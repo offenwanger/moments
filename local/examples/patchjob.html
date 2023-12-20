@@ -70,9 +70,12 @@
         drawingCanvases[1] = document.getElementById('drawing-canvas2');
 
         materials[0] = new THREE.MeshBasicMaterial();
-        materials[0].map = new THREE.CanvasTexture(drawingCanvases[0]);
         materials[1] = new THREE.MeshBasicMaterial();
-        materials[1].map = new THREE.CanvasTexture(drawingCanvases[1]);
+        materials.forEach((m, index) => {
+            m.map = new THREE.CanvasTexture(drawingCanvases[index]);
+            // m.alphaMap = new THREE.TextureLoader().load('textures/circle_mask.png');
+            // m.transparent = true;
+        })
 
         innerRenderers[0] = new THREE.WebGLRenderer({ antialias: true, canvas: drawingCanvases[0] });
         innerRenderers[0].setSize(128, 128, false);
@@ -90,23 +93,6 @@
         light.position.set(- 1, 2, 4);
         scene.add(light);
         innerScene.add(light);
-
-        const boxWidth = 1;
-        const boxHeight = 1;
-        const boxDepth = 1;
-        const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-
-        function makeInstance(geometry, material, x) {
-            const cube = new THREE.Mesh(geometry, material);
-            scene.add(cube);
-
-            cube.position.x = x;
-            cube.position.y = 1.6;
-            cube.position.z = - 2;
-
-            return cube;
-
-        }
 
         let gltfScene;
         function loadGLTF() {
@@ -149,17 +135,30 @@
             );
         }
 
-        const cubes = [
-            makeInstance(geometry, materials[0], 4),
-            makeInstance(geometry, materials[0], -2),
-            makeInstance(geometry, materials[0], 2),
-        ];
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materials[0]);
+        cube.position.copy(new THREE.Vector3(2, 1.6, -2));
+        scene.add(cube);
 
         let planes = [];
-        planes[0] = makeInstance(new THREE.PlaneGeometry(), materials[0], 0);
+        planes[0] = new THREE.Mesh(new THREE.PlaneGeometry(), materials[0]);
         planes[0].layers.set(1)
-        planes[1] = makeInstance(new THREE.PlaneGeometry(), materials[1], 0);
+        planes[0].position.copy(new THREE.Vector3(0, 1.6, -2));
+        planes[1] = new THREE.Mesh(new THREE.PlaneGeometry(), materials[1]);
         planes[1].layers.set(2)
+        planes[1].position.copy(new THREE.Vector3(0, 1.6, -2));
+        planes.forEach(plane => scene.add(plane));
+
+        const sphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.5, 32, 32),
+            new THREE.MeshPhysicalMaterial({
+                roughness: 0,
+                metalness: 0,
+                // color: 0xFFEA00,
+                transmission: 1,
+            })
+        )
+        sphere.position.copy(new THREE.Vector3(0, 1.6, -2));
+        scene.add(sphere);
 
 
         loadGLTF();
@@ -216,15 +215,9 @@
                 innerCameras[index].position.copy(centerPoint).addScaledVector(intoBubble, -dist);
             })
 
+            cube.rotation.x = time;
+            cube.rotation.y = time;
 
-            cubes.forEach((cube, ndx) => {
-
-                const speed = 1 + ndx * .1;
-                const rot = time * speed;
-                cube.rotation.x = rot;
-                cube.rotation.y = rot;
-
-            });
 
             if (gltfScene) {
                 // gltfScene.rotation.y = time;

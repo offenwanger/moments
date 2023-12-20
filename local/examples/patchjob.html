@@ -210,10 +210,10 @@
                 // we need to get dir in local coods. 
                 // camera orientation = toLocalCoords(dir)
                 // camera position = orientation*dist + centerpoint;
-                innerCameras[index].quaternion.copy(dir);
-                const vector = new THREE.Vector3(0, 0, 1);
-                vector.applyQuaternion(dir).add(centerPoint);
-                innerCameras[index].position.copy(vector);
+                // innerCameras[index].quaternion.copy(dir);
+                // const vector = new THREE.Vector3(0, 0, 1);
+                // vector.applyQuaternion(dir).add(centerPoint);
+                // innerCameras[index].position.copy(vector);
             })
 
 

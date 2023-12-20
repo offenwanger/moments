@@ -1,0 +1,248 @@
+<!-- Licensed under a BSD license. See license.html for license -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Three.js - WebXR - Basic</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        #c {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+    <canvas id="drawing-canvas1" height="128" width="128" style="display: none;"></canvas>
+    <canvas id="drawing-canvas2" height="128" width="128" style="display: none;"></canvas>
+</body>
+<script type="importmap">
+    {
+        "imports": {
+            "three": "../module/three/build/three.module.js",
+            "three/addons/": "../module/three/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { VRButton } from 'three/addons/webxr/VRButton.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+    function main() {
+        const canvas = document.querySelector('#c');
+        const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+        renderer.xr.enabled = true;
+        document.body.appendChild(VRButton.createButton(renderer));
+
+        const fov = 75;
+        const aspect = 2; // the canvas default
+        const near = 0.1;
+        const far = 200;
+        const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+        camera.position.set(0, 1.6, 0);
+
+        const scene = new THREE.Scene();
+        let centerPoint = new THREE.Vector3(-10, 1, 0.5);
+        let cameraStart = new THREE.Vector3(-11, 5, 4);
+        let dist = new THREE.Vector3().subVectors(centerPoint, cameraStart).length();
+        let defaultDirection = new THREE.Vector3().subVectors(centerPoint, cameraStart).normalize();
+
+        const innerScene = new THREE.Scene();
+        const innerRenderers = []
+        const innerCameras = []
+        let drawingCanvases = [];
+        let materials = [];
+
+        drawingCanvases[0] = document.getElementById('drawing-canvas1');
+        drawingCanvases[1] = document.getElementById('drawing-canvas2');
+
+        materials[0] = new THREE.MeshBasicMaterial();
+        materials[0].map = new THREE.CanvasTexture(drawingCanvases[0]);
+        materials[1] = new THREE.MeshBasicMaterial();
+        materials[1].map = new THREE.CanvasTexture(drawingCanvases[1]);
+
+        innerRenderers[0] = new THREE.WebGLRenderer({ antialias: true, canvas: drawingCanvases[0] });
+        innerRenderers[0].setSize(128, 128, false);
+        innerCameras[0] = new THREE.PerspectiveCamera(fov, aspect, near, far);
+        innerCameras[0].position.set(0, 1.6, 0);
+
+        innerRenderers[1] = new THREE.WebGLRenderer({ antialias: true, canvas: drawingCanvases[1] });
+        innerRenderers[1].setSize(128, 128, false);
+        innerCameras[1] = new THREE.PerspectiveCamera(fov, aspect, near, far);
+        innerCameras[1].position.set(0, 1.6, 0);
+
+        const color = 0xFFFFFF;
+        const intensity = 3;
+        const light = new THREE.DirectionalLight(color, intensity);
+        light.position.set(- 1, 2, 4);
+        scene.add(light);
+        innerScene.add(light);
+
+        const boxWidth = 1;
+        const boxHeight = 1;
+        const boxDepth = 1;
+        const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+
+        function makeInstance(geometry, material, x) {
+            const cube = new THREE.Mesh(geometry, material);
+            scene.add(cube);
+
+            cube.position.x = x;
+            cube.position.y = 1.6;
+            cube.position.z = - 2;
+
+            return cube;
+
+        }
+
+        let gltfScene;
+        function loadGLTF() {
+            // Instantiate a loader
+            const loader = new GLTFLoader();
+
+            // Optional: Provide a DRACOLoader instance to decode compressed mesh data
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('../module/three/examples/jsm/libs/draco/');
+            loader.setDRACOLoader(dracoLoader);
+
+            // Load a glTF resource
+            loader.load(
+                // resource URL
+                'scene.glb',
+                // called when the resource is loaded
+                function (gltf) {
+                    gltfScene = gltf.scene;
+                    innerScene.add(gltf.scene);
+
+                    gltf.animations; // Array<THREE.AnimationClip>
+                    gltf.scene; // THREE.Group
+                    gltf.scenes; // Array<THREE.Group>
+                    gltf.cameras; // Array<THREE.Camera>
+                    gltf.asset; // Object
+
+                },
+                // called while loading is progressing
+                function (xhr) {
+
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+
+                },
+                // called when loading has errors
+                function (error) {
+
+                    console.log('An error happened');
+
+                }
+            );
+        }
+
+        const cubes = [
+            makeInstance(geometry, materials[0], 4),
+            makeInstance(geometry, materials[0], -2),
+            makeInstance(geometry, materials[0], 2),
+        ];
+
+        let planes = [];
+        planes[0] = makeInstance(new THREE.PlaneGeometry(), materials[0], 0);
+        planes[0].layers.set(1)
+        planes[1] = makeInstance(new THREE.PlaneGeometry(), materials[1], 0);
+        planes[1].layers.set(2)
+
+
+        loadGLTF();
+
+        function resizeRendererToDisplaySize(renderer) {
+
+            const canvas = renderer.domElement;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            const needResize = canvas.width !== width || canvas.height !== height;
+            if (needResize) {
+
+                renderer.setSize(width, height, false);
+
+            }
+
+            return needResize;
+
+        }
+
+        function render(time) {
+
+            time *= 0.001;
+
+
+            // slide
+            // planes[0].position.x += 0.01;
+            // if (planes[0].position.x > 1) planes[0].position.x = -1;
+
+            // planes[1].position.x += 0.01;
+            // if (planes[1].position.x > 1) planes[1].position.x = -1;
+
+            if (resizeRendererToDisplaySize(renderer)) {
+                const canvas = renderer.domElement;
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+            }
+
+            let cameras = renderer.xr.getCamera().cameras;
+            cameras.forEach((camera, index) => {
+                let dir = new THREE.Vector3();
+                dir.subVectors(camera.position, planes[index].position).normalize();
+                let mx = new THREE.Matrix4().lookAt(dir, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
+                let qt = new THREE.Quaternion().setFromRotationMatrix(mx);
+                planes[index].quaternion.copy(qt);
+
+                // defaultDirection in local coords is <0,0,1> in world coords. 
+                // we need to get dir in local coods. 
+                // camera orientation = toLocalCoords(dir)
+                // camera position = orientation*dist + centerpoint;
+                innerCameras[index].quaternion.copy(dir);
+                const vector = new THREE.Vector3(0, 0, 1);
+                vector.applyQuaternion(dir).add(centerPoint);
+                innerCameras[index].position.copy(vector);
+            })
+
+
+            cubes.forEach((cube, ndx) => {
+
+                const speed = 1 + ndx * .1;
+                const rot = time * speed;
+                cube.rotation.x = rot;
+                cube.rotation.y = rot;
+
+            });
+
+            if (gltfScene) {
+                // gltfScene.rotation.y = time;
+            }
+
+            innerRenderers.forEach((renderer, index) => {
+                renderer.render(innerScene, innerCameras[index]);
+                materials[index].map.needsUpdate = true;
+            })
+
+            renderer.render(scene, camera);
+        }
+
+        renderer.setAnimationLoop(render);
+
+    }
+
+    main();
+</script>
+
+</html>

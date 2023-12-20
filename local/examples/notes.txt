@@ -102,3 +102,9 @@ position plane orthogonally
 render using camera
 draw relevant section to canvas? 
 
+Post processing not an option. 
+Sad, because that's what I actually needed... 
+https://github.com/mrdoob/three.js/pull/26160#issuecomment-1751012842
+
+
+

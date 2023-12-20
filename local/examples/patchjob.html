@@ -23,8 +23,8 @@
 
 <body>
     <canvas id="c"></canvas>
-    <canvas id="drawing-canvas1" height="128" width="128" style="display: none;"></canvas>
-    <canvas id="drawing-canvas2" height="128" width="128" style="display: none;"></canvas>
+    <canvas id="drawing-canvas1" height="512" width="512" style="display: none;"></canvas>
+    <canvas id="drawing-canvas2" height="512" width="512" style="display: none;"></canvas>
 </body>
 <script type="importmap">
     {
@@ -55,7 +55,7 @@
         camera.position.set(0, 1.6, 0);
 
         const scene = new THREE.Scene();
-        let centerPoint = new THREE.Vector3(-10, 1, 0.5);
+        let centerPoint = new THREE.Vector3(-15, 1.5, 3);
         let cameraStart = new THREE.Vector3(-11, 5, 4);
         let dist = new THREE.Vector3().subVectors(centerPoint, cameraStart).length();
         let defaultDirection = new THREE.Vector3().subVectors(centerPoint, cameraStart).normalize();
@@ -198,22 +198,22 @@
                 camera.updateProjectionMatrix();
             }
 
-            let cameras = renderer.xr.getCamera().cameras;
-            cameras.forEach((camera, index) => {
-                let dir = new THREE.Vector3();
-                dir.subVectors(camera.position, planes[index].position).normalize();
-                let mx = new THREE.Matrix4().lookAt(dir, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
-                let qt = new THREE.Quaternion().setFromRotationMatrix(mx);
-                planes[index].quaternion.copy(qt);
+            planes.forEach(plane => {
+                let qt = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position, plane.position, new THREE.Vector3(0, 1, 0)));
+                plane.quaternion.copy(qt);
+            })
 
+            let cameras = renderer.xr.getCamera().cameras;
+            if (cameras.length == 0) cameras = [camera, camera];
+            cameras.forEach((camera, index) => {
                 // defaultDirection in local coords is <0,0,1> in world coords. 
                 // we need to get dir in local coods. 
                 // camera orientation = toLocalCoords(dir)
                 // camera position = orientation*dist + centerpoint;
-                // innerCameras[index].quaternion.copy(dir);
-                // const vector = new THREE.Vector3(0, 0, 1);
-                // vector.applyQuaternion(dir).add(centerPoint);
-                // innerCameras[index].position.copy(vector);
+                let intoBubble = new THREE.Vector3().copy(planes[index].position).sub(camera.position).normalize();
+                let qt = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position, planes[index].position, new THREE.Vector3(0, 1, 0)));
+                innerCameras[index].quaternion.copy(qt);
+                innerCameras[index].position.copy(centerPoint).addScaledVector(intoBubble, -dist);
             })
 
 

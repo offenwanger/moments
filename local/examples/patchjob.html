@@ -40,6 +40,7 @@
     import { VRButton } from 'three/addons/webxr/VRButton.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+    import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
     function main() {
         const canvas = document.querySelector('#c');
@@ -78,12 +79,12 @@
         })
 
         innerRenderers[0] = new THREE.WebGLRenderer({ antialias: true, canvas: drawingCanvases[0] });
-        innerRenderers[0].setSize(128, 128, false);
+        innerRenderers[0].setSize(512, 512, false);
         innerCameras[0] = new THREE.PerspectiveCamera(fov, aspect, near, far);
         innerCameras[0].position.set(0, 1.6, 0);
 
         innerRenderers[1] = new THREE.WebGLRenderer({ antialias: true, canvas: drawingCanvases[1] });
-        innerRenderers[1].setSize(128, 128, false);
+        innerRenderers[1].setSize(512, 512, false);
         innerCameras[1] = new THREE.PerspectiveCamera(fov, aspect, near, far);
         innerCameras[1].position.set(0, 1.6, 0);
 
@@ -140,21 +141,39 @@
         scene.add(cube);
 
         let planes = [];
-        planes[0] = new THREE.Mesh(new THREE.PlaneGeometry(), materials[0]);
+        planes[0] = new THREE.Mesh(new THREE.CircleGeometry(0.5, 32, 0, 2 * Math.PI), materials[0]);
         planes[0].layers.set(1)
         planes[0].position.copy(new THREE.Vector3(0, 1.6, -2));
-        planes[1] = new THREE.Mesh(new THREE.PlaneGeometry(), materials[1]);
+        planes[1] = new THREE.Mesh(new THREE.CircleGeometry(0.5, 32, 0, 2 * Math.PI), materials[1]);
         planes[1].layers.set(2)
         planes[1].position.copy(new THREE.Vector3(0, 1.6, -2));
         planes.forEach(plane => scene.add(plane));
 
+        // const hdrEquirect = new RGBELoader().load(
+        //     "textures/empty_warehouse_01_2k.hdr",
+        //     () => {
+        //         hdrEquirect.mapping = THREE.EquirectangularReflectionMapping;
+        //     }
+        // );
+
+        var loader = new THREE.CubeTextureLoader();
+        loader.setPath('textures/');
+
+        var textureCube = loader.load([
+            'px.jpg', 'nx.jpg',
+            'py.jpg', 'ny.jpg',
+            'pz.jpg', 'nz.jpg'
+        ]);
+
         const sphere = new THREE.Mesh(
-            new THREE.SphereGeometry(0.5, 32, 32),
+            new THREE.IcosahedronGeometry(0.5, 15),
             new THREE.MeshPhysicalMaterial({
                 roughness: 0,
                 metalness: 0,
                 // color: 0xFFEA00,
                 transmission: 1,
+                thickness: 0.5,
+                envMap: textureCube
             })
         )
         sphere.position.copy(new THREE.Vector3(0, 1.6, -2));
@@ -198,12 +217,21 @@
             }
 
             planes.forEach(plane => {
-                let qt = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position, plane.position, new THREE.Vector3(0, 1, 0)));
+                let qt = new THREE.Quaternion()
+                    .setFromRotationMatrix(new THREE.Matrix4().lookAt(
+                        camera.position,
+                        plane.position,
+                        new THREE.Vector3(0, 1, 0)));
                 plane.quaternion.copy(qt);
             })
 
             let cameras = renderer.xr.getCamera().cameras;
-            if (cameras.length == 0) cameras = [camera, camera];
+            if (cameras.length == 0) {
+                cameras = [camera];
+                planes[0].layers.set(0)
+            } else if (cameras.length == 2) {
+                planes[0].layers.set(1)
+            }
             cameras.forEach((camera, index) => {
                 // defaultDirection in local coords is <0,0,1> in world coords. 
                 // we need to get dir in local coods. 

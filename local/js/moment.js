@@ -1,0 +1,135 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+const UP = new THREE.Vector3(0, 1, 0);
+
+export function Moment(parentScene) {
+    let centerPoint = new THREE.Vector3(-15, 1.5, 3);
+    let cameraStart = new THREE.Vector3(-11, 5, 4);
+    let dist = new THREE.Vector3().subVectors(centerPoint, cameraStart).length();
+    let defaultDirection = new THREE.Vector3().subVectors(centerPoint, cameraStart).normalize();
+
+    let mPosition = new THREE.Vector3(0, 1.6, -2);
+
+    const fov = 75;
+    const aspect = 2; // the canvas default
+    const near = 0.1;
+    const far = 200;
+
+    const mScene = new THREE.Scene();
+    mScene.fog = new THREE.Fog(0xcccccc, 0.1, 1000)
+
+    const mCanvases = [document.createElement('canvas'), document.createElement('canvas')];
+    const mMaterials = [new THREE.MeshBasicMaterial(), new THREE.MeshBasicMaterial()];
+    mMaterials.forEach((m, index) => {
+        m.map = new THREE.CanvasTexture(mCanvases[index]);
+    })
+    const mRenderers = [
+        new THREE.WebGLRenderer({ antialias: true, canvas: mCanvases[0] }),
+        new THREE.WebGLRenderer({ antialias: true, canvas: mCanvases[1] })
+    ]
+    mRenderers.forEach(renderer => renderer.setSize(512, 512, false))
+
+    const mCameras = [
+        new THREE.PerspectiveCamera(fov, aspect, near, far),
+        new THREE.PerspectiveCamera(fov, aspect, near, far),
+    ]
+    mCameras.forEach(camera => camera.position.set(0, 1.6, 0))
+
+    const mLenses = [
+        new THREE.Mesh(new THREE.CircleGeometry(0.5, 32, 0, 2 * Math.PI), mMaterials[0]),
+        new THREE.Mesh(new THREE.CircleGeometry(0.5, 32, 0, 2 * Math.PI), mMaterials[1])
+    ];
+    mLenses.forEach((lens, i) => {
+        lens.position.copy(mPosition);
+        lens.layers.set(i + 1);
+        parentScene.add(lens)
+    })
+
+    let cubeLoader = new THREE.CubeTextureLoader();
+    cubeLoader.setPath('assets/envbox/');
+    let envBox = cubeLoader.load([
+        'px.jpg', 'nx.jpg',
+        'py.jpg', 'ny.jpg',
+        'pz.jpg', 'nz.jpg'
+    ]);
+
+    const mSphere = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.5, 15),
+        new THREE.MeshPhysicalMaterial({
+            roughness: 0,
+            metalness: 0,
+            transmission: 1,
+            thickness: 0.5,
+            envMap: envBox
+        })
+    )
+    mSphere.position.copy(mPosition);
+    parentScene.add(mSphere);
+
+    let mSceneModel
+    const modelLoader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('../module/three/examples/jsm/libs/draco/');
+    modelLoader.setDRACOLoader(dracoLoader);
+    modelLoader.load('assets/scenes/test_scene.glb',
+        function (gltf) {
+            mSceneModel = gltf.scene;
+            mScene.add(gltf.scene);
+        },
+        // called while loading is progressing
+        function (xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // called when loading has errors
+        function (error) {
+            console.log('An error happened', error);
+        }
+    );
+
+    function render(time, cameras) {
+        // rendering VR vs viewer
+        if (cameras.length == 1) {
+            mLenses[0].layers.set(0)
+        } else if (cameras.length == 2) {
+            mLenses[0].layers.set(1)
+        }
+
+        // face lenses at camera
+        mLenses.forEach(lens => {
+            let rotationMatrix = new THREE.Matrix4().lookAt(cameras[0].position, lens.position, UP);
+            let qt = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
+            lens.quaternion.copy(qt);
+        })
+
+        // Position camera
+        cameras.forEach((camera, index) => {
+            let intoBubble = new THREE.Vector3().copy(mLenses[index].position).sub(camera.position).normalize();
+            let rotationMatrix = new THREE.Matrix4().lookAt(camera.position, mLenses[index].position, UP);
+            let qt = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
+            mCameras[index].quaternion.copy(qt);
+            mCameras[index].position.copy(centerPoint).addScaledVector(intoBubble, -dist);
+        })
+
+        // TODO: Think about performance
+        // Either we should prebake a bunch of images
+        // but also every render pass we can render from near to far until we run out of time. 
+
+        // render
+        mRenderers.forEach((renderer, index) => {
+            renderer.render(mScene, mCameras[index]);
+            mMaterials[index].map.needsUpdate = true;
+        })
+    }
+
+    function setPosition(position) {
+        mLenses.forEach(plane => {
+            plane.position.copy(position);
+        })
+        mSphere.position.copy(position);
+    }
+
+    this.render = render;
+    this.setPosition = setPosition;
+}

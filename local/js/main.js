@@ -18,12 +18,13 @@ function main() {
     const scene = new THREE.Scene();
 
     let mMoments = [];
-    for (let i = 0; i < 3; i++) {
+    let testCount = 16;
+    for (let i = 0; i < testCount; i++) {
         let m = new Moment(scene);
         m.setPosition(new THREE.Vector3(
-            Math.sin(Math.PI * 2 * i / 8) * 2,
-            Math.sin(Math.PI * 2 * i / 8) * 2,
-            Math.cos(Math.PI * 2 * i / 8) * -2))
+            Math.sin(Math.PI * 2 * i / testCount) * 2,
+            Math.cos(Math.PI * 2 * i / testCount) * 2,
+            Math.cos(Math.PI * 2 * i / testCount) * -2 * (1 + i / 8)))
         mMoments.push(m)
     }
 
@@ -51,6 +52,8 @@ function main() {
     }
 
     function render(time) {
+        let clock = new THREE.Clock();
+        clock.start();
 
         time *= 0.001;
 
@@ -62,7 +65,19 @@ function main() {
 
         let cameras = renderer.xr.getCamera().cameras;
         if (cameras.length == 0) cameras = [camera];
-        mMoments.forEach(m => m.render(time, cameras))
+        mMoments.forEach(moment => {
+            moment.updateLenses(cameras);
+        })
+        let sortedMoments = mMoments.map(m => { return { dist: camera.position.distanceTo(m.getPosition()), m } })
+            .sort((a, b) => a - b).map(o => o.m);
+        for (let i = 0; i < sortedMoments.length; i++) {
+            sortedMoments[i].render(time, cameras);
+            let elapsedTime = clock.getElapsedTime();
+            if (elapsedTime > 0.02) {
+                // if we've going to drop below 60fps, stop rendering
+                break;
+            };
+        }
 
         cube.rotation.x = time;
         cube.rotation.y = time;

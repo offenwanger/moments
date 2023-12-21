@@ -4,6 +4,17 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
+const gCanvases = [document.createElement('canvas'), document.createElement('canvas')];
+gCanvases.forEach(canvas => {
+    canvas.width = 512;
+    canvas.height = 512;
+})
+const gRenderers = [
+    new THREE.WebGLRenderer({ antialias: true, canvas: gCanvases[0] }),
+    new THREE.WebGLRenderer({ antialias: true, canvas: gCanvases[1] })
+]
+gRenderers.forEach(renderer => renderer.setSize(512, 512, false))
+
 export function Moment(parentScene) {
     let centerPoint = new THREE.Vector3(-15, 1.5, 3);
     let cameraStart = new THREE.Vector3(-11, 5, 4);
@@ -21,16 +32,16 @@ export function Moment(parentScene) {
     mScene.fog = new THREE.Fog(0xcccccc, 0.1, 1000)
 
     const mCanvases = [document.createElement('canvas'), document.createElement('canvas')];
+    mCanvases.forEach(canvas => {
+        canvas.width = 512;
+        canvas.height = 512;
+    });
+
+    const mContexts = mCanvases.map(c => c.getContext('2d'));
     const mMaterials = [new THREE.MeshBasicMaterial(), new THREE.MeshBasicMaterial()];
     mMaterials.forEach((m, index) => {
         m.map = new THREE.CanvasTexture(mCanvases[index]);
     })
-    const mRenderers = [
-        new THREE.WebGLRenderer({ antialias: true, canvas: mCanvases[0] }),
-        new THREE.WebGLRenderer({ antialias: true, canvas: mCanvases[1] })
-    ]
-    mRenderers.forEach(renderer => renderer.setSize(512, 512, false))
-
     const mCameras = [
         new THREE.PerspectiveCamera(fov, aspect, near, far),
         new THREE.PerspectiveCamera(fov, aspect, near, far),
@@ -68,7 +79,19 @@ export function Moment(parentScene) {
     mSphere.position.copy(mPosition);
     parentScene.add(mSphere);
 
-    let mSceneModel
+    const imageLoader = new THREE.ImageLoader();
+    imageLoader.load(
+        'assets/scenes/test_scene.png',
+        function (image) {
+            mContexts.forEach(ctx => ctx.drawImage(image, 0, 0));
+            mMaterials.forEach(m => m.map.needsUpdate = true);
+        }, null,
+        function (error) {
+            console.error('An error happened.', error);
+        }
+    );
+
+    let mSceneModel;
     const modelLoader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('../module/three/examples/jsm/libs/draco/');
@@ -80,15 +103,15 @@ export function Moment(parentScene) {
         },
         // called while loading is progressing
         function (xhr) {
-            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+            (console).log((xhr.loaded / xhr.total * 100) + '% loaded');
         },
         // called when loading has errors
         function (error) {
-            console.log('An error happened', error);
+            console.error('An error happened', error);
         }
     );
 
-    function render(time, cameras) {
+    function updateLenses(cameras) {
         // rendering VR vs viewer
         if (cameras.length == 1) {
             mLenses[0].layers.set(0)
@@ -102,6 +125,10 @@ export function Moment(parentScene) {
             let qt = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
             lens.quaternion.copy(qt);
         })
+    }
+
+    function render(time, cameras) {
+        if (!mSceneModel) return;
 
         // Position camera
         cameras.forEach((camera, index) => {
@@ -117,8 +144,9 @@ export function Moment(parentScene) {
         // but also every render pass we can render from near to far until we run out of time. 
 
         // render
-        mRenderers.forEach((renderer, index) => {
+        gRenderers.forEach((renderer, index) => {
             renderer.render(mScene, mCameras[index]);
+            mContexts[index].drawImage(gCanvases[index], 0, 0);
             mMaterials[index].map.needsUpdate = true;
         })
     }
@@ -128,8 +156,15 @@ export function Moment(parentScene) {
             plane.position.copy(position);
         })
         mSphere.position.copy(position);
+        mPosition = position;
     }
 
+    function getPosition() {
+        return mPosition;
+    }
+
+    this.updateLenses = updateLenses;
     this.render = render;
     this.setPosition = setPosition;
+    this.getPosition = getPosition;
 }

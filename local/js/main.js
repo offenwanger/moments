@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Moment } from './moment.js';
 
 function main() {
@@ -14,6 +15,11 @@ function main() {
     const far = 200;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     camera.position.set(0, 1.6, 0);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.minDistance = 2;
+    controls.maxDistance = 5;
+    controls.maxPolarAngle = Math.PI / 2;
 
     const scene = new THREE.Scene();
 
@@ -51,7 +57,14 @@ function main() {
         return needResize;
     }
 
+    let mLastTime;
     function render(time) {
+        if (renderer.xr.isPresenting) {
+            controls.enabled = false;
+        } else {
+            controls.enabled = true;
+        }
+
         let clock = new THREE.Clock();
         clock.start();
 
@@ -71,18 +84,21 @@ function main() {
         let sortedMoments = mMoments.map(m => { return { dist: camera.position.distanceTo(m.getPosition()), m } })
             .sort((a, b) => a - b).map(o => o.m);
         for (let i = 0; i < sortedMoments.length; i++) {
-            sortedMoments[i].render(time, cameras);
             let elapsedTime = clock.getElapsedTime();
-            if (elapsedTime > 0.02) {
+            if (elapsedTime < 0.02) {
+                sortedMoments[i].render(time - mLastTime, cameras);
+            } else {
                 // if we've going to drop below 60fps, stop rendering
-                break;
-            };
+                sortedMoments[i].incrementBlur(time - mLastTime);
+            }
+
         }
 
         cube.rotation.x = time;
         cube.rotation.y = time;
 
         renderer.render(scene, camera);
+        mLastTime = time;
     }
 
     renderer.setAnimationLoop(render);

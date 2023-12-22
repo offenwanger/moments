@@ -3,6 +3,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
+const BLUR_MAX = 0.2;
+const BLUR_MIN = 0;
 
 const gCanvases = [document.createElement('canvas'), document.createElement('canvas')];
 gCanvases.forEach(canvas => {
@@ -73,6 +75,7 @@ export function Moment(parentScene) {
             metalness: 0,
             transmission: 1,
             thickness: 0.5,
+            roughness: BLUR_MAX,
             envMap: envBox
         })
     )
@@ -127,8 +130,9 @@ export function Moment(parentScene) {
         })
     }
 
-    function render(time, cameras) {
+    function render(delta, cameras) {
         if (!mSceneModel) return;
+        decrementBlur(delta);
 
         // Position camera
         cameras.forEach((camera, index) => {
@@ -163,8 +167,24 @@ export function Moment(parentScene) {
         return mPosition;
     }
 
+
+    const BLUR_SPEED = 0.1;
+    function incrementBlur(delta) {
+        if (mSphere.material.roughness < BLUR_MAX) {
+            mSphere.material.roughness += delta * BLUR_SPEED;
+        }
+    }
+
+    function decrementBlur(delta) {
+        if (mSphere.material.roughness > BLUR_MIN) {
+            mSphere.material.roughness -= delta * BLUR_SPEED;
+        }
+    }
+
     this.updateLenses = updateLenses;
     this.render = render;
     this.setPosition = setPosition;
     this.getPosition = getPosition;
+    this.incrementBlur = incrementBlur;
+    this.decrementBlur = decrementBlur;
 }

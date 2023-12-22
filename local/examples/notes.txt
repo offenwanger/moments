@@ -1,3 +1,30 @@
+
+data structs
+
+Timeline
+- keyframes
+- - given T
+- - shape of the addEventListener
+- - environment effects
+- moments
+- - position T
+- - position x, Y
+- - default orientation
+- - size
+- - focalPoint
+- - focal dist
+- - scene
+- - - Will have 3D assets, sketchs, lighting probably, fog, size, etc...
+- 3D objects
+- - position t
+- - position x, Y
+- - assets?
+
+
+
+
+=================================================
+
 https://daign.github.io/clipping-with-caps/
 
 2 options

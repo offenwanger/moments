@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
-const BLUR_MAX = 0.2;
+const BLUR_MAX = 0.1;
 const BLUR_MIN = 0;
 
 const gCanvases = [document.createElement('canvas'), document.createElement('canvas')];
@@ -18,12 +18,11 @@ const gRenderers = [
 gRenderers.forEach(renderer => renderer.setSize(512, 512, false))
 
 export function Moment(parentScene) {
-    let centerPoint = new THREE.Vector3(-15, 1.5, 3);
-    let cameraStart = new THREE.Vector3(-11, 5, 4);
-    let dist = new THREE.Vector3().subVectors(centerPoint, cameraStart).length();
-    let defaultDirection = new THREE.Vector3().subVectors(centerPoint, cameraStart).normalize();
+    let mFocalPoint = new THREE.Vector3(-15, 2, 1.5);
+    let mFocalDist = 10;
 
-    let mPosition = new THREE.Vector3(0, 1.6, -2);
+    let mOrientation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0);
+    let mPosition = new THREE.Vector3();
 
     const fov = 75;
     const aspect = 2; // the canvas default
@@ -136,11 +135,12 @@ export function Moment(parentScene) {
 
         // Position camera
         cameras.forEach((camera, index) => {
-            let intoBubble = new THREE.Vector3().copy(mLenses[index].position).sub(camera.position).normalize();
-            let rotationMatrix = new THREE.Matrix4().lookAt(camera.position, mLenses[index].position, UP);
+            let rotationMatrix = new THREE.Matrix4().lookAt(camera.position, mPosition, UP);
             let qt = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
+            qt = new THREE.Quaternion().copy(mOrientation).invert().multiply(qt);
             mCameras[index].quaternion.copy(qt);
-            mCameras[index].position.copy(centerPoint).addScaledVector(intoBubble, -dist);
+            let position = new THREE.Vector3(0, 0, mFocalDist).applyQuaternion(qt).add(mFocalPoint);
+            mCameras[index].position.copy(position);
         })
 
         // TODO: Think about performance
@@ -185,6 +185,8 @@ export function Moment(parentScene) {
     this.render = render;
     this.setPosition = setPosition;
     this.getPosition = getPosition;
+    this.setOrientation = (o) => { mOrientation.copy(o) };
+    this.getOrientation = () => { return new THREE.Quaternion().copy(mOrientation) };
     this.incrementBlur = incrementBlur;
     this.decrementBlur = decrementBlur;
 }

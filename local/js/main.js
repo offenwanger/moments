@@ -97,6 +97,8 @@ function main() {
         cube.rotation.x = time;
         cube.rotation.y = time;
 
+        mMoments[0].setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), time));
+
         renderer.render(scene, camera);
         mLastTime = time;
     }

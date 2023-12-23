@@ -12,8 +12,7 @@ app.get('/', function (req, res) {
 });
 
 // Everything in the local folder can be accessed via /filename
-app.use('/', express.static(__dirname + '/local'));
-app.use('/module', express.static(__dirname + '/node_modules'));
+app.use('/', express.static(__dirname + '/'));
 
 // Start the application
 app.listen(port);

@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html>
 
+<!-- This index file is used locally so development does not require network. -->
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Moments</title>
-    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="/main.css">
     <script type="importmap">
         {
             "imports": {
-                "three": "/module/three/build/three.module.js",
-                "three/addons/": "/module/three/examples/jsm/"
+                "three": "/node_modules/three/build/three.module.js",
+                "three/addons/": "/node_modules/three/examples/jsm/"
             }
         }
     </script>
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="/js/main.js"></script>
 </head>
 
 <body>

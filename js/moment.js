@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as ThreeMeshUI from "three-mesh-ui";
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
@@ -24,9 +25,7 @@ export function Moment(parentScene) {
     let mOrientation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0);
     let mPosition = new THREE.Vector3();
 
-    let mCaption = "There is a man sitting under a tree"
-    let mSpeech = 'Things are less significant if I am talking.'
-    let mSoundEffect = 'Whoosh!'
+    let mSpeech = null;
 
     const fov = 75;
     const aspect = 2; // the canvas default
@@ -117,12 +116,51 @@ export function Moment(parentScene) {
         }
     );
 
+    let bubbleOffset = { x: 0.5, y: 1 }
+    let textBubble;
+    function makeTextBubble() {
+        textBubble = new ThreeMeshUI.Block({
+            width: 1.7,
+            height: 1,
+            padding: 0.2,
+
+            fontFamily: './assets/fonts/Roboto-msdf.json',
+            fontTexture: './assets/fonts/Roboto-msdf.png',
+            backgroundSize: "contain",
+        });
+        const texttureLoader = new THREE.TextureLoader();
+        texttureLoader.load('./assets/speech_bubble.png', (texture) => {
+            textBubble.set({ backgroundTexture: texture });
+        });
+        const text = new ThreeMeshUI.Text({
+            content: mSpeech,
+            fontColor: new THREE.Color('black'),
+            fontSize: 0.1
+        });
+        textBubble.add(text);
+        parentScene.add(textBubble);
+    }
+
     function updateLenses(cameras) {
         // rendering VR vs viewer
         if (cameras.length == 1) {
             mLenses[0].layers.set(0)
         } else if (cameras.length == 2) {
             mLenses[0].layers.set(1)
+        }
+
+        if (textBubble) {
+            let avgCameraPosition = cameras.reduce((sum, c) => sum.add(c.position), new THREE.Vector3()).multiplyScalar(1 / cameras.length);
+            let normal = new THREE.Vector3().subVectors(avgCameraPosition, mPosition).normalize();
+            let vy = UP.clone().projectOnPlane(normal).normalize();
+            let vx = new THREE.Vector3().crossVectors(normal, vy);
+            textBubble.position.copy(new THREE.Vector3().addVectors(
+                vx.multiplyScalar(bubbleOffset.x),
+                vy.multiplyScalar(bubbleOffset.y))).add(mPosition);
+            let rotationMatrix = new THREE.Matrix4().lookAt(avgCameraPosition, mPosition, UP);
+            let qt = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
+            textBubble.quaternion.copy(qt);
+            ThreeMeshUI.update();
         }
 
         // face lenses at camera
@@ -191,6 +229,8 @@ export function Moment(parentScene) {
     this.getPosition = getPosition;
     this.setOrientation = (o) => { mOrientation.copy(o) };
     this.getOrientation = () => { return new THREE.Quaternion().copy(mOrientation) };
+    this.setSpeech = (speech) => { mSpeech = speech; makeTextBubble(); };
+    this.getSpeech = () => { return mSpeech };
     this.incrementBlur = incrementBlur;
     this.decrementBlur = decrementBlur;
 }

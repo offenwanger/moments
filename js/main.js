@@ -19,7 +19,8 @@ function main() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 2;
     controls.maxDistance = 5;
-    controls.target.set(0, 1.6, -2);
+    controls.target.set(0, 2, -2);
+    camera.position.set(0, 3, 0);
     controls.update();
 
     const scene = new THREE.Scene();
@@ -33,13 +34,21 @@ function main() {
     scene.background = envBox;
 
     let mMoments = [];
+    let texts = [
+        'Things are less significant if I am talking. Unfourtunatly, I do need to say things in order to test the speech bubbles.',
+        null,
+        null,
+        'There are sometimes things to say.',
+        'and they must be readable',
+    ]
     let testCount = 16;
     for (let i = 0; i < testCount; i++) {
         let m = new Moment(scene);
         m.setPosition(new THREE.Vector3(
-            Math.sin(Math.PI * 2 * i / testCount) * 2,
-            Math.cos(Math.PI * 2 * i / testCount) * 2,
-            Math.cos(Math.PI * 2 * i / testCount) * -2 * (1 + i / 8)))
+            Math.sin(Math.PI * 3 * i / testCount) * 2 + i / 4,
+            Math.cos(Math.PI * 3 * i / testCount) * 2 + i / 4,
+            Math.cos(Math.PI * 3 * i / testCount) * -2 + i / 4))
+        if (texts[i]) m.setSpeech(texts[i])
         mMoments.push(m)
     }
 

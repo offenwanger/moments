@@ -8,7 +8,7 @@ const app = express();
 const port = 8000;
 
 app.get('/', function (req, res) {
-    res.sendFile(__dirname + '/local/index.html');
+    res.sendFile(__dirname + '/local/local_index.html');
 });
 
 // Everything in the local folder can be accessed via /filename

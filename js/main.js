@@ -19,9 +19,18 @@ function main() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 2;
     controls.maxDistance = 5;
-    controls.maxPolarAngle = Math.PI / 2;
+    controls.target.set(0, 1.6, -2);
+    controls.update();
 
     const scene = new THREE.Scene();
+    let cubeLoader = new THREE.CubeTextureLoader();
+    cubeLoader.setPath('assets/envbox/');
+    let envBox = cubeLoader.load([
+        'px.jpg', 'nx.jpg',
+        'py.jpg', 'ny.jpg',
+        'pz.jpg', 'nz.jpg'
+    ]);
+    scene.background = envBox;
 
     let mMoments = [];
     let testCount = 16;
@@ -40,10 +49,6 @@ function main() {
     light.position.set(- 1, 2, 4);
     scene.add(light);
 
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true })
-    const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
-    cube.position.copy(new THREE.Vector3(2, 1.6, -2));
-    scene.add(cube);
 
     function resizeRendererToDisplaySize(renderer) {
         const canvas = renderer.domElement;
@@ -93,9 +98,6 @@ function main() {
             }
 
         }
-
-        cube.rotation.x = time;
-        cube.rotation.y = time;
 
         mMoments[0].setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), time));
 

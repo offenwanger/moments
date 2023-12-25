@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Moment } from './moment.js';
+import { Util } from './utility.js';
+import { Caption } from './caption.js';
 
 function main() {
     const canvas = document.querySelector('#c');
@@ -34,23 +36,31 @@ function main() {
     scene.background = envBox;
 
     let mMoments = [];
-    let texts = [
-        'Things are less significant if I am talking. Unfourtunatly, I do need to say things in order to test the speech bubbles.',
-        null,
-        null,
-        'There are sometimes things to say.',
-        'and they must be readable',
-    ]
     let testCount = 16;
     for (let i = 0; i < testCount; i++) {
         let m = new Moment(scene);
+        m.setEnvBox(envBox);
+
         m.setPosition(new THREE.Vector3(
             Math.sin(Math.PI * 3 * i / testCount) * 2 + i / 4,
             Math.cos(Math.PI * 3 * i / testCount) * 2 + i / 4,
             Math.cos(Math.PI * 3 * i / testCount) * -2 + i / 4))
-        if (texts[i]) m.setSpeech(texts[i])
+        m.setSize(0.5 + (i % 4) / 8)
+        m.setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI * (i % 8) / 8))
+
         mMoments.push(m)
     }
+
+    [{ offset: { x: 1, y: 1 }, moment: 0, root: new THREE.Vector3(-15.1, 7, -0.5), text: 'Things are less significant if I am talking. Unfourtunatly, I do need to say things in order to test the speech bubbles.' },
+    { offset: { x: 0.75, y: 1.5 }, moment: 2, root: new THREE.Vector3(-15.1, 2.2, 1.2), text: 'There are sometimes things to say.' },
+    { offset: { x: -0.25, y: 1.25 }, moment: 2, root: new THREE.Vector3(0, 0, 2), text: 'and they must be readable', },
+    ].forEach(c => {
+        let caption = new Caption(scene);
+        caption.setText(c.text);
+        caption.setOffset(c.offset);
+        caption.setRoot(c.root);
+        mMoments[c.moment].addCaption(caption);
+    })
 
     const color = 0xFFFFFF;
     const intensity = 3;
@@ -92,20 +102,29 @@ function main() {
 
         let cameras = renderer.xr.getCamera().cameras;
         if (cameras.length == 0) cameras = [camera];
-        mMoments.forEach(moment => {
-            moment.updateLenses(cameras);
-        })
+
         let sortedMoments = mMoments.map(m => { return { dist: camera.position.distanceTo(m.getPosition()), m } })
             .sort((a, b) => a - b).map(o => o.m);
+
+        // TODO, complete the full initial render pass.
+        for (let i = 0; i < sortedMoments.length; i++) {
+            let elapsedTime = clock.getElapsedTime();
+            if (elapsedTime < 0.015) {
+                sortedMoments[i].update(cameras);
+            } else {
+                break;
+            }
+        }
+
         for (let i = 0; i < sortedMoments.length; i++) {
             let elapsedTime = clock.getElapsedTime();
             if (elapsedTime < 0.02) {
-                sortedMoments[i].render(time - mLastTime, cameras);
+                sortedMoments[i].decrementBlur(time - mLastTime);
+                sortedMoments[i].render();
             } else {
                 // if we've going to drop below 60fps, stop rendering
                 sortedMoments[i].incrementBlur(time - mLastTime);
             }
-
         }
 
         mMoments[0].setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), time));

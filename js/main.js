@@ -114,16 +114,22 @@ function main() {
         for (let i = 0; i < sortedMoments.length; i++) {
             if (clock.getElapsedTime() > 0.015) { break; }
 
-            if (!interactionTarget && isTargeted(sortedMoments[i])) {
-                interactionTarget = true;
-                mHighlightRing.setPosition(sortedMoments[i].getPosition()
-                    .add(new THREE.Vector3(0, -sortedMoments[i].getSize(), 0)))
-                mHighlightRing.show();
+            if (interactionTarget == false && isTargeted(sortedMoments[i])) {
+                interactionTarget = i;
             }
 
             sortedMoments[i].update(cameras);
         }
-        if (!interactionTarget) mHighlightRing.hide();
+
+        if (interactionTarget !== false) {
+            let moment = sortedMoments.splice(interactionTarget, 1)[0];
+            mHighlightRing.setPosition(moment.getPosition()
+                .add(new THREE.Vector3(0, -moment.getSize(), 0)))
+            mHighlightRing.show();
+            sortedMoments.unshift(moment);
+        } else {
+            mHighlightRing.hide();
+        }
 
         // chop the animation time out of rendering, should be cheap
         sortedMoments.forEach(moment => {

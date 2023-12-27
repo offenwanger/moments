@@ -4,6 +4,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Moment } from './moment.js';
 import { Util } from './utility.js';
 import { Caption } from './caption.js';
+import { HighlightRing } from './highlight_ring.js';
+
+const INTERACTION_DISTANCE = 10;
 
 function main() {
     const canvas = document.querySelector('#c');
@@ -51,6 +54,8 @@ function main() {
         mMoments.push(m)
     }
 
+    let mHighlightRing = new HighlightRing(scene);
+
     [{ offset: { x: 1, y: 1 }, moment: 0, root: new THREE.Vector3(-15.1, 7, -0.5), text: 'Things are less significant if I am talking. Unfourtunatly, I do need to say things in order to test the speech bubbles.' },
     { offset: { x: 0.75, y: 1.5 }, moment: 2, root: new THREE.Vector3(-15.1, 2.2, 1.2), text: 'There are sometimes things to say.' },
     { offset: { x: -0.25, y: 1.25 }, moment: 2, root: new THREE.Vector3(0, 0, 2), text: 'and they must be readable', },
@@ -68,7 +73,6 @@ function main() {
     light.position.set(- 1, 2, 4);
     scene.add(light);
 
-
     function resizeRendererToDisplaySize(renderer) {
         const canvas = renderer.domElement;
         const width = canvas.clientWidth;
@@ -81,8 +85,9 @@ function main() {
         return needResize;
     }
 
-    let mLastTime;
     function render(time) {
+        time *= 0.001;
+
         if (renderer.xr.isPresenting) {
             controls.enabled = false;
         } else {
@@ -91,8 +96,6 @@ function main() {
 
         let clock = new THREE.Clock();
         clock.start();
-
-        time *= 0.001;
 
         if (resizeRendererToDisplaySize(renderer)) {
             const canvas = renderer.domElement;
@@ -106,34 +109,50 @@ function main() {
         let sortedMoments = mMoments.map(m => { return { dist: camera.position.distanceTo(m.getPosition()), m } })
             .sort((a, b) => a - b).map(o => o.m);
 
+        let interactionTarget = false;
         // TODO, complete the full initial render pass.
         for (let i = 0; i < sortedMoments.length; i++) {
-            let elapsedTime = clock.getElapsedTime();
-            if (elapsedTime < 0.015) {
-                sortedMoments[i].update(cameras);
-            } else {
-                break;
+            if (clock.getElapsedTime() > 0.015) { break; }
+
+            if (!interactionTarget && isTargeted(sortedMoments[i])) {
+                interactionTarget = true;
+                mHighlightRing.setPosition(sortedMoments[i].getPosition()
+                    .add(new THREE.Vector3(0, -sortedMoments[i].getSize(), 0)))
+                mHighlightRing.show();
             }
+
+            sortedMoments[i].update(cameras);
         }
+        if (!interactionTarget) mHighlightRing.hide();
+
+        // chop the animation time out of rendering, should be cheap
+        sortedMoments.forEach(moment => {
+            moment.animate(time);
+        })
 
         for (let i = 0; i < sortedMoments.length; i++) {
-            let elapsedTime = clock.getElapsedTime();
-            if (elapsedTime < 0.02) {
-                sortedMoments[i].decrementBlur(time - mLastTime);
+            if (clock.getElapsedTime() < 0.02) {
+                sortedMoments[i].setBlur(false);
                 sortedMoments[i].render();
             } else {
                 // if we've going to drop below 60fps, stop rendering
-                sortedMoments[i].incrementBlur(time - mLastTime);
+                sortedMoments[i].setBlur(true);
             }
         }
 
         mMoments[0].setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), time));
+        mHighlightRing.animate(time);
 
         renderer.render(scene, camera);
-        mLastTime = time;
     }
 
     renderer.setAnimationLoop(render);
+
+    function isTargeted(moment) {
+        if (moment.getPosition().distanceTo(camera.position) > INTERACTION_DISTANCE) return false;
+        return Util.hasSphereIntersection(camera.position, new THREE.Vector3(0, 0, - 1).applyQuaternion(camera.quaternion).add(camera.position),
+            moment.getPosition(), moment.getSize())
+    }
 
 }
 

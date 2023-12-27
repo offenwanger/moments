@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-function getIntersection(fromPoint, toPoint, spherePos, sphereRadius) {
+function getSphereIntersection(fromPoint, toPoint, spherePos, sphereRadius) {
     let closestPoint = Util.closestPointOnLine(fromPoint, toPoint, spherePos);
     if (closestPoint.distanceTo(spherePos) > sphereRadius) {
         return null;
@@ -11,6 +11,12 @@ function getIntersection(fromPoint, toPoint, spherePos, sphereRadius) {
         let len = fromPoint.distanceTo(closestPoint) - b;
         return new THREE.Vector3().subVectors(closestPoint, fromPoint).normalize().multiplyScalar(len).add(fromPoint);
     }
+}
+
+function hasSphereIntersection(fromPoint, toPoint, spherePos, sphereRadius) {
+    if (fromPoint.distanceTo(spherePos) < sphereRadius) return true;
+    let closestPoint = Util.closestPointOnLine(fromPoint, toPoint, spherePos);
+    return closestPoint.distanceTo(spherePos) < sphereRadius && v().subVectors(fromPoint, closestPoint).dot(v().subVectors(fromPoint, toPoint)) >= 0;
 }
 
 function planeCoordsToWorldCoords(vec, normal, up, position) {
@@ -36,7 +42,8 @@ function v(x = 0, y = 0, z = 0) {
 }
 
 export const Util = {
-    getIntersection,
+    getSphereIntersection,
+    hasSphereIntersection,
     planeCoordsToWorldCoords,
     random,
     closestPointOnLine,

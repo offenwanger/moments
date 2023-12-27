@@ -6,6 +6,7 @@ import { Util } from './utility.js';
 const UP = new THREE.Vector3(0, 1, 0);
 const BLUR_MAX = 0.1;
 const BLUR_MIN = 0;
+const BLUR_SPEED = 0.0;
 
 const gCanvases = [document.createElement('canvas'), document.createElement('canvas')];
 gCanvases.forEach(canvas => {
@@ -29,6 +30,8 @@ export function Moment(parentScene) {
     let mSize = 1;
 
     let mCaptions = [];
+
+    let mBlur = false;
 
     const fov = 75;
     const aspect = 2; // the canvas default
@@ -68,11 +71,13 @@ export function Moment(parentScene) {
     const mSphere = new THREE.Mesh(
         new THREE.IcosahedronGeometry(1, 15),
         new THREE.MeshPhysicalMaterial({
-            roughness: 0,
-            metalness: 0,
+            color: 'white',
+            metalness: 0.0,
             transmission: 1,
-            thickness: 0.5,
-            roughness: BLUR_MAX,
+            reflectivity: 0.42,
+            ior: 1.44,
+            thickness: 0.3,
+            roughness: 0.08,
         })
     )
     mSphere.position.copy(mPosition);
@@ -143,6 +148,20 @@ export function Moment(parentScene) {
         mCaptions.forEach(caption => caption.update(mPosition, mSize, avgCameraPosition, localCoordsToSphereSurface(caption.getRoot(), avgCameraPosition)))
     }
 
+    let mLastTime;
+    function animate(time) {
+        if (!mLastTime) mLastTime = time;
+        let delta = time - mLastTime;
+
+        if (mBlur && mSphere.material.roughness < BLUR_MAX) {
+            mSphere.material.roughness = Math.min(mSphere.material.roughness + delta * BLUR_SPEED, BLUR_MAX);
+        } else if (!mBlur && mSphere.material.roughness > BLUR_MIN) {
+            mSphere.material.roughness = Math.max(mSphere.material.roughness - delta * BLUR_SPEED, BLUR_MIN);
+        }
+
+        mLastTime = time;
+    }
+
     function render() {
         if (!mSceneModel) return;
         gRenderers.forEach((renderer, index) => {
@@ -161,21 +180,7 @@ export function Moment(parentScene) {
     }
 
     function getPosition() {
-        return mPosition;
-    }
-
-
-    const BLUR_SPEED = 0.1;
-    function incrementBlur(delta) {
-        if (mSphere.material.roughness < BLUR_MAX) {
-            mSphere.material.roughness += delta * BLUR_SPEED;
-        }
-    }
-
-    function decrementBlur(delta) {
-        if (mSphere.material.roughness > BLUR_MIN) {
-            mSphere.material.roughness -= delta * BLUR_SPEED;
-        }
+        return mPosition.clone();
     }
 
     function setEnvBox(envBox) {
@@ -186,6 +191,10 @@ export function Moment(parentScene) {
         mSphere.scale.setScalar(size);
         mLenses.forEach(lens => lens.scale.setScalar(size));
         mSize = size;
+    }
+
+    function getSize() {
+        return mSize;
     }
 
     function addCaption(caption, index = null) {
@@ -208,7 +217,7 @@ export function Moment(parentScene) {
 
     function localCoordsToSphereSurface(localcoords, cameraPosition) {
         let worldCoords = localCoordToWorldCoords(localcoords);
-        let intersection = Util.getIntersection(cameraPosition, worldCoords, mPosition, mSize);
+        let intersection = Util.getSphereIntersection(cameraPosition, worldCoords, mPosition, mSize);
         if (!intersection || cameraPosition.distanceTo(worldCoords) < cameraPosition.distanceTo(intersection)) {
             let normal = new THREE.Vector3().subVectors(cameraPosition, mPosition).normalize();
             let planeCoords = worldCoords.sub(cameraPosition).projectOnPlane(normal);
@@ -220,14 +229,15 @@ export function Moment(parentScene) {
     }
 
     this.update = update;
+    this.animate = animate;
     this.render = render;
     this.setPosition = setPosition;
     this.getPosition = getPosition;
     this.setOrientation = (o) => { mOrientation.copy(o) };
     this.getOrientation = () => { return new THREE.Quaternion().copy(mOrientation) };
     this.addCaption = addCaption;
-    this.incrementBlur = incrementBlur;
-    this.decrementBlur = decrementBlur;
     this.setEnvBox = setEnvBox;
     this.setSize = setSize;
+    this.getSize = getSize;
+    this.setBlur = (blur) => mBlur = blur;
 }

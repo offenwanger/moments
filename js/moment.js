@@ -8,16 +8,12 @@ const BLUR_MAX = 0.1;
 const BLUR_MIN = 0;
 const BLUR_SPEED = 0.0;
 
-const gCanvases = [document.createElement('canvas'), document.createElement('canvas')];
-gCanvases.forEach(canvas => {
-    canvas.width = 512;
-    canvas.height = 512;
-})
-const gRenderers = [
-    new THREE.WebGLRenderer({ antialias: true, canvas: gCanvases[0] }),
-    new THREE.WebGLRenderer({ antialias: true, canvas: gCanvases[1] })
-]
-gRenderers.forEach(renderer => renderer.setSize(512, 512, false));
+const gCanvas = document.createElement('canvas');
+gCanvas.width = 1024;
+gCanvas.height = 512;
+
+const gRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: gCanvas });
+gRenderer.setSize(1024, 512, false);
 
 export function Moment(parentScene) {
     // internal values
@@ -164,11 +160,18 @@ export function Moment(parentScene) {
 
     function render() {
         if (!mSceneModel) return;
-        gRenderers.forEach((renderer, index) => {
-            renderer.render(mScene, mCameras[index]);
-            mContexts[index].drawImage(gCanvases[index], 0, 0);
-            mMaterials[index].map.needsUpdate = true;
-        })
+
+        gRenderer.clear();
+
+        gRenderer.setViewport(0, 0, 512, 512);
+        gRenderer.render(mScene, mCameras[0]);
+        mContexts[0].drawImage(gCanvas, 0, 0, 512, 512, 0, 0, 512, 512);
+        mMaterials[0].map.needsUpdate = true;
+
+        gRenderer.setViewport(512, 0, 512, 512);
+        gRenderer.render(mScene, mCameras[1]);
+        mContexts[1].drawImage(gCanvas, 512, 0, 512, 512, 0, 0, 512, 512);
+        mMaterials[1].map.needsUpdate = true;
     }
 
     function setPosition(position) {

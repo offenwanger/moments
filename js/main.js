@@ -67,7 +67,7 @@ function main() {
         for (let i = 0; i < sortedMoments.length; i++) {
             if (clock.getElapsedTime() > 0.015) { break; }
 
-            if (interactionTargetIndex == false && isTargeted(sortedMoments[i])) {
+            if (interactionTargetIndex == -1 && isTargeted(sortedMoments[i])) {
                 interactionTargetIndex = i;
             }
             sortedMoments[i].update(cameras);

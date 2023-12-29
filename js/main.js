@@ -59,6 +59,8 @@ function main() {
     [{ offset: { x: 1, y: 1 }, moment: 0, root: new THREE.Vector3(-15.1, 7, -0.5), text: 'Things are less significant if I am talking. Unfourtunatly, I do need to say things in order to test the speech bubbles.' },
     { offset: { x: 0.75, y: 1.5 }, moment: 2, root: new THREE.Vector3(-15.1, 2.2, 1.2), text: 'There are sometimes things to say.' },
     { offset: { x: -0.25, y: 1.25 }, moment: 2, root: new THREE.Vector3(0, 0, 2), text: 'and they must be readable', },
+    { offset: { x: 1.5, y: 0 }, moment: 3, root: new THREE.Vector3(0, 0, 2), text: 'And they could go anywhere', },
+    { offset: { x: 0, y: -1.5 }, moment: 4, root: new THREE.Vector3(0, 0, 2), text: 'Anywhere at all', },
     ].forEach(c => {
         let caption = new Caption(scene);
         caption.setText(c.text);

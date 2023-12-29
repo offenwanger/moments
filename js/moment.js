@@ -16,6 +16,9 @@ const gRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: gCanvas });
 gRenderer.setSize(1024, 512, false);
 
 export function Moment(parentScene) {
+    // exposed variable
+    this.tDist = Infinity;
+
     // internal values
     let mFocalPoint = new THREE.Vector3(-15, 2, 1.5);
     let mFocalDist = 10;

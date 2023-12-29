@@ -1,12 +1,10 @@
+import * as C from './constants.js';
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Moment } from './moment.js';
-import { Util } from './utility.js';
 import { Caption } from './caption.js';
 import { HighlightRing } from './highlight_ring.js';
-
-const INTERACTION_DISTANCE = 10;
+import { InputManager } from './input_manager.js';
 
 function main() {
     const mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.querySelector('#c') });
@@ -21,24 +19,23 @@ function main() {
     const mCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     mCamera.position.set(0, 1.6, 0);
 
-    const controls = new OrbitControls(mCamera, mRenderer.domElement);
-    controls.minDistance = 2;
-    controls.maxDistance = 5;
-    controls.target.set(0, 2, -2);
-    mCamera.position.set(0, 3, 0);
-    controls.update();
-
     const mEnvironmentBox = getEnvBox();
 
     const mScene = new THREE.Scene();
     mScene.background = mEnvironmentBox;
 
     const mMoments = getMoments();
+    sortMoments();
     const mHighlightRing = new HighlightRing(mScene);
 
     const light = new THREE.DirectionalLight(0xFFFFFF, 3);
     light.position.set(- 1, 2, 4);
     mScene.add(light);
+
+    const mInputManager = new InputManager(mCamera, mRenderer);
+    mInputManager.setCameraPositionChangeCallback(() => {
+        sortMoments();
+    })
 
     function render(time) {
         time *= 0.001;
@@ -53,49 +50,49 @@ function main() {
 
         let cameras;
         if (mRenderer.xr.isPresenting) {
-            controls.enabled = false;
             cameras = mRenderer.xr.getCamera().cameras;
         } else {
-            controls.enabled = true;
             cameras = [mCamera]
         }
 
-        let interactionTargetIndex = -1;
-
-        let sortedMoments = mMoments.map(m => { return { dist: mCamera.position.distanceTo(m.getPosition()), m } })
-            .sort((a, b) => a - b).map(o => o.m);
-        for (let i = 0; i < sortedMoments.length; i++) {
+        for (let i = 0; i < mMoments.length; i++) {
             if (clock.getElapsedTime() > 0.015) { break; }
-
-            if (interactionTargetIndex == -1 && isTargeted(sortedMoments[i])) {
-                interactionTargetIndex = i;
-            }
-            sortedMoments[i].update(cameras);
+            mMoments[i].update(cameras);
         }
 
-        if (interactionTargetIndex >= 0) {
-            let moment = sortedMoments.splice(interactionTargetIndex, 1)[0];
-            sortedMoments.unshift(moment);
-
-            mHighlightRing.setPosition(moment.getPosition()
-                .add(new THREE.Vector3(0, -moment.getSize(), 0)))
+        let interactionTarget = mInputManager.getLookTarget(mCamera, mMoments);
+        if (interactionTarget.type == C.LookTarget.MOMENT) {
+            mHighlightRing.setPosition(interactionTarget.moment.getPosition()
+                .add(new THREE.Vector3(0, -interactionTarget.moment.getSize(), 0)))
             mHighlightRing.show();
-        } else {
+        } else if (interactionTarget.type == C.LookTarget.GROUND) {
+            mHighlightRing.setPosition(interactionTarget.position);
+            mHighlightRing.show();
+        } else if (interactionTarget.type == C.LookTarget.HORIZON_FORWARD) {
+            // Get next moment viewing position
+        } else if (interactionTarget.type == C.LookTarget.HORIZON_FORWARD) {
+            // Get last moment viewing position
+        } else if (interactionTarget.type == C.LookTarget.UP) {
             mHighlightRing.hide();
+            // show the exit
+        } else if (interactionTarget.type == C.LookTarget.NONE) {
+            mHighlightRing.hide();
+        } else {
+            console.error("Type not supported!", interactionTarget);
         }
 
         // chop the animation time out of rendering, it should be cheap
-        sortedMoments.forEach(moment => {
+        mMoments.forEach(moment => {
             moment.animate(time);
         })
 
-        for (let i = 0; i < sortedMoments.length; i++) {
+        for (let i = 0; i < mMoments.length; i++) {
             if (clock.getElapsedTime() < 0.02) {
-                sortedMoments[i].setBlur(false);
-                sortedMoments[i].render();
+                mMoments[i].setBlur(false);
+                mMoments[i].render();
             } else {
                 // if we've going to drop below 60fps, stop rendering
-                sortedMoments[i].setBlur(true);
+                mMoments[i].setBlur(true);
             }
         }
 
@@ -107,12 +104,6 @@ function main() {
 
     mRenderer.setAnimationLoop(render);
 
-    function isTargeted(moment) {
-        if (moment.getPosition().distanceTo(mCamera.position) > INTERACTION_DISTANCE) return false;
-        return Util.hasSphereIntersection(mCamera.position, new THREE.Vector3(0, 0, - 1).applyQuaternion(mCamera.quaternion).add(mCamera.position),
-            moment.getPosition(), moment.getSize())
-    }
-
     function resizeRendererToDisplaySize(mRenderer) {
         const canvas = mRenderer.domElement;
         const width = canvas.clientWidth;
@@ -123,6 +114,17 @@ function main() {
         }
 
         return needResize;
+    }
+
+    function sortMoments() {
+        // sort the moments by their distance on t, i.e. how far they are 
+        // from the time point the user is standing on. Only changes when the user moves
+        // then we can just check the moments whose tDist places them in
+        // the walking area
+        mMoments.forEach(moment => {
+            moment.tDist = mCamera.position.distanceTo(moment.getPosition());
+        })
+        mMoments.sort((a, b) => a.tDist - b.tDist)
     }
 
     function getEnvBox() {

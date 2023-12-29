@@ -1,10 +1,14 @@
 import * as C from './constants.js';
+import { Util } from './utility.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Util } from './utility.js';
+import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
-export function InputManager(camera, renderer) {
+export function InputManager(camera, renderer, parentScene) {
     const INTERACTION_DISTANCE = 10;
+    const MODE_CARDBOARD = 'cardboard';
+    const MODE_SCREEN = 'screen';
+    const MODE_HEADSET = 'headset';
     /*
     This object manages the inputs for the various supported
     hardware configurations. 
@@ -18,9 +22,11 @@ export function InputManager(camera, renderer) {
     let mClickCallback = () => { };
 
     let mDragStartCallback = () => { };
-    let mDragCallback = () => { }
     let mDragEndCallback = () => { }
     let mCameraPositionChangeCallback = () => { };
+
+    let mMode = MODE_SCREEN;
+    let mLastLookTarget;
 
     const mOrbitControls = new OrbitControls(camera, renderer.domElement);
     mOrbitControls.minDistance = 2;
@@ -31,20 +37,88 @@ export function InputManager(camera, renderer) {
         mCameraPositionChangeCallback();
     })
 
+    renderer.xr.addEventListener('sessionstart', () => {
+        mOrbitControls.enabled = false;
+    })
+
+    renderer.xr.addEventListener('sessionend', () => {
+        mOrbitControls.enabled = true;
+    })
+
+    const mController1 = renderer.xr.getController(0);
+    mController1.addEventListener('selectstart', onSelectStart);
+    mController1.addEventListener('selectend', onSelectEnd);
+    mController1.addEventListener('connected', function (event) {
+        if (event.data.targetRayMode == 'gaze') {
+            // we now know we are in Cardboard mode, hooray!
+            mMode = MODE_CARDBOARD;
+        } else if (event.data.targetRayMode == 'tracked-pointer') {
+            // We don't do any pointing pointing, just grabbing. 
+            mMode = MODE_HEADSET;
+        } else if (event.data.targetRayMode == 'screen') {
+            console.error("I don't even know what kind of device results in screen...")
+        } else {
+            console.error("This shouldn't happen.", event.data.targetRayMode)
+        }
+        this.add(buildController(event.data));
+    });
+    mController1.addEventListener('disconnected', function () {
+        this.remove(this.children[0]);
+    });
+    parentScene.add(mController1);
+
+    let mController2 = renderer.xr.getController(1);
+    mController2.addEventListener('selectstart', onSelectStart);
+    mController2.addEventListener('selectend', onSelectEnd);
+    mController2.addEventListener('connected', function (event) {
+        if (event.data.targetRayMode != 'tracked-pointer') {
+            console.error("I have no idea why this is happening.", event.data.targetRayMode)
+        }
+
+        // This we will need for the authoring system, not the viewer.
+    });
+    mController2.addEventListener('disconnected', function () {
+        this.remove(this.children[0]);
+    });
+    parentScene.add(mController2);
+
+    // Make controllers for if we have them
+    let controllerGrip1 = renderer.xr.getControllerGrip(0);
+    controllerGrip1.add(new XRControllerModelFactory().createControllerModel(controllerGrip1));
+    parentScene.add(controllerGrip1);
+
+    let controllerGrip2 = renderer.xr.getControllerGrip(1);
+    controllerGrip2.add(new XRControllerModelFactory().createControllerModel(controllerGrip2));
+    parentScene.add(controllerGrip2);
+
     function getLookTarget(camera, moments) {
         for (let i = 0; i < moments.length; i++) {
             if (moments[i].tDist > INTERACTION_DISTANCE) { break; }
             if (isTargeted(camera, moments[i])) {
-                return {
+                mLastLookTarget = {
                     type: C.LookTarget.MOMENT,
                     moment: moments[i]
-                }
+                };
+                return mLastLookTarget;
             }
         }
 
         // TODO: check for ground/hoizon/up
 
-        return { type: C.LookTarget.NONE };
+        mLastLookTarget = { type: C.LookTarget.NONE };
+        return mLastLookTarget;
+    }
+
+    function onSelectStart() {
+        if (mLastLookTarget.type = C.LookTarget.MOMENT && mMode == MODE_CARDBOARD) {
+            mDragStartCallback(mLastLookTarget.moment);
+        }
+    }
+
+    function onSelectEnd() {
+        if (mLastLookTarget.type = C.LookTarget.MOMENT && mMode == MODE_CARDBOARD) {
+            mDragEndCallback();
+        }
     }
 
     function isTargeted(camera, moment) {
@@ -53,13 +127,17 @@ export function InputManager(camera, renderer) {
             moment.getPosition(), moment.getSize())
     }
 
-    renderer.xr.addEventListener('sessionstart', () => {
-        mOrbitControls.enabled = false;
-    })
+    function buildController(data) {
+        let geometry, material;
+        switch (data.targetRayMode) {
+            case 'tracked-pointer':
 
-    renderer.xr.addEventListener('sessionend', () => {
-        mOrbitControls.enabled = true;
-    })
+            case 'gaze':
+                geometry = new THREE.RingGeometry(0.02, 0.04, 32).translate(0, 0, - 1);
+                material = new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true });
+                return new THREE.Mesh(geometry, material);
+        }
+    }
 
     this.getLookTarget = getLookTarget;
     this.setClickCallback = (callback) => mClickCallback = callback;

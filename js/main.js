@@ -7,6 +7,8 @@ import { HighlightRing } from './highlight_ring.js';
 import { InputManager } from './input_manager.js';
 
 function main() {
+    const MOMENT_DRAG = 'draggingMoment';
+
     const mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.querySelector('#c') });
     mRenderer.xr.enabled = true;
     document.body.appendChild(VRButton.createButton(mRenderer));
@@ -15,6 +17,8 @@ function main() {
     const aspect = 2; // the canvas default
     const near = 0.1;
     const far = 200;
+
+    let mInteraction = false;
 
     const mCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     mCamera.position.set(0, 1.6, 0);
@@ -32,10 +36,22 @@ function main() {
     light.position.set(- 1, 2, 4);
     mScene.add(light);
 
-    const mInputManager = new InputManager(mCamera, mRenderer);
+    const mInputManager = new InputManager(mCamera, mRenderer, mScene);
     mInputManager.setCameraPositionChangeCallback(() => {
         sortMoments();
     })
+    mInputManager.setDragStartCallback(moment => {
+        mInteraction = {
+            type: MOMENT_DRAG,
+            moment,
+            cameraStartPos: mCamera.position.clone(),
+            toMoment: new THREE.Vector3().subVectors(moment.getPosition(), mCamera.position).applyQuaternion(mCamera.quaternion.clone().invert())
+        }
+        mHighlightRing.hide();
+    });
+    mInputManager.setDragEndCallback(() => {
+        mInteraction = false;
+    });
 
     function render(time) {
         time *= 0.001;
@@ -60,25 +76,39 @@ function main() {
             mMoments[i].update(cameras);
         }
 
-        let interactionTarget = mInputManager.getLookTarget(mCamera, mMoments);
-        if (interactionTarget.type == C.LookTarget.MOMENT) {
-            mHighlightRing.setPosition(interactionTarget.moment.getPosition()
-                .add(new THREE.Vector3(0, -interactionTarget.moment.getSize(), 0)))
-            mHighlightRing.show();
-        } else if (interactionTarget.type == C.LookTarget.GROUND) {
-            mHighlightRing.setPosition(interactionTarget.position);
-            mHighlightRing.show();
-        } else if (interactionTarget.type == C.LookTarget.HORIZON_FORWARD) {
-            // Get next moment viewing position
-        } else if (interactionTarget.type == C.LookTarget.HORIZON_FORWARD) {
-            // Get last moment viewing position
-        } else if (interactionTarget.type == C.LookTarget.UP) {
-            mHighlightRing.hide();
-            // show the exit
-        } else if (interactionTarget.type == C.LookTarget.NONE) {
-            mHighlightRing.hide();
+        let interactionTarget;
+        if (mInteraction) {
+            if (mInteraction.type == MOMENT_DRAG) {
+                interactionTarget = mInteraction.moment;
+                mInteraction.moment.setPosition(
+                    mInteraction.toMoment.clone()
+                        .applyQuaternion(mCamera.quaternion)
+                        .add(mInteraction.cameraStartPos))
+            } else {
+                console.error("Not supported!", mInteraction);
+            }
         } else {
-            console.error("Type not supported!", interactionTarget);
+            let lookTarget = mInputManager.getLookTarget(mCamera, mMoments);
+            if (lookTarget.type == C.LookTarget.MOMENT) {
+                mHighlightRing.setPosition(lookTarget.moment.getPosition()
+                    .add(new THREE.Vector3(0, -lookTarget.moment.getSize(), 0)))
+                mHighlightRing.show();
+                interactionTarget = lookTarget.moment;
+            } else if (lookTarget.type == C.LookTarget.GROUND) {
+                mHighlightRing.setPosition(lookTarget.position);
+                mHighlightRing.show();
+            } else if (lookTarget.type == C.LookTarget.HORIZON_FORWARD) {
+                // Get next moment viewing position
+            } else if (lookTarget.type == C.LookTarget.HORIZON_FORWARD) {
+                // Get last moment viewing position
+            } else if (lookTarget.type == C.LookTarget.UP) {
+                mHighlightRing.hide();
+                // show the exit
+            } else if (lookTarget.type == C.LookTarget.NONE) {
+                mHighlightRing.hide();
+            } else {
+                console.error("Type not supported!", lookTarget);
+            }
         }
 
         // chop the animation time out of rendering, it should be cheap
@@ -86,7 +116,13 @@ function main() {
             moment.animate(time);
         })
 
+        // render the interaction target first
+        if (clock.getElapsedTime() < 0.02 && interactionTarget) {
+            interactionTarget.setBlur(false);
+            interactionTarget.render();
+        }
         for (let i = 0; i < mMoments.length; i++) {
+            if (mMoments[i] == interactionTarget) continue;
             if (clock.getElapsedTime() < 0.02) {
                 mMoments[i].setBlur(false);
                 mMoments[i].render();
@@ -95,8 +131,6 @@ function main() {
                 mMoments[i].setBlur(true);
             }
         }
-
-        mMoments[0].setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), time));
         mHighlightRing.animate(time);
 
         mRenderer.render(mScene, mCamera);

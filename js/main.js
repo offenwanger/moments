@@ -9,131 +9,82 @@ import { HighlightRing } from './highlight_ring.js';
 const INTERACTION_DISTANCE = 10;
 
 function main() {
-    const canvas = document.querySelector('#c');
-    const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
-    renderer.xr.enabled = true;
-    document.body.appendChild(VRButton.createButton(renderer));
+    const mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.querySelector('#c') });
+    mRenderer.xr.enabled = true;
+    document.body.appendChild(VRButton.createButton(mRenderer));
 
     const fov = 75;
     const aspect = 2; // the canvas default
     const near = 0.1;
     const far = 200;
-    const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera.position.set(0, 1.6, 0);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
+    const mCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    mCamera.position.set(0, 1.6, 0);
+
+    const controls = new OrbitControls(mCamera, mRenderer.domElement);
     controls.minDistance = 2;
     controls.maxDistance = 5;
     controls.target.set(0, 2, -2);
-    camera.position.set(0, 3, 0);
+    mCamera.position.set(0, 3, 0);
     controls.update();
 
-    const scene = new THREE.Scene();
-    let cubeLoader = new THREE.CubeTextureLoader();
-    cubeLoader.setPath('assets/envbox/');
-    let envBox = cubeLoader.load([
-        'px.jpg', 'nx.jpg',
-        'py.jpg', 'ny.jpg',
-        'pz.jpg', 'nz.jpg'
-    ]);
-    scene.background = envBox;
+    const mEnvironmentBox = getEnvBox();
 
-    let mMoments = [];
-    let testCount = 16;
-    for (let i = 0; i < testCount; i++) {
-        let m = new Moment(scene);
-        m.setEnvBox(envBox);
+    const mScene = new THREE.Scene();
+    mScene.background = mEnvironmentBox;
 
-        m.setPosition(new THREE.Vector3(
-            Math.sin(Math.PI * 3 * i / testCount) * 2 + i / 4,
-            Math.cos(Math.PI * 3 * i / testCount) * 2 + i / 4,
-            Math.cos(Math.PI * 3 * i / testCount) * -2 + i / 4))
-        m.setSize(0.5 + (i % 4) / 8)
-        m.setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI * (i % 8) / 8))
+    const mMoments = getMoments();
+    const mHighlightRing = new HighlightRing(mScene);
 
-        mMoments.push(m)
-    }
-
-    let mHighlightRing = new HighlightRing(scene);
-
-    [{ offset: { x: 1, y: 1 }, moment: 0, root: new THREE.Vector3(-15.1, 7, -0.5), text: 'Things are less significant if I am talking. Unfourtunatly, I do need to say things in order to test the speech bubbles.' },
-    { offset: { x: 0.75, y: 1.5 }, moment: 2, root: new THREE.Vector3(-15.1, 2.2, 1.2), text: 'There are sometimes things to say.' },
-    { offset: { x: -0.25, y: 1.25 }, moment: 2, root: new THREE.Vector3(0, 0, 2), text: 'and they must be readable', },
-    { offset: { x: 1.5, y: 0 }, moment: 3, root: new THREE.Vector3(0, 0, 2), text: 'And they could go anywhere', },
-    { offset: { x: 0, y: -1.5 }, moment: 4, root: new THREE.Vector3(0, 0, 2), text: 'Anywhere at all', },
-    ].forEach(c => {
-        let caption = new Caption(scene);
-        caption.setText(c.text);
-        caption.setOffset(c.offset);
-        caption.setRoot(c.root);
-        mMoments[c.moment].addCaption(caption);
-    })
-
-    const color = 0xFFFFFF;
-    const intensity = 3;
-    const light = new THREE.DirectionalLight(color, intensity);
+    const light = new THREE.DirectionalLight(0xFFFFFF, 3);
     light.position.set(- 1, 2, 4);
-    scene.add(light);
-
-    function resizeRendererToDisplaySize(renderer) {
-        const canvas = renderer.domElement;
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
-        const needResize = canvas.width !== width || canvas.height !== height;
-        if (needResize) {
-            renderer.setSize(width, height, false);
-        }
-
-        return needResize;
-    }
+    mScene.add(light);
 
     function render(time) {
         time *= 0.001;
-
-        if (renderer.xr.isPresenting) {
-            controls.enabled = false;
-        } else {
-            controls.enabled = true;
-        }
-
         let clock = new THREE.Clock();
         clock.start();
 
-        if (resizeRendererToDisplaySize(renderer)) {
-            const canvas = renderer.domElement;
-            camera.aspect = canvas.clientWidth / canvas.clientHeight;
-            camera.updateProjectionMatrix();
+        if (resizeRendererToDisplaySize(mRenderer)) {
+            const canvas = mRenderer.domElement;
+            mCamera.aspect = canvas.clientWidth / canvas.clientHeight;
+            mCamera.updateProjectionMatrix();
         }
 
-        let cameras = renderer.xr.getCamera().cameras;
-        if (cameras.length == 0) cameras = [camera];
+        let cameras;
+        if (mRenderer.xr.isPresenting) {
+            controls.enabled = false;
+            cameras = mRenderer.xr.getCamera().cameras;
+        } else {
+            controls.enabled = true;
+            cameras = [mCamera]
+        }
 
-        let sortedMoments = mMoments.map(m => { return { dist: camera.position.distanceTo(m.getPosition()), m } })
+        let interactionTargetIndex = -1;
+
+        let sortedMoments = mMoments.map(m => { return { dist: mCamera.position.distanceTo(m.getPosition()), m } })
             .sort((a, b) => a - b).map(o => o.m);
-
-        let interactionTarget = false;
-        // TODO, complete the full initial render pass.
         for (let i = 0; i < sortedMoments.length; i++) {
             if (clock.getElapsedTime() > 0.015) { break; }
 
-            if (interactionTarget == false && isTargeted(sortedMoments[i])) {
-                interactionTarget = i;
+            if (interactionTargetIndex == false && isTargeted(sortedMoments[i])) {
+                interactionTargetIndex = i;
             }
-
             sortedMoments[i].update(cameras);
         }
 
-        if (interactionTarget !== false) {
-            let moment = sortedMoments.splice(interactionTarget, 1)[0];
+        if (interactionTargetIndex >= 0) {
+            let moment = sortedMoments.splice(interactionTargetIndex, 1)[0];
+            sortedMoments.unshift(moment);
+
             mHighlightRing.setPosition(moment.getPosition()
                 .add(new THREE.Vector3(0, -moment.getSize(), 0)))
             mHighlightRing.show();
-            sortedMoments.unshift(moment);
         } else {
             mHighlightRing.hide();
         }
 
-        // chop the animation time out of rendering, should be cheap
+        // chop the animation time out of rendering, it should be cheap
         sortedMoments.forEach(moment => {
             moment.animate(time);
         })
@@ -151,15 +102,71 @@ function main() {
         mMoments[0].setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), time));
         mHighlightRing.animate(time);
 
-        renderer.render(scene, camera);
+        mRenderer.render(mScene, mCamera);
     }
 
-    renderer.setAnimationLoop(render);
+    mRenderer.setAnimationLoop(render);
 
     function isTargeted(moment) {
-        if (moment.getPosition().distanceTo(camera.position) > INTERACTION_DISTANCE) return false;
-        return Util.hasSphereIntersection(camera.position, new THREE.Vector3(0, 0, - 1).applyQuaternion(camera.quaternion).add(camera.position),
+        if (moment.getPosition().distanceTo(mCamera.position) > INTERACTION_DISTANCE) return false;
+        return Util.hasSphereIntersection(mCamera.position, new THREE.Vector3(0, 0, - 1).applyQuaternion(mCamera.quaternion).add(mCamera.position),
             moment.getPosition(), moment.getSize())
+    }
+
+    function resizeRendererToDisplaySize(mRenderer) {
+        const canvas = mRenderer.domElement;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        const needResize = canvas.width !== width || canvas.height !== height;
+        if (needResize) {
+            mRenderer.setSize(width, height, false);
+        }
+
+        return needResize;
+    }
+
+    function getEnvBox() {
+        let cubeLoader = new THREE.CubeTextureLoader();
+        cubeLoader.setPath('assets/envbox/');
+        return cubeLoader.load([
+            'px.jpg', 'nx.jpg',
+            'py.jpg', 'ny.jpg',
+            'pz.jpg', 'nz.jpg'
+        ]);
+    }
+
+    function getMoments() {
+        let result = [];
+
+        let testCount = 16;
+        for (let i = 0; i < testCount; i++) {
+            let m = new Moment(mScene);
+            m.setEnvBox(mEnvironmentBox);
+
+            m.setPosition(new THREE.Vector3(
+                Math.sin(Math.PI * 3 * i / testCount) * 2 + i / 4,
+                Math.cos(Math.PI * 3 * i / testCount) * 2 + i / 4,
+                Math.cos(Math.PI * 3 * i / testCount) * -2 + i / 4))
+            m.setSize(0.5 + (i % 4) / 8)
+            m.setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI * (i % 8) / 8))
+
+            result.push(m)
+        }
+
+        [{ offset: { x: 1, y: 1 }, moment: 0, root: new THREE.Vector3(-15.1, 7, -0.5), text: 'Things are less significant if I am talking. Unfourtunatly, I do need to say things in order to test the speech bubbles.' },
+        { offset: { x: 0.75, y: 1.5 }, moment: 2, root: new THREE.Vector3(-15.1, 2.2, 1.2), text: 'There are sometimes things to say.' },
+        { offset: { x: -0.25, y: 1.25 }, moment: 2, root: new THREE.Vector3(0, 0, 2), text: 'and they must be readable', },
+        { offset: { x: 1.5, y: 0 }, moment: 3, root: new THREE.Vector3(0, 0, 2), text: 'And they could go anywhere', },
+        { offset: { x: 0, y: -1.5 }, moment: 4, root: new THREE.Vector3(0, 0, 2), text: 'Anywhere at all', },
+        ].forEach(c => {
+            let caption = new Caption(mScene);
+            caption.setText(c.text);
+            caption.setOffset(c.offset);
+            caption.setRoot(c.root);
+            result[c.moment].addCaption(caption);
+        })
+
+        return result;
     }
 
 }

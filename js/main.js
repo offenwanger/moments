@@ -99,8 +99,10 @@ function main() {
                 mHighlightRing.show();
             } else if (lookTarget.type == C.LookTarget.HORIZON_FORWARD) {
                 // Get next moment viewing position
-            } else if (lookTarget.type == C.LookTarget.HORIZON_FORWARD) {
+                mHighlightRing.hide();
+            } else if (lookTarget.type == C.LookTarget.HORIZON_BACKWARD) {
                 // Get last moment viewing position
+                mHighlightRing.hide();
             } else if (lookTarget.type == C.LookTarget.UP) {
                 mHighlightRing.hide();
                 // show the exit

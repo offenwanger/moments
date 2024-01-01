@@ -9,7 +9,7 @@ function getSphereIntersection(fromPoint, toPoint, spherePos, sphereRadius) {
         let c = sphereRadius;
         let b = Math.sqrt(c * c - a * a);
         let len = fromPoint.distanceTo(closestPoint) - b;
-        return new THREE.Vector3().subVectors(closestPoint, fromPoint).normalize().multiplyScalar(len).add(fromPoint);
+        return v().subVectors(closestPoint, fromPoint).normalize().multiplyScalar(len).add(fromPoint);
     }
 }
 
@@ -37,6 +37,14 @@ function closestPointOnLine(l1, l2, p) {
     return l1.clone().addScaledVector(lineDirection, (lineDirection.dot(p) - lineDirection.dot(l1)) / lineDirection.dot(lineDirection));
 }
 
+function planeIntersection(fromPoint, direction, normal, planePoint) {
+    let demoniator = direction.dot(normal);
+    if (demoniator == 0) return null;
+    let d = v().subVectors(planePoint, fromPoint).dot(normal) / demoniator;
+    let intersection = v().addVectors(fromPoint, direction.clone().multiplyScalar(d));
+    return intersection;
+}
+
 function v(x = 0, y = 0, z = 0) {
     return new THREE.Vector3(x, y, z);
 }
@@ -47,6 +55,7 @@ export const Util = {
     planeCoordsToWorldCoords,
     random,
     closestPointOnLine,
+    planeIntersection,
 
     //// Debug Utils ////
     console: {

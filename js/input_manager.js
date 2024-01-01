@@ -103,7 +103,31 @@ export function InputManager(camera, renderer, parentScene) {
             }
         }
 
-        // TODO: check for ground/hoizon/up
+        let lookAngles = new THREE.Euler().setFromQuaternion(camera.quaternion, "YXZ");
+        // X => Pi/2 = straight up, -PI/2 straight down, 0 = horizon
+        // Y => 0 = neg Z, Pi/-Pi = pos Z
+        let downAngle = -Math.PI / 8;
+        let horizonTop = Math.PI / 4;
+        let upAngle = Math.PI * 7 / 8;
+        if (lookAngles.x < horizonTop && lookAngles.x > downAngle) {
+            if (Math.abs(lookAngles.y) < Math.PI / 4) {
+                mLastLookTarget = { type: C.LookTarget.HORIZON_FORWARD };
+                return mLastLookTarget;
+            } else if (Math.abs(lookAngles.y) > Math.PI * 3 / 4) {
+                mLastLookTarget = { type: C.LookTarget.HORIZON_BACKWARD };
+                return mLastLookTarget;
+            }
+        } else if (lookAngles.x < downAngle) {
+            let lookDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            mLastLookTarget = {
+                type: C.LookTarget.GROUND,
+                position: Util.planeIntersection(camera.position, lookDirection, new THREE.Vector3(0, 1, 0), new THREE.Vector3())
+            };
+            return mLastLookTarget;
+        } else if (lookAngles.x > upAngle) {
+            mLastLookTarget = { type: C.LookTarget.UP };
+            return mLastLookTarget;
+        }
 
         mLastLookTarget = { type: C.LookTarget.NONE };
         return mLastLookTarget;

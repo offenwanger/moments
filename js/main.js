@@ -1,10 +1,9 @@
 import * as C from './constants.js';
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
-import { Moment } from './moment.js';
-import { Caption } from './caption.js';
 import { HighlightRing } from './highlight_ring.js';
 import { InputManager } from './input_manager.js';
+import { Storyline } from './storyline.js';
 
 function main() {
     const MOMENT_DRAG = 'draggingMoment';
@@ -23,22 +22,20 @@ function main() {
     const mCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     mCamera.position.set(0, 1.6, 0);
 
-    const mEnvironmentBox = getEnvBox();
-
     const mScene = new THREE.Scene();
-    mScene.background = mEnvironmentBox;
-
-    const mMoments = getMoments();
-    sortMoments();
     const mHighlightRing = new HighlightRing(mScene);
 
     const light = new THREE.DirectionalLight(0xFFFFFF, 3);
     light.position.set(- 1, 2, 4);
     mScene.add(light);
 
+    const mStoryline = new Storyline(mScene);
+    mStoryline.loadFromObject("don't have yet");
+    mStoryline.sortMoments(mCamera.position.clone())
+
     const mInputManager = new InputManager(mCamera, mRenderer, mScene);
     mInputManager.setCameraPositionChangeCallback(() => {
-        sortMoments();
+        mStoryline.sortMoments(mCamera.position.clone());
     })
     mInputManager.setDragStartCallback(moment => {
         mInteraction = {
@@ -71,9 +68,11 @@ function main() {
             cameras = [mCamera]
         }
 
-        for (let i = 0; i < mMoments.length; i++) {
+        let momentsArr = mStoryline.getMoments();
+
+        for (let i = 0; i < momentsArr.length; i++) {
             if (clock.getElapsedTime() > 0.015) { break; }
-            mMoments[i].update(cameras);
+            momentsArr[i].update(cameras);
         }
 
         let interactionTarget;
@@ -88,7 +87,7 @@ function main() {
                 console.error("Not supported!", mInteraction);
             }
         } else {
-            let lookTarget = mInputManager.getLookTarget(mCamera, mMoments);
+            let lookTarget = mInputManager.getLookTarget(mCamera, momentsArr);
             if (lookTarget.type == C.LookTarget.MOMENT) {
                 mHighlightRing.setPosition(lookTarget.moment.getPosition()
                     .add(new THREE.Vector3(0, -lookTarget.moment.getSize(), 0)))
@@ -114,7 +113,7 @@ function main() {
         }
 
         // chop the animation time out of rendering, it should be cheap
-        mMoments.forEach(moment => {
+        momentsArr.forEach(moment => {
             moment.animate(time);
         })
 
@@ -123,21 +122,20 @@ function main() {
             interactionTarget.setBlur(false);
             interactionTarget.render();
         }
-        for (let i = 0; i < mMoments.length; i++) {
-            if (mMoments[i] == interactionTarget) continue;
+        for (let i = 0; i < momentsArr.length; i++) {
+            if (momentsArr[i] == interactionTarget) continue;
             if (clock.getElapsedTime() < 0.02) {
-                mMoments[i].setBlur(false);
-                mMoments[i].render();
+                momentsArr[i].setBlur(false);
+                momentsArr[i].render();
             } else {
                 // if we've going to drop below 60fps, stop rendering
-                mMoments[i].setBlur(true);
+                momentsArr[i].setBlur(true);
             }
         }
         mHighlightRing.animate(time);
 
         mRenderer.render(mScene, mCamera);
     }
-
     mRenderer.setAnimationLoop(render);
 
     function resizeRendererToDisplaySize(mRenderer) {
@@ -151,62 +149,6 @@ function main() {
 
         return needResize;
     }
-
-    function sortMoments() {
-        // sort the moments by their distance on t, i.e. how far they are 
-        // from the time point the user is standing on. Only changes when the user moves
-        // then we can just check the moments whose tDist places them in
-        // the walking area
-        mMoments.forEach(moment => {
-            moment.tDist = mCamera.position.distanceTo(moment.getPosition());
-        })
-        mMoments.sort((a, b) => a.tDist - b.tDist)
-    }
-
-    function getEnvBox() {
-        let cubeLoader = new THREE.CubeTextureLoader();
-        cubeLoader.setPath('assets/envbox/');
-        return cubeLoader.load([
-            'px.jpg', 'nx.jpg',
-            'py.jpg', 'ny.jpg',
-            'pz.jpg', 'nz.jpg'
-        ]);
-    }
-
-    function getMoments() {
-        let result = [];
-
-        let testCount = 16;
-        for (let i = 0; i < testCount; i++) {
-            let m = new Moment(mScene);
-            m.setEnvBox(mEnvironmentBox);
-
-            m.setPosition(new THREE.Vector3(
-                Math.sin(Math.PI * 3 * i / testCount) * 2 + i / 4,
-                Math.cos(Math.PI * 3 * i / testCount) * 2 + i / 4,
-                Math.cos(Math.PI * 3 * i / testCount) * -2 + i / 4))
-            m.setSize(0.5 + (i % 4) / 8)
-            m.setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI * (i % 8) / 8))
-
-            result.push(m)
-        }
-
-        [{ offset: { x: 1, y: 1 }, moment: 0, root: new THREE.Vector3(-15.1, 7, -0.5), text: 'Things are less significant if I am talking. Unfourtunatly, I do need to say things in order to test the speech bubbles.' },
-        { offset: { x: 0.75, y: 1.5 }, moment: 2, root: new THREE.Vector3(-15.1, 2.2, 1.2), text: 'There are sometimes things to say.' },
-        { offset: { x: -0.25, y: 1.25 }, moment: 2, root: new THREE.Vector3(0, 0, 2), text: 'and they must be readable', },
-        { offset: { x: 1.5, y: 0 }, moment: 3, root: new THREE.Vector3(0, 0, 2), text: 'And they could go anywhere', },
-        { offset: { x: 0, y: -1.5 }, moment: 4, root: new THREE.Vector3(0, 0, 2), text: 'Anywhere at all', },
-        ].forEach(c => {
-            let caption = new Caption(mScene);
-            caption.setText(c.text);
-            caption.setOffset(c.offset);
-            caption.setRoot(c.root);
-            result[c.moment].addCaption(caption);
-        })
-
-        return result;
-    }
-
 }
 
 main();

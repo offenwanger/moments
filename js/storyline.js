@@ -1,51 +1,97 @@
 import * as THREE from 'three';
 import { Moment } from "./moment.js";
 import { Caption } from "./caption.js";
+import { Util } from './utility.js';
 
 export function Storyline(parentScene) {
     const mMoments = [];
+    const mGroup = new THREE.Group();
+    const mLines = [];
+    parentScene.add(mGroup);
+
     let mEnvironmentBox = getDefaultEnvBox();
 
     function loadFromObject(obj) {
-        // TODO: load the env box from the json
+        mGroup.remove(...mGroup.children);
+        mMoments.splice(0, mMoments.length);
+
+        obj.lines.forEach(line => {
+            mLines.push({
+                t: line.t,
+                curve: new THREE.CatmullRomCurve3(line.path.map(p => new THREE.Vector3().fromArray(p))),
+            })
+        })
+
+        if (obj.envBox) {
+            let cubeLoader = new THREE.CubeTextureLoader();
+            mEnvironmentBox = cubeLoader.load(obj.envBox);
+        }
 
         parentScene.background = mEnvironmentBox;
 
-        let result = [];
-
-        let testCount = 16;
-        for (let i = 0; i < testCount; i++) {
-            let m = new Moment(parentScene);
+        obj.moments.forEach(momentData => {
+            let m = new Moment(mGroup);
             m.setEnvBox(mEnvironmentBox);
+            m.setT(momentData.t);
+            m.setOffset(momentData.offset);
+            m.setSize(momentData.size);
+            m.setOrientation(new THREE.Quaternion().fromArray(momentData.orientation));
 
-            m.setPosition(new THREE.Vector3(
-                Math.sin(Math.PI * 3 * i / testCount) * 2 + i / 4,
-                Math.cos(Math.PI * 3 * i / testCount) * 2 + i / 4,
-                Math.cos(Math.PI * 3 * i / testCount) * -2 + i / 4))
-            m.setSize(0.5 + (i % 4) / 8)
-            m.setOrientation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI * (i % 8) / 8))
+            momentData.captions.forEach(captionData => {
+                let caption = new Caption(mGroup);
+                caption.setText(captionData.text);
+                caption.setOffset(captionData.offset);
+                caption.setRoot(new THREE.Vector3().fromArray(captionData.root));
+                m.addCaption(caption);
+            })
 
-            result.push(m)
-        }
-
-        [{ offset: { x: 1, y: 1 }, moment: 0, root: new THREE.Vector3(-15.1, 7, -0.5), text: 'Things are less significant if I am talking. Unfourtunatly, I do need to say things in order to test the speech bubbles.' },
-        { offset: { x: 0.75, y: 1.5 }, moment: 2, root: new THREE.Vector3(-15.1, 2.2, 1.2), text: 'There are sometimes things to say.' },
-        { offset: { x: -0.25, y: 1.25 }, moment: 2, root: new THREE.Vector3(0, 0, 2), text: 'and they must be readable', },
-        { offset: { x: 1.5, y: 0 }, moment: 3, root: new THREE.Vector3(0, 0, 2), text: 'And they could go anywhere', },
-        { offset: { x: 0, y: -1.5 }, moment: 4, root: new THREE.Vector3(0, 0, 2), text: 'Anywhere at all', },
-        ].forEach(c => {
-            let caption = new Caption(parentScene);
-            caption.setText(c.text);
-            caption.setOffset(c.offset);
-            caption.setRoot(c.root);
-            result[c.moment].addCaption(caption);
+            mMoments.push(m);
         })
-
-        mMoments.splice(0, mMoments.length, ...result);
     }
 
     function getObject() {
         return JSON.stringify({})
+    }
+
+    function update(userT) {
+        let pointCount = 50;
+        let line = mLines[0].curve;
+        for (let i = 0; i < mLines.length - 1; i++) {
+            if (userT >= mLines[i].t && userT <= mLines[i + 1].t) {
+                let line1 = mLines[i].curve;
+                let line2 = mLines[i + 1].curve;
+                let percent2 = (userT - mLines[i].t) / (mLines[i + 1].t - mLines[i].t)
+                let percent1 = 1 - percent2;
+                line = new THREE.CatmullRomCurve3(new Array(pointCount).fill("")
+                    .map((n, index) => line1.getPointAt(index / pointCount)
+                        .multiplyScalar(percent1)
+                        .add(
+                            line2.getPointAt(index / pointCount)
+                                .multiplyScalar(percent2))));
+                break;
+            }
+        }
+        // line is a catmullromcurve and we want to transform it so that when 
+        // we get points, they are relative to a given base point. 
+        // how do we do that? 
+
+
+        let position = line.getPointAt(userT);
+        let tangent = line.getTangentAt(userT);
+        let rotation = new THREE.Quaternion().setFromUnitVectors(tangent, new THREE.Vector3(0, 0, -1));
+
+        line = new THREE.CatmullRomCurve3(line.getSpacedPoints(pointCount).map(p => {
+            return p.sub(position).applyQuaternion(rotation);
+            // NOT WORKINGs
+        }));
+
+        mMoments.forEach(moment => {
+            moment.setPosition(Util.planeCoordsToWorldCoords(
+                moment.getOffset(),
+                line.getTangentAt(moment.getT()).multiplyScalar(-1),
+                new THREE.Vector3(0, 1, 0),
+                line.getPointAt(moment.getT())))
+        })
     }
 
     function sortMoments(userOffset) {
@@ -71,6 +117,7 @@ export function Storyline(parentScene) {
 
     this.loadFromObject = loadFromObject;
     this.getObject = getObject;
+    this.update = update;
     this.sortMoments = sortMoments;
     this.getMoments = () => mMoments;
 }

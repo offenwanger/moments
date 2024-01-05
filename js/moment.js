@@ -16,8 +16,11 @@ const gRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: gCanvas });
 gRenderer.setSize(1024, 512, false);
 
 export function Moment(parentScene) {
-    // exposed variable
+    // computed values
     this.tDist = Infinity;
+
+    // exposed variable
+    let mPosition = new THREE.Vector3();
 
     // internal values
     let mFocalPoint = new THREE.Vector3(-15, 2, 1.5);
@@ -25,8 +28,9 @@ export function Moment(parentScene) {
 
     // external values
     let mOrientation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0);
-    let mPosition = new THREE.Vector3();
     let mSize = 1;
+    let mT = 0;
+    let mOffset = { x: 0, y: 0 };
 
     let mCaptions = [];
 
@@ -114,37 +118,19 @@ export function Moment(parentScene) {
         }
     );
 
-    function update(cameras) {
-        // rendering VR vs viewer
-        if (cameras.length == 1) {
-            mLenses[0].layers.set(0)
-        } else if (cameras.length == 2) {
-            mLenses[0].layers.set(1)
-        }
-
+    function update(userOffset) {
         // face lenses at camera
         mLenses.forEach(lens => {
-            let rotationMatrix = new THREE.Matrix4().lookAt(cameras[0].position, lens.position, UP);
+            let rotationMatrix = new THREE.Matrix4().lookAt(userOffset, lens.position, UP);
             let qt = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
             lens.quaternion.copy(qt);
         })
 
-        // Position camera
-        cameras.forEach((camera, index) => {
-            let rotationMatrix = new THREE.Matrix4().lookAt(camera.position, mPosition, UP);
-            let qt = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
-            qt = mOrientation.clone().invert().multiply(qt);
-            mCameras[index].quaternion.copy(qt);
-            let position = new THREE.Vector3(0, 0, mFocalDist).applyQuaternion(qt).add(mFocalPoint);
-            mCameras[index].position.copy(position);
-        })
-
-        // TODO: Set the baked image. 
-        // TODO: Perform caption layout. Captions should be fixed, it's just the tails that need laying out so they don't cross. 
-        // for now, just do the stupid thing
-
-        let avgCameraPosition = cameras.reduce((sum, c) => sum.add(c.position), new THREE.Vector3()).multiplyScalar(1 / cameras.length);
-        mCaptions.forEach(caption => caption.update(mPosition, mSize, avgCameraPosition, localCoordsToSphereSurface(caption.getRoot(), avgCameraPosition)))
+        mCaptions.forEach(caption =>
+            caption.update(mPosition,
+                mSize,
+                userOffset,
+                localCoordsToSphereSurface(caption.getRoot(), userOffset)))
     }
 
     let mLastTime;
@@ -161,8 +147,25 @@ export function Moment(parentScene) {
         mLastTime = time;
     }
 
-    function render() {
+    function render(cameras) {
         if (!mSceneModel) return;
+
+        // rendering VR vs viewer
+        if (cameras.length == 1) {
+            mLenses[0].layers.set(0)
+        } else if (cameras.length == 2) {
+            mLenses[0].layers.set(1)
+        }
+
+        // Position camera
+        cameras.forEach((camera, index) => {
+            let rotationMatrix = new THREE.Matrix4().lookAt(camera.position, mPosition, UP);
+            let qt = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
+            qt = mOrientation.clone().invert().multiply(qt);
+            mCameras[index].quaternion.copy(qt);
+            let position = new THREE.Vector3(0, 0, mFocalDist).applyQuaternion(qt).add(mFocalPoint);
+            mCameras[index].position.copy(position);
+        })
 
         gRenderer.clear();
 
@@ -241,6 +244,10 @@ export function Moment(parentScene) {
     this.getPosition = getPosition;
     this.setOrientation = (o) => { mOrientation.copy(o) };
     this.getOrientation = () => { return new THREE.Quaternion().copy(mOrientation) };
+    this.setT = (t) => { mT = t; };
+    this.getT = () => { return mT };
+    this.setOffset = (o) => { mOffset = o; };
+    this.getOffset = () => { return { x: mOffset.x, y: mOffset.y } };
     this.addCaption = addCaption;
     this.setEnvBox = setEnvBox;
     this.setSize = setSize;

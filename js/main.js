@@ -4,6 +4,7 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { HighlightRing } from './highlight_ring.js';
 import { InputManager } from './input_manager.js';
 import { Storyline } from './storyline.js';
+import { FileHandler } from './file_handler.js';
 
 function main() {
     const MOMENT_DRAG = 'draggingMoment';
@@ -18,6 +19,8 @@ function main() {
     const far = 200;
 
     let mInteraction = false;
+    // A value between 0 and 1;
+    let mTPosition = 0;
 
     const mCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     mCamera.position.set(0, 1.6, 0);
@@ -30,8 +33,13 @@ function main() {
     mScene.add(light);
 
     const mStoryline = new Storyline(mScene);
-    mStoryline.loadFromObject("don't have yet");
+
+    /////////////// this should be handled elsewhere ///////////
+    let obj = FileHandler.loadStorylineFile();
+    mStoryline.loadFromObject(obj);
+    mStoryline.update(0);
     mStoryline.sortMoments(mCamera.position.clone())
+    ////////////////////////////////////////////////////////////
 
     const mInputManager = new InputManager(mCamera, mRenderer, mScene);
     mInputManager.setCameraPositionChangeCallback(() => {
@@ -61,18 +69,11 @@ function main() {
             mCamera.updateProjectionMatrix();
         }
 
-        let cameras;
-        if (mRenderer.xr.isPresenting) {
-            cameras = mRenderer.xr.getCamera().cameras;
-        } else {
-            cameras = [mCamera]
-        }
-
         let momentsArr = mStoryline.getMoments();
 
         for (let i = 0; i < momentsArr.length; i++) {
             if (clock.getElapsedTime() > 0.015) { break; }
-            momentsArr[i].update(cameras);
+            momentsArr[i].update(mCamera.position);
         }
 
         let interactionTarget;
@@ -117,16 +118,23 @@ function main() {
             moment.animate(time);
         })
 
+        let cameras;
+        if (mRenderer.xr.isPresenting) {
+            cameras = mRenderer.xr.getCamera().cameras;
+        } else {
+            cameras = [mCamera]
+        }
+
         // render the interaction target first
         if (clock.getElapsedTime() < 0.02 && interactionTarget) {
             interactionTarget.setBlur(false);
-            interactionTarget.render();
+            interactionTarget.render(cameras);
         }
         for (let i = 0; i < momentsArr.length; i++) {
             if (momentsArr[i] == interactionTarget) continue;
             if (clock.getElapsedTime() < 0.02) {
                 momentsArr[i].setBlur(false);
-                momentsArr[i].render();
+                momentsArr[i].render(cameras);
             } else {
                 // if we've going to drop below 60fps, stop rendering
                 momentsArr[i].setBlur(true);

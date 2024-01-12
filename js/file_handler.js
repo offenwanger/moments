@@ -14,16 +14,7 @@ export const FileHandler = function () {
                 'assets/envbox/pz.jpg',
                 'assets/envbox/nz.jpg'],
             moments: [],
-            lines: [
-                {
-                    t: 0,
-                    path: [[0, 0, 0], [0, 1, -5], [0, 2, -8], [0, 7, -15], [0, 30, -40]]
-                },
-                {
-                    t: 1,
-                    path: [[0, 0, 0], [5, -1, -9], [10, 1, -10], [0, 0, -20], [-5, 1, -15], [-10, 1, -10], [-5, 2, -2], [-2, 2, -2]]
-                }
-            ]
+            line: [[0, 0, 0], [0, 1, -5], [0, 2, -8], [0, 7, -15], [0, 30, -40]]
         }
 
         let testCount = 16;
@@ -31,8 +22,8 @@ export const FileHandler = function () {
             result.moments.push({
                 t: (i + 1) / testCount,
                 offset: {
-                    x: Math.sin(Math.PI * 3 * i / testCount) * 2 + i / 4,
-                    y: Math.cos(Math.PI * 3 * i / testCount) * 2 + i / 4,
+                    x: Math.sin(Math.PI * 3 * i / testCount) * 2,
+                    y: Math.cos(Math.PI * 3 * i / testCount) + 1.2,
                 },
                 size: 0.5 + (i % 4) / 8,
                 orientation: new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI * (i % 8) / 8).toArray(),

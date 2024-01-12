@@ -1,8 +1,8 @@
 export const LookTarget = {
-    GROUND: 'ground',
-    HORIZON_FORWARD: 'forward',
-    HORIZON_BACKWARD: 'backward',
+    LINE_SURFACE: 'line surface',
     MOMENT: 'moment',
     UP: 'up',
     NONE: 'none',
 }
+
+export const CAST_ONLY_LAYER = 4;

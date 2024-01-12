@@ -5,6 +5,7 @@ import { HighlightRing } from './highlight_ring.js';
 import { InputManager } from './input_manager.js';
 import { Storyline } from './storyline.js';
 import { FileHandler } from './file_handler.js';
+import { Util } from './utility.js';
 
 function main() {
     const MOMENT_DRAG = 'draggingMoment';
@@ -18,12 +19,15 @@ function main() {
     const near = 0.1;
     const far = 200;
 
+    const USER_HEIGHT = 1.6;
+
     let mInteraction = false;
     // A value between 0 and 1;
     let mTPosition = 0;
+    let mLastLookTarget = false;
 
     const mCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    mCamera.position.set(0, 1.6, 0);
+    mCamera.position.set(0, USER_HEIGHT, 0);
 
     const mScene = new THREE.Scene();
     const mHighlightRing = new HighlightRing(mScene);
@@ -37,7 +41,7 @@ function main() {
     /////////////// this should be handled elsewhere ///////////
     let obj = FileHandler.loadStorylineFile();
     mStoryline.loadFromObject(obj);
-    mStoryline.update(0);
+    mStoryline.update(0, 0);
     mStoryline.sortMoments(mCamera.position.clone())
     ////////////////////////////////////////////////////////////
 
@@ -50,12 +54,25 @@ function main() {
             type: MOMENT_DRAG,
             moment,
             cameraStartPos: mCamera.position.clone(),
-            toMoment: new THREE.Vector3().subVectors(moment.getPosition(), mCamera.position).applyQuaternion(mCamera.quaternion.clone().invert())
+            toMoment: new THREE.Vector3().subVectors(moment.getWorldPosition(), mCamera.position).applyQuaternion(mCamera.quaternion.clone().invert())
         }
         mHighlightRing.hide();
     });
     mInputManager.setDragEndCallback(() => {
         mInteraction = false;
+    });
+    mInputManager.setClickCallback(() => {
+        if (!mLastLookTarget) return;
+        if (mLastLookTarget.type == C.LookTarget.LINE_SURFACE) {
+            let position = mStoryline.worldToLocalPosition(mLastLookTarget.position)
+            let closestPoint = Util.getClosestPointOnLine(mStoryline.getLinePoints(), position);
+            let sideways = new THREE.Vector3().subVectors(position, closestPoint.point);
+            let offset = sideways.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), closestPoint.tangent));
+
+            mTPosition = closestPoint.t;
+            let xPos = Math.min(mStoryline.getLineWidth(), Math.max(-mStoryline.getLineWidth(), offset.x))
+            mStoryline.update(mTPosition, xPos);
+        }
     });
 
     function render(time) {
@@ -80,36 +97,32 @@ function main() {
         if (mInteraction) {
             if (mInteraction.type == MOMENT_DRAG) {
                 interactionTarget = mInteraction.moment;
-                mInteraction.moment.setPosition(
-                    mInteraction.toMoment.clone()
+                mInteraction.moment.setLocalPosition(
+                    mStoryline.worldToLocalPosition(mInteraction.toMoment.clone()
                         .applyQuaternion(mCamera.quaternion)
-                        .add(mInteraction.cameraStartPos))
+                        .add(mInteraction.cameraStartPos)))
             } else {
                 console.error("Not supported!", mInteraction);
             }
         } else {
-            let lookTarget = mInputManager.getLookTarget(mCamera, momentsArr);
-            if (lookTarget.type == C.LookTarget.MOMENT) {
-                mHighlightRing.setPosition(lookTarget.moment.getPosition()
-                    .add(new THREE.Vector3(0, -lookTarget.moment.getSize(), 0)))
+            mLastLookTarget = mInputManager.getLookTarget(mCamera, mStoryline);
+            if (mLastLookTarget.type == C.LookTarget.MOMENT) {
+                mHighlightRing.setPosition(mLastLookTarget.moment.getWorldPosition()
+                    .add(new THREE.Vector3(0, -mLastLookTarget.moment.getSize(), 0)))
+                mHighlightRing.rotateUp();
                 mHighlightRing.show();
-                interactionTarget = lookTarget.moment;
-            } else if (lookTarget.type == C.LookTarget.GROUND) {
-                mHighlightRing.setPosition(lookTarget.position);
+                interactionTarget = mLastLookTarget.moment;
+            } else if (mLastLookTarget.type == C.LookTarget.LINE_SURFACE) {
+                mHighlightRing.setPosition(mLastLookTarget.position)
+                mHighlightRing.rotateUp(mLastLookTarget.normal);
                 mHighlightRing.show();
-            } else if (lookTarget.type == C.LookTarget.HORIZON_FORWARD) {
-                // Get next moment viewing position
-                mHighlightRing.hide();
-            } else if (lookTarget.type == C.LookTarget.HORIZON_BACKWARD) {
-                // Get last moment viewing position
-                mHighlightRing.hide();
-            } else if (lookTarget.type == C.LookTarget.UP) {
+            } else if (mLastLookTarget.type == C.LookTarget.UP) {
                 mHighlightRing.hide();
                 // show the exit
-            } else if (lookTarget.type == C.LookTarget.NONE) {
+            } else if (mLastLookTarget.type == C.LookTarget.NONE) {
                 mHighlightRing.hide();
             } else {
-                console.error("Type not supported!", lookTarget);
+                console.error("Type not supported!", mLastLookTarget);
             }
         }
 

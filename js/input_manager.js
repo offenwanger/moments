@@ -27,6 +27,7 @@ export function InputManager(camera, renderer, parentScene) {
 
     let mMode = MODE_SCREEN;
     let mLastLookTarget;
+    let mDragging = false;
 
     const mOrbitControls = new OrbitControls(camera, renderer.domElement);
     mOrbitControls.minDistance = 2;
@@ -67,7 +68,7 @@ export function InputManager(camera, renderer, parentScene) {
     });
     parentScene.add(mController1);
 
-    let mController2 = renderer.xr.getController(1);
+    const mController2 = renderer.xr.getController(1);
     mController2.addEventListener('selectstart', onSelectStart);
     mController2.addEventListener('selectend', onSelectEnd);
     mController2.addEventListener('connected', function (event) {
@@ -91,10 +92,23 @@ export function InputManager(camera, renderer, parentScene) {
     controllerGrip2.add(new XRControllerModelFactory().createControllerModel(controllerGrip2));
     parentScene.add(controllerGrip2);
 
-    function getLookTarget(camera, moments) {
+    document.addEventListener('keydown', event => {
+        if (event.code === 'Space') {
+            onSelectStart()
+        }
+    })
+
+    document.addEventListener('keyup', event => {
+        if (event.code === 'Space') {
+            onSelectEnd();
+        }
+    })
+
+    function getLookTarget(camera, storyline) {
+        let moments = storyline.getMoments();
         for (let i = 0; i < moments.length; i++) {
-            if (moments[i].tDist > INTERACTION_DISTANCE) { break; }
-            if (isTargeted(camera, moments[i])) {
+            if (moments[i].userDist > INTERACTION_DISTANCE) { break; }
+            if (isMomentTargeted(camera, moments[i])) {
                 mLastLookTarget = {
                     type: C.LookTarget.MOMENT,
                     moment: moments[i]
@@ -105,50 +119,58 @@ export function InputManager(camera, renderer, parentScene) {
 
         let lookAngles = new THREE.Euler().setFromQuaternion(camera.quaternion, "YXZ");
         // X => Pi/2 = straight up, -PI/2 straight down, 0 = horizon
-        // Y => 0 = neg Z, Pi/-Pi = pos Z
-        let downAngle = -Math.PI / 8;
-        let horizonTop = Math.PI / 4;
         let upAngle = Math.PI * 7 / 8;
-        if (lookAngles.x < horizonTop && lookAngles.x > downAngle) {
-            if (Math.abs(lookAngles.y) < Math.PI / 4) {
-                mLastLookTarget = { type: C.LookTarget.HORIZON_FORWARD };
-                return mLastLookTarget;
-            } else if (Math.abs(lookAngles.y) > Math.PI * 3 / 4) {
-                mLastLookTarget = { type: C.LookTarget.HORIZON_BACKWARD };
-                return mLastLookTarget;
-            }
-        } else if (lookAngles.x < downAngle) {
-            let lookDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-            mLastLookTarget = {
-                type: C.LookTarget.GROUND,
-                position: Util.planeIntersection(camera.position, lookDirection, new THREE.Vector3(0, 1, 0), new THREE.Vector3())
-            };
-            return mLastLookTarget;
-        } else if (lookAngles.x > upAngle) {
+
+        if (lookAngles.x > upAngle) {
             mLastLookTarget = { type: C.LookTarget.UP };
             return mLastLookTarget;
+        } else {
+            let surfaceIntersection = isSurfaceTargeted(camera, storyline.getLineSurface())
+            if (surfaceIntersection) {
+                mLastLookTarget = {
+                    type: C.LookTarget.LINE_SURFACE,
+                    position: surfaceIntersection.point,
+                    normal: storyline.localToWorldRotation(surfaceIntersection.normal),
+                };
+            } else {
+                mLastLookTarget = { type: C.LookTarget.NONE };
+            }
         }
 
-        mLastLookTarget = { type: C.LookTarget.NONE };
         return mLastLookTarget;
     }
 
     function onSelectStart() {
-        if (mLastLookTarget.type = C.LookTarget.MOMENT && mMode == MODE_CARDBOARD) {
+        if (mLastLookTarget.type == C.LookTarget.MOMENT &&
+            (mMode == MODE_CARDBOARD || mMode == MODE_SCREEN)) {
             mDragStartCallback(mLastLookTarget.moment);
+            mDragging = true;
         }
     }
 
     function onSelectEnd() {
-        if (mLastLookTarget.type = C.LookTarget.MOMENT && mMode == MODE_CARDBOARD) {
+        if (mDragging) {
+            mDragging = false;
             mDragEndCallback();
+        } else if (mLastLookTarget.type == C.LookTarget.LINE_SURFACE ||
+            mLastLookTarget.type == C.LookTarget.UP) {
+            mClickCallback();
         }
     }
 
-    function isTargeted(camera, moment) {
-        if (moment.getPosition().distanceTo(camera.position) > INTERACTION_DISTANCE) return false;
+    function isMomentTargeted(camera, moment) {
+        if (moment.getWorldPosition().distanceTo(camera.position) > INTERACTION_DISTANCE) return false;
         return Util.hasSphereIntersection(camera.position, new THREE.Vector3(0, 0, - 1).applyQuaternion(camera.quaternion).add(camera.position),
-            moment.getPosition(), moment.getSize())
+            moment.getWorldPosition(), moment.getSize())
+    }
+
+    function isSurfaceTargeted(camera, surface) {
+        const raycaster = new THREE.Raycaster();
+        raycaster.layers.set(C.CAST_ONLY_LAYER);
+        raycaster.set(camera.getWorldPosition(new THREE.Vector3()), camera.getWorldDirection(new THREE.Vector3()));
+        let intersect = raycaster.intersectObject(surface, false);
+        if (intersect[0]) return intersect[0];
+        return null;
     }
 
     function buildController(data) {
@@ -166,7 +188,6 @@ export function InputManager(camera, renderer, parentScene) {
     this.getLookTarget = getLookTarget;
     this.setClickCallback = (callback) => mClickCallback = callback;
     this.setDragStartCallback = (callback) => mDragStartCallback = callback;
-    this.setDragCallback = (callback) => mDragCallback = callback;
     this.setDragEndCallback = (callback) => mDragEndCallback = callback;
     this.setCameraPositionChangeCallback = (callback) => mCameraPositionChangeCallback = callback;
 }

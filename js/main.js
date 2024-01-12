@@ -64,14 +64,21 @@ function main() {
     mInputManager.setClickCallback(() => {
         if (!mLastLookTarget) return;
         if (mLastLookTarget.type == C.LookTarget.LINE_SURFACE) {
+            let zeroT = mTPosition;
+
+            let userPosition = mStoryline.worldToLocalPosition(mCamera.position.clone());
+            let userClosestPoint = Util.getClosestPointOnLine(mStoryline.getLinePoints(), userPosition);
+
             let position = mStoryline.worldToLocalPosition(mLastLookTarget.position)
             let closestPoint = Util.getClosestPointOnLine(mStoryline.getLinePoints(), position);
-            let sideways = new THREE.Vector3().subVectors(position, closestPoint.point);
-            let offset = sideways.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), closestPoint.tangent));
+            let offset = new THREE.Vector3()
+                .subVectors(position, closestPoint.point)
+                .applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), closestPoint.tangent));
 
-            mTPosition = closestPoint.t;
-            let xPos = Math.min(mStoryline.getLineWidth(), Math.max(-mStoryline.getLineWidth(), offset.x))
-            mStoryline.update(mTPosition, xPos);
+            mTPosition = closestPoint.t + zeroT - userClosestPoint.t;
+            mTPosition = Math.max(0, Math.min(1, mTPosition));
+
+            mStoryline.update(mTPosition, offset.x);
         }
     });
 

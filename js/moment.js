@@ -16,9 +16,6 @@ const gRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: gCanvas });
 gRenderer.setSize(1024, 512, false);
 
 export function Moment(parentScene) {
-    // computed values
-    this.userDist = Infinity;
-
     // exposed variable
     let mPosition = new THREE.Vector3();
 
@@ -31,7 +28,6 @@ export function Moment(parentScene) {
     let mSize = 1;
     let mT = 0;
     let mOffset = { x: 0, y: 0 };
-
     let mCaptions = [];
 
     let mBlur = false;
@@ -121,7 +117,7 @@ export function Moment(parentScene) {
     function update(userPos) {
         // face lenses at camera
         mLenses.forEach(lens => {
-            let rotationMatrix = new THREE.Matrix4().lookAt(userPos, lens.getWorldPosition(new THREE.Vector3()), UP);
+            let rotationMatrix = new THREE.Matrix4().lookAt(userPos, lens.position, UP);
             let qt = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
             lens.quaternion.copy(qt);
         })
@@ -147,24 +143,28 @@ export function Moment(parentScene) {
         mLastTime = time;
     }
 
-    function render(cameras) {
+    function render(cameraPosition1, cameraPosition2) {
         if (!mSceneModel) return;
 
         // rendering VR vs viewer
-        if (cameras.length == 1) {
+        if (!cameraPosition2) {
             mLenses[0].layers.set(0)
-        } else if (cameras.length == 2) {
+            cameraPosition2 = new THREE.Vector3(0, 0, 0);
+        } else {
             mLenses[0].layers.set(1)
         }
 
-        // Position camera
-        cameras.forEach((camera, index) => {
-            let qt = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position, getWorldPosition(), UP));
-            qt = mOrientation.clone().invert().multiply(qt);
-            mCameras[index].quaternion.copy(qt);
-            let position = new THREE.Vector3(0, 0, mFocalDist).applyQuaternion(qt).add(mFocalPoint);
-            mCameras[index].position.copy(position);
-        })
+        let internalCameraOrientation1 = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(cameraPosition1, mPosition, UP));
+        internalCameraOrientation1 = mOrientation.clone().invert().multiply(internalCameraOrientation1);
+        mCameras[0].quaternion.copy(internalCameraOrientation1);
+        let internalCameraPosition1 = new THREE.Vector3(0, 0, mFocalDist).applyQuaternion(internalCameraOrientation1).add(mFocalPoint);
+        mCameras[0].position.copy(internalCameraPosition1);
+
+        let internalCameraOrientation2 = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(cameraPosition2, mPosition, UP));
+        internalCameraOrientation2 = mOrientation.clone().invert().multiply(internalCameraOrientation2);
+        mCameras[1].quaternion.copy(internalCameraOrientation2);
+        let internalCameraPosition2 = new THREE.Vector3(0, 0, mFocalDist).applyQuaternion(internalCameraOrientation2).add(mFocalPoint);
+        mCameras[1].position.copy(internalCameraPosition2);
 
         gRenderer.clear();
 
@@ -179,16 +179,12 @@ export function Moment(parentScene) {
         mMaterials[1].map.needsUpdate = true;
     }
 
-    function setLocalPosition(position) {
+    function setPosition(position) {
         mLenses.forEach(plane => {
             plane.position.copy(position);
         })
         mSphere.position.copy(position);
         mPosition = position;
-    }
-
-    function getWorldPosition() {
-        return mSphere.getWorldPosition(new THREE.Vector3());
     }
 
     function setEnvBox(envBox) {
@@ -239,8 +235,8 @@ export function Moment(parentScene) {
     this.update = update;
     this.animate = animate;
     this.render = render;
-    this.setLocalPosition = setLocalPosition;
-    this.getWorldPosition = getWorldPosition;
+    this.setPosition = setPosition;
+    this.getPosition = () => mPosition;
     this.setOrientation = (o) => { mOrientation.copy(o) };
     this.getOrientation = () => { return new THREE.Quaternion().copy(mOrientation) };
     this.setT = (t) => { mT = t; };

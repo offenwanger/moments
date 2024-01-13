@@ -93,7 +93,7 @@ export function InputManager(camera, renderer, parentScene) {
     parentScene.add(controllerGrip2);
 
     document.addEventListener('keydown', event => {
-        if (event.code === 'Space') {
+        if (event.code === 'Space' && !event.repeat) {
             onSelectStart()
         }
     })
@@ -106,9 +106,12 @@ export function InputManager(camera, renderer, parentScene) {
 
     function getLookTarget(camera, storyline) {
         let moments = storyline.getMoments();
+        let origin = storyline.worldToLocalPosition(camera.position);
+        let lookDirection = storyline.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)).add(origin);
         for (let i = 0; i < moments.length; i++) {
-            if (moments[i].userDist > INTERACTION_DISTANCE) { break; }
-            if (isMomentTargeted(camera, moments[i])) {
+            if (origin.distanceTo(moments[i].getPosition()) > INTERACTION_DISTANCE) { break; }
+            let targeted = Util.hasSphereIntersection(origin, lookDirection, moments[i].getPosition(), moments[i].getSize());
+            if (targeted) {
                 mLastLookTarget = {
                     type: C.LookTarget.MOMENT,
                     moment: moments[i]
@@ -125,7 +128,7 @@ export function InputManager(camera, renderer, parentScene) {
             mLastLookTarget = { type: C.LookTarget.UP };
             return mLastLookTarget;
         } else {
-            let userPosition = storyline.worldToLocalPosition(camera.position.clone());
+            let userPosition = storyline.worldToLocalPosition(camera.position);
             let userLookDirection = storyline.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
             let pathLineIntersection = pathLineTarget(userPosition, userLookDirection, storyline.getPathLine())
             if (pathLineIntersection.distance < INTERACTION_DISTANCE) {
@@ -158,12 +161,6 @@ export function InputManager(camera, renderer, parentScene) {
             mLastLookTarget.type == C.LookTarget.UP) {
             mClickCallback();
         }
-    }
-
-    function isMomentTargeted(camera, moment) {
-        if (moment.getWorldPosition().distanceTo(camera.position) > INTERACTION_DISTANCE) return false;
-        return Util.hasSphereIntersection(camera.position, new THREE.Vector3(0, 0, - 1).applyQuaternion(camera.quaternion).add(camera.position),
-            moment.getWorldPosition(), moment.getSize())
     }
 
     function pathLineTarget(origin, direction, pathLine) {

@@ -26,13 +26,16 @@ export function Storyline(parentScene) {
         }
 
         obj.moments.forEach(momentData => {
+            let pathLineData = mPathLine.getData(momentData.t, momentData.offset);
             let m = new Moment(mGroup);
             m.setEnvBox(mEnvironmentBox);
             m.setT(momentData.t);
             m.setOffset(momentData.offset);
             m.setSize(momentData.size);
-            m.setOrientation(new THREE.Quaternion().fromArray(momentData.orientation));
-            m.setLocalPosition(mPathLine.getData(momentData.t, momentData.offset).position)
+            m.setOrientation(new THREE.Quaternion()
+                .fromArray(momentData.orientation)
+                .multiply(pathLineData.rotation.clone().invert()));
+            m.setPosition(pathLineData.position)
 
             momentData.captions.forEach(captionData => {
                 let caption = new Caption(mGroup);
@@ -51,38 +54,32 @@ export function Storyline(parentScene) {
 
     function update(t, offsetX) {
         let lineData = mPathLine.getData(t, { x: offsetX, y: 0 });
-        let upRotation = new THREE.Quaternion().setFromUnitVectors(lineData.normal, new THREE.Vector3(0, 1, 0))
-        let currentForward = lineData.tangent.clone().applyQuaternion(upRotation);
-        let forwardRotation = new THREE.Quaternion().setFromUnitVectors(currentForward, new THREE.Vector3(0, 0, -1))
-
-
 
         mGroup.position.copy(new THREE.Vector3());
         mGroup.position.sub(lineData.position);
-        mGroup.position.applyQuaternion(upRotation).applyQuaternion(forwardRotation); // rotate the POSITION
+        mGroup.position.applyQuaternion(lineData.rotation); // rotate the POSITION
 
         // mGroup.quaternion.copy(rotation)
         mGroup.rotation.copy(new THREE.Euler());
-        mGroup.applyQuaternion(upRotation).applyQuaternion(forwardRotation); // rotate the OBJECT
+        mGroup.applyQuaternion(lineData.rotation); // rotate the OBJECT
     }
 
     function sortMoments(userOffset) {
         // sort the moments by their distance to the user. 
         // from the time point the user is standing on. Only changes when the user moves
         // then we can just check the moments whose userDist places them in
-        // the walking area
-        mMoments.forEach(moment => {
-            moment.userDist = userOffset.distanceTo(moment.getWorldPosition());
-        })
-        mMoments.sort((a, b) => a.userDist - b.userDist)
+        // the walking area.
+        let sortArray = mMoments.map(m => { return { dist: userOffset.distanceTo(m.getPosition()), m } });
+        sortArray.sort((a, b) => a.dist - b.dist);
+        mMoments.splice(0, mMoments.length, ...sortArray.map(i => i.m));
     }
 
     function worldToLocalPosition(worldPosition) {
-        return mGroup.worldToLocal(worldPosition);
+        return mGroup.worldToLocal(worldPosition.clone());
     }
 
     function localToWorldPosition(localPosition) {
-        return mGroup.localToWorld(localPosition);
+        return mGroup.localToWorld(localPosition.clone());
     }
 
     function localToWorldRotation(localRotation) {

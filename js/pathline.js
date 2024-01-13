@@ -50,7 +50,13 @@ export function PathLine(parent) {
         let normal = getNormal(t);
         let tangent = mLine.getTangentAt(t);
         let position = Util.planeCoordsToWorldCoords(offset, tangent.clone().multiplyScalar(-1), normal, tPoint);
-        return { tPoint, normal, tangent, position };
+
+        let upRotation = new THREE.Quaternion().setFromUnitVectors(normal, new THREE.Vector3(0, 1, 0));
+        let currentForward = tangent.clone().applyQuaternion(upRotation);
+        let forwardRotation = new THREE.Quaternion().setFromUnitVectors(currentForward, new THREE.Vector3(0, 0, -1));
+        let rotation = forwardRotation.multiply(upRotation);
+
+        return { tPoint, normal, tangent, position, rotation };
     }
 
     function generateNormals(points) {

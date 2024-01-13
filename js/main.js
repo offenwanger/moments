@@ -42,19 +42,19 @@ function main() {
     let obj = FileHandler.loadStorylineFile();
     mStoryline.loadFromObject(obj);
     mStoryline.update(0, 0);
-    mStoryline.sortMoments(mCamera.position.clone())
+    mStoryline.sortMoments(mStoryline.worldToLocalPosition(mCamera.position));
     ////////////////////////////////////////////////////////////
 
     const mInputManager = new InputManager(mCamera, mRenderer, mScene);
     mInputManager.setCameraPositionChangeCallback(() => {
-        mStoryline.sortMoments(mCamera.position.clone());
-    })
+        mStoryline.sortMoments(mStoryline.worldToLocalPosition(mCamera.position));
+    });
     mInputManager.setDragStartCallback(moment => {
         mInteraction = {
             type: MOMENT_DRAG,
             moment,
             cameraStartPos: mCamera.position.clone(),
-            toMoment: new THREE.Vector3().subVectors(moment.getWorldPosition(), mCamera.position).applyQuaternion(mCamera.quaternion.clone().invert())
+            toMoment: new THREE.Vector3().subVectors(mStoryline.localToWorldPosition(moment.getPosition()), mCamera.position).applyQuaternion(mCamera.quaternion.clone().invert())
         }
         mHighlightRing.hide();
     });
@@ -66,7 +66,7 @@ function main() {
         if (mLastLookTarget.type == C.LookTarget.LINE_SURFACE) {
             let zeroT = mTPosition;
 
-            let userPosition = mStoryline.worldToLocalPosition(mCamera.position.clone());
+            let userPosition = mStoryline.worldToLocalPosition(mCamera.position);
             let userClosestPoint = mStoryline.getPathLine().getClosestPoint(userPosition);
 
             let position = mStoryline.worldToLocalPosition(mLastLookTarget.position)
@@ -94,28 +94,30 @@ function main() {
         }
 
         let momentsArr = mStoryline.getMoments();
+        let localCameraPos = mStoryline.worldToLocalPosition(mCamera.position);
 
         for (let i = 0; i < momentsArr.length; i++) {
             if (clock.getElapsedTime() > 0.015) { break; }
-            momentsArr[i].update(mCamera.position);
+            momentsArr[i].update(localCameraPos);
         }
 
         let interactionTarget;
         if (mInteraction) {
             if (mInteraction.type == MOMENT_DRAG) {
                 interactionTarget = mInteraction.moment;
-                mInteraction.moment.setLocalPosition(
-                    mStoryline.worldToLocalPosition(mInteraction.toMoment.clone()
-                        .applyQuaternion(mCamera.quaternion)
-                        .add(mInteraction.cameraStartPos)))
+                let newWorldPos = mInteraction.toMoment.clone()
+                    .applyQuaternion(mCamera.quaternion)
+                    .add(mCamera.position);
+                mInteraction.moment.setPosition(mStoryline.worldToLocalPosition(newWorldPos))
             } else {
                 console.error("Not supported!", mInteraction);
             }
         } else {
             mLastLookTarget = mInputManager.getLookTarget(mCamera, mStoryline);
             if (mLastLookTarget.type == C.LookTarget.MOMENT) {
-                mHighlightRing.setPosition(mLastLookTarget.moment.getWorldPosition()
-                    .add(new THREE.Vector3(0, -mLastLookTarget.moment.getSize(), 0)))
+                let worldPos = mStoryline.localToWorldPosition(mLastLookTarget.moment.getPosition());
+                worldPos.add(new THREE.Vector3(0, -mLastLookTarget.moment.getSize(), 0))
+                mHighlightRing.setPosition(worldPos)
                 mHighlightRing.rotateUp();
                 mHighlightRing.show();
                 interactionTarget = mLastLookTarget.moment;
@@ -138,23 +140,26 @@ function main() {
             moment.animate(time);
         })
 
-        let cameras;
+        let cameraPosition1 = null;
+        let cameraPosition2 = null;
         if (mRenderer.xr.isPresenting) {
-            cameras = mRenderer.xr.getCamera().cameras;
+            let cameras = mRenderer.xr.getCamera().cameras;
+            cameraPosition1 = mStoryline.worldToLocalPosition(cameras[0].position)
+            cameraPosition2 = mStoryline.worldToLocalPosition(cameras[1].position)
         } else {
-            cameras = [mCamera]
+            cameraPosition1 = mStoryline.worldToLocalPosition(mCamera.position)
         }
 
         // render the interaction target first
         if (clock.getElapsedTime() < 0.02 && interactionTarget) {
             interactionTarget.setBlur(false);
-            interactionTarget.render(cameras);
+            interactionTarget.render(cameraPosition1, cameraPosition2);
         }
         for (let i = 0; i < momentsArr.length; i++) {
             if (momentsArr[i] == interactionTarget) continue;
             if (clock.getElapsedTime() < 0.02) {
                 momentsArr[i].setBlur(false);
-                momentsArr[i].render(cameras);
+                momentsArr[i].render(cameraPosition1, cameraPosition2);
             } else {
                 // if we've going to drop below 60fps, stop rendering
                 momentsArr[i].setBlur(true);

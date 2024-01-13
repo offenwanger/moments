@@ -26,7 +26,7 @@ export function PathLine(parent) {
         mPointNormals.splice(0, mPointNormals.length, ...generateNormals(mLinePoints));
 
         for (let i = 0; i < 50; i++) {
-            let pos = getPosition(i / 50);
+            let pos = getData(i / 50);
             Util.console.log.point("line" + i, pos.tPoint, parent);
             Util.console.log.point("linenormal" + i, pos.normal.add(pos.tPoint), parent, 0x0000ff);
         }
@@ -45,7 +45,7 @@ export function PathLine(parent) {
         }
     }
 
-    function getPosition(t, offset = { x: 0, y: 0 }) {
+    function getData(t, offset = { x: 0, y: 0 }) {
         let tPoint = mLine.getPointAt(t);
         let normal = getNormal(t);
         let tangent = mLine.getTangentAt(t);
@@ -112,7 +112,7 @@ export function PathLine(parent) {
     }
 
     this.loadFromObject = loadFromObject;
-    this.getPosition = getPosition;
+    this.getData = getData;
     this.getClosestPoint = getClosestPoint;
     this.getPoints = () => mLinePoints;
 }

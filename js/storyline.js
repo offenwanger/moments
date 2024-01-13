@@ -32,7 +32,7 @@ export function Storyline(parentScene) {
             m.setOffset(momentData.offset);
             m.setSize(momentData.size);
             m.setOrientation(new THREE.Quaternion().fromArray(momentData.orientation));
-            m.setLocalPosition(mPathLine.getPosition(momentData.t, momentData.offset).position)
+            m.setLocalPosition(mPathLine.getData(momentData.t, momentData.offset).position)
 
             momentData.captions.forEach(captionData => {
                 let caption = new Caption(mGroup);
@@ -49,19 +49,21 @@ export function Storyline(parentScene) {
         return JSON.stringify({})
     }
 
-    function update(userT, offsetX) {
-        let linePosition = mPathLine.getPosition(userT, { x: offsetX, y: 0 });
-        let forward = new THREE.Vector3(0, 0, -1);
-        let angle = linePosition.tangent.angleTo(forward);
-        let axis = new THREE.Vector3().crossVectors(linePosition.tangent, forward).normalize();
+    function update(t, offsetX) {
+        let lineData = mPathLine.getData(t, { x: offsetX, y: 0 });
+        let upRotation = new THREE.Quaternion().setFromUnitVectors(lineData.normal, new THREE.Vector3(0, 1, 0))
+        let currentForward = lineData.tangent.clone().applyQuaternion(upRotation);
+        let forwardRotation = new THREE.Quaternion().setFromUnitVectors(currentForward, new THREE.Vector3(0, 0, -1))
+
+
 
         mGroup.position.copy(new THREE.Vector3());
-        mGroup.position.sub(linePosition.position);
-        mGroup.position.applyAxisAngle(axis, angle); // rotate the POSITION
+        mGroup.position.sub(lineData.position);
+        mGroup.position.applyQuaternion(upRotation).applyQuaternion(forwardRotation); // rotate the POSITION
 
         // mGroup.quaternion.copy(rotation)
         mGroup.rotation.copy(new THREE.Euler());
-        mGroup.rotateOnAxis(axis, angle); // rotate the OBJECT
+        mGroup.applyQuaternion(upRotation).applyQuaternion(forwardRotation); // rotate the OBJECT
     }
 
     function sortMoments(userOffset) {

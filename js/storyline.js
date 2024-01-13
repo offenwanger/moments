@@ -1,31 +1,23 @@
 
 import * as THREE from 'three';
-import * as C from './constants.js';
 import { Moment } from "./moment.js";
 import { Caption } from "./caption.js";
-import { Util } from './utility.js';
+import { PathLine } from './pathline.js';
 
 export function Storyline(parentScene) {
     const mMoments = [];
-    const mLinePoints = [];
-
-    const mLine = new THREE.CatmullRomCurve3();
-    let mLineLength = 1;
-    let mLineWidth = 1;
-    let mTimelineSurface = null;
 
     const mGroup = new THREE.Group();
     parentScene.add(mGroup);
+
+    const mPathLine = new PathLine(mGroup);
 
     let mEnvironmentBox = getDefaultEnvBox();
 
     function loadFromObject(obj) {
         mMoments.splice(0, mMoments.length);
         mGroup.remove(...mGroup.children);
-
-        mLinePoints.splice(0, mLinePoints.length, ...obj.line.map(p => new THREE.Vector3().fromArray(p)))
-        mLine.points = mLinePoints;
-        mLineLength = mLine.getLength();
+        mPathLine.loadFromObject(obj);
 
         if (obj.envBox) {
             let cubeLoader = new THREE.CubeTextureLoader();
@@ -40,11 +32,7 @@ export function Storyline(parentScene) {
             m.setOffset(momentData.offset);
             m.setSize(momentData.size);
             m.setOrientation(new THREE.Quaternion().fromArray(momentData.orientation));
-            m.setLocalPosition(Util.planeCoordsToWorldCoords(
-                m.getOffset(),
-                mLine.getTangentAt(m.getT()).multiplyScalar(-1),
-                new THREE.Vector3(0, 1, 0),
-                mLine.getPointAt(m.getT())))
+            m.setLocalPosition(mPathLine.getPosition(momentData.t, momentData.offset).position)
 
             momentData.captions.forEach(captionData => {
                 let caption = new Caption(mGroup);
@@ -54,18 +42,7 @@ export function Storyline(parentScene) {
                 m.addCaption(caption);
             })
             mMoments.push(m);
-
-            mLineWidth = Math.max(mLineWidth, Math.abs(momentData.offset.x) + momentData.size);
         })
-
-        mTimelineSurface = new THREE.Mesh(new THREE.ExtrudeGeometry(
-            new THREE.Shape([new THREE.Vector2(-mLineWidth, 0), new THREE.Vector2(mLineWidth, 0)]), {
-            steps: 100,
-            bevelEnabled: false,
-            extrudePath: mLine
-        }));
-        mTimelineSurface.layers.set(C.CAST_ONLY_LAYER)
-        mGroup.add(mTimelineSurface);
     }
 
     function getObject() {
@@ -73,14 +50,13 @@ export function Storyline(parentScene) {
     }
 
     function update(userT, offsetX) {
-        let position = mLine.getPointAt(userT);
-        let tangent = mLine.getTangentAt(userT);
+        let linePosition = mPathLine.getPosition(userT, { x: offsetX, y: 0 });
         let forward = new THREE.Vector3(0, 0, -1);
-        let angle = tangent.angleTo(forward);
-        let axis = new THREE.Vector3().crossVectors(tangent, forward).normalize();
+        let angle = linePosition.tangent.angleTo(forward);
+        let axis = new THREE.Vector3().crossVectors(linePosition.tangent, forward).normalize();
 
         mGroup.position.copy(new THREE.Vector3());
-        mGroup.position.sub(position).sub(new THREE.Vector3(offsetX, 0, 0))
+        mGroup.position.sub(linePosition.position);
         mGroup.position.applyAxisAngle(axis, angle); // rotate the POSITION
 
         // mGroup.quaternion.copy(rotation)
@@ -123,9 +99,6 @@ export function Storyline(parentScene) {
     this.sortMoments = sortMoments;
     this.worldToLocalPosition = worldToLocalPosition;
     this.localToWorldRotation = localToWorldRotation;
-    this.getLength = () => mLineLength;
-    this.getLineWidth = () => mLineWidth;
     this.getMoments = () => mMoments;
-    this.getLineSurface = () => mTimelineSurface;
-    this.getLinePoints = () => mLinePoints;
+    this.getPathLine = () => mPathLine;
 }

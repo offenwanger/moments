@@ -125,7 +125,7 @@ export function InputManager(camera, renderer, parentScene) {
             mLastLookTarget = { type: C.LookTarget.UP };
             return mLastLookTarget;
         } else {
-            let surfaceIntersection = isSurfaceTargeted(camera, storyline.getLineSurface())
+            let surfaceIntersection = isSurfaceTargeted(camera, storyline.getPathLine().getLineSurface())
             if (surfaceIntersection) {
                 mLastLookTarget = {
                     type: C.LookTarget.LINE_SURFACE,

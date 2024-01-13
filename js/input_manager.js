@@ -125,19 +125,21 @@ export function InputManager(camera, renderer, parentScene) {
             mLastLookTarget = { type: C.LookTarget.UP };
             return mLastLookTarget;
         } else {
-            let surfaceIntersection = isSurfaceTargeted(camera, storyline.getPathLine().getLineSurface())
-            if (surfaceIntersection) {
+            let userPosition = storyline.worldToLocalPosition(camera.position.clone());
+            let userLookDirection = storyline.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+            let pathLineIntersection = pathLineTarget(userPosition, userLookDirection, storyline.getPathLine())
+            if (pathLineIntersection.distance < INTERACTION_DISTANCE) {
                 mLastLookTarget = {
                     type: C.LookTarget.LINE_SURFACE,
-                    position: surfaceIntersection.point,
-                    normal: storyline.localToWorldRotation(surfaceIntersection.normal),
+                    position: storyline.localToWorldPosition(pathLineIntersection.position),
+                    normal: storyline.localToWorldRotation(pathLineIntersection.normal),
                 };
             } else {
                 mLastLookTarget = { type: C.LookTarget.NONE };
             }
-        }
 
-        return mLastLookTarget;
+            return mLastLookTarget;
+        }
     }
 
     function onSelectStart() {
@@ -164,13 +166,35 @@ export function InputManager(camera, renderer, parentScene) {
             moment.getWorldPosition(), moment.getSize())
     }
 
-    function isSurfaceTargeted(camera, surface) {
-        const raycaster = new THREE.Raycaster();
-        raycaster.layers.set(C.CAST_ONLY_LAYER);
-        raycaster.set(camera.getWorldPosition(new THREE.Vector3()), camera.getWorldDirection(new THREE.Vector3()));
-        let intersect = raycaster.intersectObject(surface, false);
-        if (intersect[0]) return intersect[0];
-        return null;
+    function pathLineTarget(origin, direction, pathLine) {
+        let points = pathLine.getPoints();
+        let ray = new THREE.Line3(origin, origin.clone().add(direction));
+
+        let closestPoint = ray.closestPointToPoint(points[0], false, new THREE.Vector3());
+        let minDist = closestPoint.distanceTo(points[0]);
+        let minIndex = 0;
+        for (let i = 1; i < points.length; i++) {
+            let point = ray.closestPointToPoint(points[i], false, new THREE.Vector3());
+            let dist = point.distanceTo(points[i]);
+            if (dist < minDist) {
+                closestPoint = point;
+                minDist = dist;
+                minIndex = i;
+            }
+        }
+
+        let linePoint = pathLine.getClosestPoint(closestPoint);
+        let xVector = new THREE.Vector3().crossVectors(linePoint.tangent, linePoint.normal);
+        let xProjection = closestPoint.clone().sub(linePoint.position).projectOnVector(xVector).add(linePoint.position);
+
+        return {
+            position: xProjection,
+            linePosition: linePoint.position,
+            tangent: linePoint.tangent,
+            normal: linePoint.normal,
+            xOffset: -xProjection.dot(xVector),
+            distance: xProjection.distanceTo(linePoint.position),
+        }
     }
 
     function buildController(data) {

@@ -67,12 +67,12 @@ function main() {
             let zeroT = mTPosition;
 
             let userPosition = mStoryline.worldToLocalPosition(mCamera.position.clone());
-            let userClosestPoint = Util.getClosestPointOnLine(mStoryline.getPathLine().getLinePoints(), userPosition);
+            let userClosestPoint = mStoryline.getPathLine().getClosestPoint(userPosition);
 
             let position = mStoryline.worldToLocalPosition(mLastLookTarget.position)
-            let closestPoint = Util.getClosestPointOnLine(mStoryline.getPathLine().getLinePoints(), position);
+            let closestPoint = mStoryline.getPathLine().getClosestPoint(position);
             let offset = new THREE.Vector3()
-                .subVectors(position, closestPoint.point)
+                .subVectors(position, closestPoint.position)
                 .applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), closestPoint.tangent));
 
             mTPosition = closestPoint.t + zeroT - userClosestPoint.t;

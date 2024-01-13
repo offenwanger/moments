@@ -79,8 +79,16 @@ export function Storyline(parentScene) {
         return mGroup.worldToLocal(worldPosition);
     }
 
+    function localToWorldPosition(localPosition) {
+        return mGroup.localToWorld(localPosition);
+    }
+
     function localToWorldRotation(localRotation) {
         return localRotation.clone().applyQuaternion(mGroup.quaternion);
+    }
+
+    function worldToLocalRotation(worldRotation) {
+        return worldRotation.clone().applyQuaternion(mGroup.quaternion.clone().invert());
     }
 
     function getDefaultEnvBox() {
@@ -98,7 +106,9 @@ export function Storyline(parentScene) {
     this.update = update;
     this.sortMoments = sortMoments;
     this.worldToLocalPosition = worldToLocalPosition;
+    this.localToWorldPosition = localToWorldPosition;
     this.localToWorldRotation = localToWorldRotation;
+    this.worldToLocalRotation = worldToLocalRotation;
     this.getMoments = () => mMoments;
     this.getPathLine = () => mPathLine;
 }

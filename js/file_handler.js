@@ -6,6 +6,18 @@ export const FileHandler = function () {
         // this should be in a json
         // TODO: Load in zip file, read json out of zip, validate JSON
 
+        let linepoints = []
+        let n = 50;
+        let R = 10;
+        let a = 10;
+        let revoluations = 1
+        for (let t = 0; t < n; t++) {
+            let x = R * Math.cos(-revoluations * 2 * Math.PI * t / n);
+            let z = R * Math.sin(-revoluations * 2 * Math.PI * t / n);
+            let y = a * t / n;
+            linepoints.push([x, y, z])
+        }
+
         let result = {
             envBox: ['assets/envbox/px.jpg',
                 'assets/envbox/nx.jpg',
@@ -14,7 +26,7 @@ export const FileHandler = function () {
                 'assets/envbox/pz.jpg',
                 'assets/envbox/nz.jpg'],
             moments: [],
-            line: [[0, 0, 0], [0, 1, -5], [0, 2, -8], [0, 7, -15], [0, 30, -40]]
+            line: linepoints,
         }
 
         let testCount = 16;

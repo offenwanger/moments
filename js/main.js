@@ -10,7 +10,7 @@ import { Util } from './utility.js';
 function main() {
     const MOMENT_DRAG = 'draggingMoment';
 
-    const mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.querySelector('#c') });
+    const mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.querySelector('#main-view') });
     mRenderer.xr.enabled = true;
     document.body.appendChild(VRButton.createButton(mRenderer));
 

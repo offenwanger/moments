@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { Util } from './utility.js';
+import { Util } from './utils/utility.js';
+import { AssetUtil } from './utils/assets_util.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const BLUR_MAX = 0.1;
@@ -15,11 +14,12 @@ gCanvas.height = 512;
 const gRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: gCanvas });
 gRenderer.setSize(1024, 512, false);
 
-export function Moment(parentScene) {
+export function Moment(parent) {
     // exposed variable
     let mPosition = new THREE.Vector3();
 
     // internal values
+    let mSceneModel;
     let mFocalPoint = new THREE.Vector3(-15, 2, 1.5);
     let mFocalDist = 10;
 
@@ -64,7 +64,7 @@ export function Moment(parentScene) {
     mLenses.forEach((lens, i) => {
         lens.position.copy(mPosition);
         lens.layers.set(i + 1);
-        parentScene.add(lens)
+        parent.add(lens)
     })
 
     const mSphere = new THREE.Mesh(
@@ -80,39 +80,7 @@ export function Moment(parentScene) {
         })
     )
     mSphere.position.copy(mPosition);
-    parentScene.add(mSphere);
-
-    const imageLoader = new THREE.ImageLoader();
-    imageLoader.load(
-        'assets/scenes/test_scene.png',
-        function (image) {
-            mContexts.forEach(ctx => ctx.drawImage(image, 0, 0));
-            mMaterials.forEach(m => m.map.needsUpdate = true);
-        }, null,
-        function (error) {
-            console.error('An error happened.', error);
-        }
-    );
-
-    let mSceneModel;
-    const modelLoader = new GLTFLoader();
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('../module/three/examples/jsm/libs/draco/');
-    modelLoader.setDRACOLoader(dracoLoader);
-    modelLoader.load('assets/scenes/test_scene.glb',
-        function (gltf) {
-            mSceneModel = gltf.scene;
-            mScene.add(gltf.scene);
-        },
-        // called while loading is progressing
-        function (xhr) {
-            (console).log((xhr.loaded / xhr.total * 100) + '% loaded');
-        },
-        // called when loading has errors
-        function (error) {
-            console.error('An error happened', error);
-        }
-    );
+    parent.add(mSphere);
 
     function update(userPos) {
         // face lenses at camera
@@ -187,6 +155,20 @@ export function Moment(parentScene) {
         mPosition = position;
     }
 
+    function setModel(file) {
+        AssetUtil.loadGLTFModel(file).then(gltf=> {
+            mSceneModel = gltf.scene;
+            mScene.add(gltf.scene);
+        })
+    }
+
+    function setImage(file) {
+        AssetUtil.loadImage(file).then(image => {
+            mContexts.forEach(ctx => ctx.drawImage(image, 0, 0));
+            mMaterials.forEach(m => m.map.needsUpdate = true);
+        });
+    }
+
     function setEnvBox(envBox) {
         mSphere.material.envMap = envBox;
     }
@@ -236,6 +218,8 @@ export function Moment(parentScene) {
     this.animate = animate;
     this.render = render;
     this.setPosition = setPosition;
+    this.setModel = setModel;
+    this.setImage = setImage;
     this.getPosition = () => mPosition;
     this.setOrientation = (o) => { mOrientation.copy(o) };
     this.getOrientation = () => { return new THREE.Quaternion().copy(mOrientation) };

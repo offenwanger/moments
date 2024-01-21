@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import * as ThreeMeshUI from "three-mesh-ui";
-import { Util } from './utility.js';
+import { Util } from './utils/utility.js';
+import { AssetUtil } from './utils/assets_util.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
-export function Caption(parentScene) {
+export function Caption(parent) {
     let mTextString = "text";
     let mOffset = { x: 1, y: 1 };
     let mRoot = new THREE.Vector3();
@@ -13,11 +14,11 @@ export function Caption(parentScene) {
         height: 1,
         padding: 0.2,
 
-        fontFamily: './assets/fonts/Roboto-msdf.json',
-        fontTexture: './assets/fonts/Roboto-msdf.png',
+        fontFamily: './css/fonts/Roboto-msdf.json',
+        fontTexture: './css/fonts/Roboto-msdf.png',
         backgroundSize: "contain",
     });
-    parentScene.add(mBubble);
+    parent.add(mBubble);
 
     const mTextNode = new ThreeMeshUI.Text({
         content: mTextString,
@@ -26,9 +27,8 @@ export function Caption(parentScene) {
     });
     mBubble.add(mTextNode);
 
-    const texttureLoader = new THREE.TextureLoader();
-    texttureLoader.load('./assets/speech_bubble.png', (texture) => {
-        mBubble.set({ backgroundTexture: texture });
+    AssetUtil.loadTexture('speech_bubble.png').then(image => {
+        mBubble.set({ backgroundTexture: image });
     });
 
     let mComputedBounding = false;
@@ -36,7 +36,7 @@ export function Caption(parentScene) {
     const geometry = new THREE.BufferGeometry();
     const material = new THREE.LineBasicMaterial({ color: "black" });
     const curveObject = new THREE.Line(geometry, material);
-    parentScene.add(curveObject)
+    parent.add(curveObject)
 
     function update(momentPos, radius, cameraPos, tailEnd) {
         let normal = new THREE.Vector3().subVectors(momentPos, cameraPos).normalize();

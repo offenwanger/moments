@@ -3,16 +3,17 @@ import * as THREE from 'three';
 import { Moment } from "./moment.js";
 import { Caption } from "./caption.js";
 import { PathLine } from './pathline.js';
+import { AssetUtil } from './utils/assets_util.js';
 
-export function Storyline(parentScene) {
+export function Storyline(parent) {
     const mMoments = [];
 
     const mGroup = new THREE.Group();
-    parentScene.add(mGroup);
+    parent.add(mGroup);
 
     const mPathLine = new PathLine(mGroup);
 
-    let mEnvironmentBox = getDefaultEnvBox();
+    let mEnvironmentBox = AssetUtil.loadEnvironmentCube('default');
 
     function loadFromObject(obj) {
         mMoments.splice(0, mMoments.length);
@@ -20,9 +21,8 @@ export function Storyline(parentScene) {
         mPathLine.loadFromObject(obj);
 
         if (obj.envBox) {
-            let cubeLoader = new THREE.CubeTextureLoader();
-            mEnvironmentBox = cubeLoader.load(obj.envBox);
-            parentScene.background = mEnvironmentBox;
+            mEnvironmentBox = AssetUtil.loadEnvironmentCube(obj.envBox);
+            parent.background = mEnvironmentBox;
         }
 
         obj.moments.forEach(momentData => {
@@ -35,7 +35,10 @@ export function Storyline(parentScene) {
             m.setOrientation(new THREE.Quaternion()
                 .fromArray(momentData.orientation)
                 .multiply(pathLineData.rotation.clone().invert()));
-            m.setPosition(pathLineData.position)
+            m.setPosition(pathLineData.position);
+            m.setModel(momentData.model);
+            m.setImage(momentData.image);
+
 
             momentData.captions.forEach(captionData => {
                 let caption = new Caption(mGroup);
@@ -88,16 +91,6 @@ export function Storyline(parentScene) {
 
     function worldToLocalRotation(worldRotation) {
         return worldRotation.clone().applyQuaternion(mGroup.quaternion.clone().invert());
-    }
-
-    function getDefaultEnvBox() {
-        let cubeLoader = new THREE.CubeTextureLoader();
-        cubeLoader.setPath('assets/envbox/');
-        return cubeLoader.load([
-            'px.jpg', 'nx.jpg',
-            'py.jpg', 'ny.jpg',
-            'pz.jpg', 'nz.jpg'
-        ]);
     }
 
     this.loadFromObject = loadFromObject;

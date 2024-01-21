@@ -1,26 +1,25 @@
 import * as THREE from 'three';
-import * as C from './constants.js';
-import { Util } from './utility.js';
+import { Util } from './utils/utility.js';
 
 export function PathLine(parent) {
-    const mLinePoints = [];
-    const mPointNormals = [];
-    const mPointTangents = [];
-    const mPointTs = [];
-    const mPointLengths = []
-    let mLineLength = 0;
-    let mCurveLength = 0;
-    const mLine = new THREE.CatmullRomCurve3();
+    const mLinePoints = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)];
+    const mPointNormals = [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 1, 0)];
+    const mPointTangents = [new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, -1)];
+    const mPointTs = [0, 1];
+    const mPointLengths = [0, 1]
+    let mLineLength = 1;
+    let mCurveLength = 1;
+    const mLine = new THREE.CatmullRomCurve3(mLinePoints);
 
     function loadFromObject(obj) {
         mLinePoints.splice(0, mLinePoints.length, ...obj.line.map(p => new THREE.Vector3().fromArray(p)))
         mLine.points = mLinePoints;
         mCurveLength = mLine.getLength();
 
-        mPointLengths.splice(0, mPointTs.length, ...generateLengths(mLinePoints));
+        mPointLengths.splice(0, mPointLengths.length, ...generateLengths(mLinePoints));
         mLineLength = mPointLengths[mPointLengths.length - 1];
-        mPointTs.splice(0, mPointTs.length, ...mPointLengths.map(l => l / mLineLength));
 
+        mPointTs.splice(0, mPointTs.length, ...mPointLengths.map(l => l / mLineLength));
 
         mPointTangents.splice(0, mPointTangents.length, ...mPointTs.map(t => mLine.getTangentAt(t)));
         mPointNormals.splice(0, mPointNormals.length, ...generateNormals(mLinePoints));

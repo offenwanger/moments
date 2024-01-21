@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<!-- 
+    This is the viewer application.
+-->
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Moments</title>
+    <link rel="stylesheet" href="css/main.css">
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.159.0/build/three.module.js",
+              "three-mesh-ui": "https://unpkg.com/three-mesh-ui@6.5.4/build/three-mesh-ui.module.js",
+              "three/addons/": "https://unpkg.com/three@0.159.0/examples/jsm/"
+            }
+          }
+    </script>
+    <script type="module" src="js/main_viewer.js"></script>
+</head>
+
+<body>
+    <canvas id="viewer"></canvas>
+</body>
+
+</html>

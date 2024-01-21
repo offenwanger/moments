@@ -1,10 +1,10 @@
 import * as C from './constants.js';
-import { Util } from './utility.js';
+import { Util } from './utils/utility.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
-export function InputManager(camera, renderer, parentScene) {
+export function InputManager(camera, renderer, parent) {
     const INTERACTION_DISTANCE = 10;
     const MODE_CARDBOARD = 'cardboard';
     const MODE_SCREEN = 'screen';
@@ -66,7 +66,7 @@ export function InputManager(camera, renderer, parentScene) {
     mController1.addEventListener('disconnected', function () {
         this.remove(this.children[0]);
     });
-    parentScene.add(mController1);
+    parent.add(mController1);
 
     const mController2 = renderer.xr.getController(1);
     mController2.addEventListener('selectstart', onSelectStart);
@@ -81,16 +81,16 @@ export function InputManager(camera, renderer, parentScene) {
     mController2.addEventListener('disconnected', function () {
         this.remove(this.children[0]);
     });
-    parentScene.add(mController2);
+    parent.add(mController2);
 
     // Make controllers for if we have them
     let controllerGrip1 = renderer.xr.getControllerGrip(0);
     controllerGrip1.add(new XRControllerModelFactory().createControllerModel(controllerGrip1));
-    parentScene.add(controllerGrip1);
+    parent.add(controllerGrip1);
 
     let controllerGrip2 = renderer.xr.getControllerGrip(1);
     controllerGrip2.add(new XRControllerModelFactory().createControllerModel(controllerGrip2));
-    parentScene.add(controllerGrip2);
+    parent.add(controllerGrip2);
 
     document.addEventListener('keydown', event => {
         if (event.code === 'Space' && !event.repeat) {

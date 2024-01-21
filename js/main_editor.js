@@ -4,13 +4,12 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { HighlightRing } from './highlight_ring.js';
 import { InputManager } from './input_manager.js';
 import { Storyline } from './storyline.js';
-import { FileHandler } from './file_handler.js';
-import { Util } from './utility.js';
+import { ServerUtil } from './utils/server_util.js';
 
 function main() {
     const MOMENT_DRAG = 'draggingMoment';
 
-    const mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.querySelector('#main-view') });
+    const mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.querySelector('#main-canvas') });
     mRenderer.xr.enabled = true;
     document.body.appendChild(VRButton.createButton(mRenderer));
 
@@ -38,12 +37,14 @@ function main() {
 
     const mStoryline = new Storyline(mScene);
 
-    /////////////// this should be handled elsewhere ///////////
-    let obj = FileHandler.loadStorylineFile();
-    mStoryline.loadFromObject(obj);
-    mStoryline.update(0, 0);
-    mStoryline.sortMoments(mStoryline.worldToLocalPosition(mCamera.position));
-    ////////////////////////////////////////////////////////////
+    const mStoryName = new URLSearchParams(window.location.search).get("story");
+    if (!mStoryName) { console.error("Story not set!") } else {
+        ServerUtil.fetchStory(mStoryName).then(storyObj => {
+            mStoryline.loadFromObject(storyObj);
+            mStoryline.update(0, 0);
+            mStoryline.sortMoments(mStoryline.worldToLocalPosition(mCamera.position));
+        });
+    }
 
     const mInputManager = new InputManager(mCamera, mRenderer, mScene);
     mInputManager.setCameraPositionChangeCallback(() => {

@@ -1,13 +1,14 @@
 import * as THREE from 'three';
+import { AssetUtil } from './utils/assets_util.js';
 
-export function HighlightRing(parentScene) {
+export function HighlightRing(parent) {
     const UP = new THREE.Vector3(0, 1, 0);
 
     const geometry = new THREE.CylinderGeometry(0.5, 0.4, 0.3, 32, 1, true)
-    const texture = new THREE.TextureLoader().load('assets/flat_halo_v1.png');
+    const texture = AssetUtil.loadTextureSync('flat_halo_v1.png');
     texture.wrapS = THREE.RepeatWrapping;
     texture.repeat.set(4, 1);
-    const alphatexture = new THREE.TextureLoader().load('assets/halo_alphaMap_v1.png');
+    const alphatexture = AssetUtil.loadTextureSync('halo_alphaMap_v1.png');
     alphatexture.wrapS = THREE.RepeatWrapping;
     const material = new THREE.MeshBasicMaterial({
         map: texture,
@@ -17,7 +18,7 @@ export function HighlightRing(parentScene) {
     });
     const mRing = new THREE.Mesh(geometry, material);
     mRing.visible = false;
-    parentScene.add(mRing);
+    parent.add(mRing);
 
     function show() {
         mRing.visible = true;

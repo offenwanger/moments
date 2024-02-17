@@ -1,0 +1,15 @@
+{
+    "story": {
+        "id": "Story_test_sample_1",
+        "name": "Test Story",
+        "storyline": {
+            "id": "Storyline_1707547236560_1",
+            "path": [],
+            "moments": [],
+            "annotations": []
+        },
+        "models": [],
+        "annotations": [],
+        "background": null
+    }
+}

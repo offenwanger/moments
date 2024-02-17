@@ -1,7 +1,9 @@
 import * as THREE from 'three';
-import { assertVectorEqual } from './test_utils.js';
 
-import { Util } from '../js/utility.js';
+import { setup, cleanup } from './test_utils/test_environment.js';
+import { assertVectorEqual } from './test_utils/utils.js';
+
+import { Util } from '../js/utils/utility.js';
 import * as chai from 'chai';
 
 let assert = chai.assert;

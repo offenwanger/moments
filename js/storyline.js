@@ -51,10 +51,6 @@ export function Storyline(parent) {
         })
     }
 
-    function getObject() {
-        return JSON.stringify({})
-    }
-
     function update(t, offsetX) {
         let lineData = mPathLine.getData(t, { x: offsetX, y: 0 });
 
@@ -94,7 +90,6 @@ export function Storyline(parent) {
     }
 
     this.loadFromObject = loadFromObject;
-    this.getObject = getObject;
     this.update = update;
     this.sortMoments = sortMoments;
     this.worldToLocalPosition = worldToLocalPosition;

@@ -5,17 +5,28 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Moments</title>
-    <link rel="stylesheet" href="main.css">
-    <script type="module" src="js/main.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <!-- This gets replaced when running locally. Must be first script in file. -->
+    <script type="importmap">
+        {
+            "imports": {
+              "three": "https://unpkg.com/three@0.159.0/build/three.module.js",
+              "three-mesh-ui": "https://unpkg.com/three-mesh-ui@6.5.4/build/three-mesh-ui.module.js",
+              "three/addons/": "https://unpkg.com/three@0.159.0/examples/jsm/",
+              "zipjs": "https://deno.land/x/zipjs@v2.7.34/index.js",
+            }
+          }
+    </script>
+
+    <script src="lib/d3.min.js" charset="utf-8"></script>
+    <script src="lib/zip.min.js" charset="utf-8"></script>
+
 </head>
 
 <body>
-    Welcome to moments. This is an in development application for exploring the possibilities for and of immersive
-    webcomics.
+    <div id="content"></div>
 
-    <ul>
-        <li><a href="viewer.html?story=test">Test</a></li>
-    </ul>
+    <script type="module" src="js/main.js"></script>
 </body>
 
 </html>

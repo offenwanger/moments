@@ -46,6 +46,17 @@ function planeIntersection(fromPoint, direction, normal, planePoint) {
     return intersection;
 }
 
+function unique(arr) {
+    if (arr.length == 0) return arr;
+    if (arr[0].id) {
+        return [...new Map(arr.map(item =>
+            [item.id, item])).values()];
+    } else {
+        return [...new Map(arr.map(item =>
+            [item, item])).values()];
+    }
+}
+
 function v(x = 0, y = 0, z = 0) {
     return new THREE.Vector3(x, y, z);
 }
@@ -57,6 +68,7 @@ export const Util = {
     random,
     closestPointOnLine,
     planeIntersection,
+    unique,
 
     //// Debug Utils ////
     console: {

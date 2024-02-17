@@ -1,15 +1,17 @@
-import * as C from './constants.js';
+import * as C from '../constants.js';
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
-import { HighlightRing } from './highlight_ring.js';
-import { InputManager } from './input_manager.js';
-import { Storyline } from './storyline.js';
-import { ServerUtil } from './utils/server_util.js';
+import { HighlightRing } from '../highlight_ring.js';
+import { InputManager } from '../input_manager.js';
+import { Storyline } from '../storyline.js';
+import { ServerUtil } from '../utils/server_util.js';
 
-function main() {
+export function ViewerPage(parentContainer) {
     const MOMENT_DRAG = 'draggingMoment';
 
-    const mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.querySelector('#main-canvas') });
+    let canvas = document.createElement('canvas');
+
+    const mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas });
     mRenderer.xr.enabled = true;
     document.body.appendChild(VRButton.createButton(mRenderer));
 
@@ -37,13 +39,18 @@ function main() {
 
     const mStoryline = new Storyline(mScene);
 
-    const mStoryName = new URLSearchParams(window.location.search).get("story");
-    if (!mStoryName) { console.error("Story not set!") } else {
-        ServerUtil.fetchStory(mStoryName).then(storyObj => {
-            mStoryline.loadFromObject(storyObj);
-            mStoryline.update(0, 0);
-            mStoryline.sortMoments(mStoryline.worldToLocalPosition(mCamera.position));
-        });
+    function show(folder) {
+        parentContainer.append(canvas).attr('id', 'viewer');
+
+        const mStoryName = new URLSearchParams(window.location.search).get("story");
+        if (!mStoryName) { console.error("Story not set!") } else {
+            ServerUtil.fetchStory(mStoryName).then(storyObj => {
+                mStoryline.loadFromObject(storyObj);
+                mStoryline.update(0, 0);
+                mStoryline.sortMoments(mStoryline.worldToLocalPosition(mCamera.position));
+            });
+        }
+        mRenderer.setAnimationLoop(render);
     }
 
     const mInputManager = new InputManager(mCamera, mRenderer, mScene);
@@ -170,7 +177,6 @@ function main() {
 
         mRenderer.render(mScene, mCamera);
     }
-    mRenderer.setAnimationLoop(render);
 
     function resizeRendererToDisplaySize(mRenderer) {
         const canvas = mRenderer.domElement;
@@ -183,6 +189,6 @@ function main() {
 
         return needResize;
     }
-}
 
-main();
+    this.show = show;
+}

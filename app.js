@@ -3,7 +3,7 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs'
 
-const IMPORT_TEMPLATE = ` 
+const LOCAL_IMPORT = ` 
 <script type="importmap">
     {
         "imports": {
@@ -13,34 +13,27 @@ const IMPORT_TEMPLATE = `
         }
     }
 </script>
-`
+`;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
 const app = express();
-
-(console).log("************* Starting the server *************")
-
 const port = 8000;
 
-app.get('/editor.html', function (req, res) {
-    sendFileReplaceImportMap(res, "editor.html");
-});
-
-app.get('/viewer.html', function (req, res) {
-    sendFileReplaceImportMap(res, "viewer.html");
+app.get('/', function (req, res) {
+    sendFileReplaceImportMap(res, "index.html");
 });
 
 function sendFileReplaceImportMap(res, filename) {
     let html = fs.readFileSync(filename, 'utf8');
     let preStuff = html.split('<script type="importmap">')[0]
     let endStuff = html.split('</script>').slice(1).join('</script>') // this will be fine since import map has to be the first script.
-    html = preStuff + IMPORT_TEMPLATE + endStuff;
+    html = preStuff + LOCAL_IMPORT + endStuff;
     res.end(html);
 }
 
 // Everything in the local folder can be accessed via /filename
 app.use('/', express.static(__dirname + '/'));
 
+(console).log("************* Starting the server *************");
 // Start the application
 app.listen(port);

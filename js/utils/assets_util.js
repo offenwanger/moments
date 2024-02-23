@@ -1,11 +1,24 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { AssetTypes, BOX_ASSET_PREFIXES } from '../constants.js';
 
-function loadEnvironmentCube(name) {
-    let files = ['px', 'nx', 'py', 'ny', 'pz', 'nz'].map(f => './assets/envboxes/' + name + "/" + f + ".png")
+async function loadEnvironmentCube(asset, workspace) {
+    let files = [];
+    if (!asset || asset.type != AssetTypes.BOX) { console.error("Invalid cube asset!", asset); return loadDefaultEnvironmentCube(); }
+    for (const prefix of BOX_ASSET_PREFIXES) {
+        let filename = prefix + asset.filename;
+        files.push(await workspace.getImageAsset(filename))
+    }
     let cubeLoader = new THREE.CubeTextureLoader();
     return cubeLoader.load(files)
+}
+
+async function loadDefaultEnvironmentCube() {
+    let files = BOX_ASSET_PREFIXES.map(f => f + "default.png");
+    let cubeLoader = new THREE.CubeTextureLoader();
+    cubeLoader.setPath('assets/default_env_box/')
+    return cubeLoader.load(files);
 }
 
 async function loadImage(file) {
@@ -46,6 +59,7 @@ async function loadGLTFModel(file) {
 
 export const AssetUtil = {
     loadEnvironmentCube,
+    loadDefaultEnvironmentCube,
     loadImage,
     loadTexture,
     loadTextureSync,

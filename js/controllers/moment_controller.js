@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { Util } from './utils/utility.js';
-import { AssetUtil } from './utils/assets_util.js';
+import { Util } from '../utils/utility.js';
+import { AssetUtil } from '../utils/assets_util.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const BLUR_MAX = 0.1;
@@ -14,7 +14,7 @@ gCanvas.height = 512;
 const gRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: gCanvas });
 gRenderer.setSize(1024, 512, false);
 
-export function Moment(parent) {
+export function MomentController(parent) {
     // exposed variable
     let mPosition = new THREE.Vector3();
 

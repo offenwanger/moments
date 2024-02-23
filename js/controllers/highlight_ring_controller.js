@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { AssetUtil } from './utils/assets_util.js';
+import { AssetUtil } from '../utils/assets_util.js';
 
-export function HighlightRing(parent) {
+export function HighlightRingController(parent) {
     const UP = new THREE.Vector3(0, 1, 0);
 
     const geometry = new THREE.CylinderGeometry(0.5, 0.4, 0.3, 32, 1, true)

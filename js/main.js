@@ -1,19 +1,18 @@
-import { EditorPage } from './moment_editor/editor_page.js';
-import { ListPage } from './moment_list/list_page.js';
-import { ViewerPage } from './moment_viewer/viewer_page.js';
-import { WelcomePage } from './moment_welcome/welcome_page.js';
+import { EventManager } from './event_manager.js';
+import { EditorPage } from './pages/editor_page.js';
+import { ListPage } from './pages/list_page.js';
+import { ViewerPage } from './pages/viewer_page.js';
+import { WelcomePage } from './pages/welcome_page.js';
 import { HandleStorage } from './utils/file_util.js';
 import { WorkspaceManager } from './workspace_manager.js';
 
 function main() {
-    console.log("Ok, next order of buisness is making the stories editable.")
-    console.log("I need to be able to add assets so I can test my asset up/download.")
-    console.log("I guess I should really start the entire interface creation process...")
-
     let mWelcomePage = new WelcomePage(d3.select('#content'));
     let mEditorPage = new EditorPage(d3.select('#content'));
     let mViewerPage = new ViewerPage(d3.select('#content'));
     let mListPage = new ListPage(d3.select('#content'));
+
+    let mEventManager = new EventManager();
 
     mWelcomePage.setFolderSelectedCallback(async (folder) => {
         if (await folder.requestPermission({ mode: 'readwrite' }) === 'granted') {
@@ -51,26 +50,30 @@ function main() {
         let folder = await HandleStorage.getItem('folder');
         if (folder) {
             if (await folder.queryPermission({ mode: 'readwrite' }) !== 'granted') {
-                mWelcomePage.show(true);
+                setPage(mWelcomePage, [true]);
             } else {
                 // folder all set
                 let mWorkspaceManager = new WorkspaceManager(folder);
-                let storyName = new URLSearchParams(window.location.search).get("story")
-                let storyFolder = storyName ? await folder.getDirectoryHandle(storyName) : null;
-                if (storyFolder) {
+                let story = new URLSearchParams(window.location.search).get("story")
+                if (story) {
                     let isEditor = new URLSearchParams(window.location.search).get("editor");
                     if (isEditor == 'true') {
-                        mEditorPage.show(mWorkspaceManager);
+                        setPage(mEditorPage, [mWorkspaceManager]);
                     } else {
-                        mViewerPage.show(mWorkspaceManager);
+                        setPage(mViewerPage, [mWorkspaceManager]);
                     }
                 } else {
-                    mListPage.show(mWorkspaceManager);
+                    setPage(mListPage, [mWorkspaceManager]);
                 }
             }
         } else {
-            mWelcomePage.show();
+            setPage(mWelcomePage, [])
         }
+    }
+
+    function setPage(page, args) {
+        page.show(...args);
+        mEventManager.setListener(page);
     }
 
     updatePage();

@@ -54,8 +54,9 @@ export function AnnotationText() {
     this.id = IdUtil.getUniqueId(AnnotationText);
     this.x = 0;
     this.y = 0;
-    this.height = 1;
     this.width = 1;
+    this.fontSize = 1;
+    this.font = 'Default Font'
     this.assetId = null;
 }
 
@@ -81,6 +82,7 @@ export function AnnotationPointer() {
 export function Asset(type) {
     this.id = IdUtil.getUniqueId(Asset);
     this.type = type;
+    this.name = null
     this.text = null;
     this.filename = null;
 }

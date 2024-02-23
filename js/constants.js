@@ -10,6 +10,7 @@ export const LookTarget = {
     NONE: 'none',
 }
 
+export const USER_HEIGHT = 1.6;
 export const CAST_ONLY_LAYER = 4;
 
 export const AssetTypes = {

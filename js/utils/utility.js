@@ -57,6 +57,14 @@ function unique(arr) {
     }
 }
 
+function limit(val, v1, v2) {
+    if (v1 < v2) {
+        return Math.min(v2, Math.max(v1, val));
+    } else {
+        return Math.min(v1, Math.max(v2, val));
+    }
+}
+
 function v(x = 0, y = 0, z = 0) {
     return new THREE.Vector3(x, y, z);
 }
@@ -69,6 +77,7 @@ export const Util = {
     closestPointOnLine,
     planeIntersection,
     unique,
+    limit,
 
     //// Debug Utils ////
     console: {

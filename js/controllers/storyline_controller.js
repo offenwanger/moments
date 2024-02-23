@@ -1,44 +1,45 @@
 
 import * as THREE from 'three';
-import { Moment } from "./moment.js";
-import { Caption } from "./caption.js";
-import { PathLine } from './pathline.js';
-import { AssetUtil } from './utils/assets_util.js';
+import { MomentController } from "./moment_controller.js";
+import { CaptionController } from "./caption_controller.js";
+import { PathLineController } from './pathline_controller.js';
+import { DataModel } from '../data_model.js';
 
-export function Storyline(parent) {
-    const mMoments = [];
+export function StorylineController(parent) {
+    let mModel = new DataModel();
+
+    const mMomentContollers = [];
 
     const mGroup = new THREE.Group();
     parent.add(mGroup);
 
-    const mPathLine = new PathLine(mGroup);
+    const mPathLineController = new PathLineController(mGroup);
 
-    let mEnvironmentBox = AssetUtil.loadEnvironmentCube('default');
+    async function updateModel(dataModel) {
+        if (!dataModel) { console.error("Invalid model"); return; }
+        mModel = dataModel;
 
-    function loadFromObject(obj) {
-        mMoments.splice(0, mMoments.length);
+        mMomentContollers.splice(0, mMomentContollers.length);
         mGroup.remove(...mGroup.children);
-        mPathLine.loadFromObject(obj);
 
-        if (obj.envBox) {
-            mEnvironmentBox = AssetUtil.loadEnvironmentCube(obj.envBox);
-            parent.background = mEnvironmentBox;
-        }
+        let storyline = mModel.getStory().storyline;
+        mPathLineController.updatePath(storyline.path);
 
-        obj.moments.forEach(momentData => {
-            let pathLineData = mPathLine.getData(momentData.t, momentData.offset);
-            let m = new Moment(mGroup);
+        storyline.moments.forEach(momentData => {
+            let pathLineData = mPathLineController.getData(momentData.t, momentData.offset);
+            let m = new MomentController(mGroup);
             m.setEnvBox(mEnvironmentBox);
-            m.setT(momentData.t);
-            m.setOffset(momentData.offset);
+            m.setT(momentData.z);
+            m.setOffset({ x: momentData.x, y: momentData.y });
             m.setSize(momentData.size);
             m.setOrientation(new THREE.Quaternion()
                 .fromArray(momentData.orientation)
                 .multiply(pathLineData.rotation.clone().invert()));
             m.setPosition(pathLineData.position);
+
+
             m.setModel(momentData.model);
             m.setImage(momentData.image);
-
 
             momentData.captions.forEach(captionData => {
                 let caption = new Caption(mGroup);
@@ -47,12 +48,12 @@ export function Storyline(parent) {
                 caption.setRoot(new THREE.Vector3().fromArray(captionData.root));
                 m.addCaption(caption);
             })
-            mMoments.push(m);
+            mMomentContollers.push(m);
         })
     }
 
     function update(t, offsetX) {
-        let lineData = mPathLine.getData(t, { x: offsetX, y: 0 });
+        let lineData = mPathLineController.getData(t, { x: offsetX, y: 0 });
 
         mGroup.position.copy(new THREE.Vector3());
         mGroup.position.sub(lineData.position);
@@ -68,9 +69,9 @@ export function Storyline(parent) {
         // from the time point the user is standing on. Only changes when the user moves
         // then we can just check the moments whose userDist places them in
         // the walking area.
-        let sortArray = mMoments.map(m => { return { dist: userOffset.distanceTo(m.getPosition()), m } });
+        let sortArray = mMomentContollers.map(m => { return { dist: userOffset.distanceTo(m.getPosition()), m } });
         sortArray.sort((a, b) => a.dist - b.dist);
-        mMoments.splice(0, mMoments.length, ...sortArray.map(i => i.m));
+        mMomentContollers.splice(0, mMomentContollers.length, ...sortArray.map(i => i.m));
     }
 
     function worldToLocalPosition(worldPosition) {
@@ -89,13 +90,13 @@ export function Storyline(parent) {
         return worldRotation.clone().applyQuaternion(mGroup.quaternion.clone().invert());
     }
 
-    this.loadFromObject = loadFromObject;
+    this.updateModel = updateModel;
     this.update = update;
     this.sortMoments = sortMoments;
     this.worldToLocalPosition = worldToLocalPosition;
     this.localToWorldPosition = localToWorldPosition;
     this.localToWorldRotation = localToWorldRotation;
     this.worldToLocalRotation = worldToLocalRotation;
-    this.getMoments = () => mMoments;
-    this.getPathLine = () => mPathLine;
+    this.getMoments = () => mMomentContollers;
+    this.getPathLine = () => mPathLineController;
 }

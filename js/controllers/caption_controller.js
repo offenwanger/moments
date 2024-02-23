@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import * as ThreeMeshUI from "three-mesh-ui";
-import { Util } from './utils/utility.js';
-import { AssetUtil } from './utils/assets_util.js';
+import { Util } from '../utils/utility.js';
+import { AssetUtil } from '../utils/assets_util.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
-export function Caption(parent) {
+export function CaptionController(parent) {
     let mTextString = "text";
     let mOffset = { x: 1, y: 1 };
     let mRoot = new THREE.Vector3();

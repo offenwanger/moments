@@ -1,12 +1,13 @@
 import * as C from '../constants.js';
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
-import { HighlightRing } from '../highlight_ring.js';
-import { InputManager } from '../input_manager.js';
-import { Storyline } from '../storyline.js';
+import { HighlightRingController } from '../controllers/highlight_ring_controller.js';
+import { InputController } from '../controllers/input_controller.js';
+import { StorylineController } from '../controllers/storyline_controller.js';
 import { ServerUtil } from '../utils/server_util.js';
 
 export function ViewerPage(parentContainer) {
+    return;
     const MOMENT_DRAG = 'draggingMoment';
 
     let canvas = document.createElement('canvas');
@@ -20,18 +21,16 @@ export function ViewerPage(parentContainer) {
     const near = 0.1;
     const far = 200;
 
-    const USER_HEIGHT = 1.6;
-
     let mInteraction = false;
     // A value between 0 and 1;
     let mTPosition = 0;
     let mLastLookTarget = false;
 
     const mCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    mCamera.position.set(0, USER_HEIGHT, 0);
+    mCamera.position.set(0, C.USER_HEIGHT, 0);
 
     const mScene = new THREE.Scene();
-    const mHighlightRing = new HighlightRing(mScene);
+    const mHighlightRingController = new HighlightRingController(mScene);
 
     const light = new THREE.DirectionalLight(0xFFFFFF, 3);
     light.position.set(- 1, 2, 4);
@@ -53,7 +52,7 @@ export function ViewerPage(parentContainer) {
         mRenderer.setAnimationLoop(render);
     }
 
-    const mInputManager = new InputManager(mCamera, mRenderer, mScene);
+    const mInputManager = new InputController(mCamera, mRenderer, mScene);
     mInputManager.setCameraPositionChangeCallback(() => {
         mStoryline.sortMoments(mStoryline.worldToLocalPosition(mCamera.position));
     });

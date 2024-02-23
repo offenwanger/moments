@@ -62,6 +62,18 @@ export function WorkspaceManager(folderHandle) {
         await writeFile(await mFolderHandle.getDirectoryHandle(model.getStory().id), STORY_JSON_FILE, JSON.stringify(model.toObject()))
     }
 
+    async function getStory(storyId) {
+        let storyObj = await getJSONFromFile(await mFolderHandle.getDirectoryHandle(storyId), STORY_JSON_FILE);
+        if (!storyObj) { console.error("Failed to load story object for id " + storyId); return null; }
+        let model = DataModel.fromObject(storyObj);
+        return model;
+    }
+
+    async function getImageAsset(filename) {
+        let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER);
+        return getDataUriFromFile(assetFolder, filename);
+    }
+
     async function updateWorkspaceData() {
         await initialized;
 
@@ -108,6 +120,8 @@ export function WorkspaceManager(folderHandle) {
     this.getStoryList = getStoryList;
     this.newStory = newStory;
     this.updateStory = updateStory;
+    this.getStory = getStory;
+    this.getImageAsset = getImageAsset;
     this.loadStory = loadStory;
     this.packageStory = packageStory;
 }

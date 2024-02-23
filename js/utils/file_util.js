@@ -1,4 +1,4 @@
-import { AssetExtensions, AssetTypes, BOX_ASSET_PREFIXES, STORY_JSON_FILE } from '../constants.js';
+import { AssetTypes, BOX_ASSET_PREFIXES, STORY_JSON_FILE } from '../constants.js';
 import { DataModel } from '../data_model.js';
 
 // needed for storing file handles.
@@ -71,6 +71,20 @@ export async function getJSONFromFile(dir, filename) {
     let jsonTxt = await file.text();
     let obj = JSON.parse(jsonTxt);
     return obj;
+}
+
+export async function getDataUriFromFile(dir, filename) {
+    let handle = await dir.getFileHandle(filename)
+    let file = await handle.getFile();
+
+    const reader = new FileReader();
+    const promise = new Promise(resolve => {
+        reader.onload = function (e) {
+            resolve(reader.result);
+        }
+    });
+    reader.readAsDataURL(file);
+    return promise;
 }
 
 export async function getFile(dir, filename) {

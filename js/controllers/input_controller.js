@@ -1,10 +1,10 @@
-import * as C from './constants.js';
-import { Util } from './utils/utility.js';
+import * as C from '../constants.js';
+import { Util } from '../utils/utility.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
-export function InputManager(camera, renderer, parent) {
+export function InputController(camera, renderer, parent) {
     const INTERACTION_DISTANCE = 10;
     const MODE_CARDBOARD = 'cardboard';
     const MODE_SCREEN = 'screen';
@@ -104,10 +104,10 @@ export function InputManager(camera, renderer, parent) {
         }
     })
 
-    function getLookTarget(camera, storyline) {
-        let moments = storyline.getMoments();
-        let origin = storyline.worldToLocalPosition(camera.position);
-        let lookDirection = storyline.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)).add(origin);
+    function getLookTarget(camera, storyController) {
+        let moments = storyController.getMoments();
+        let origin = storyController.worldToLocalPosition(camera.position);
+        let lookDirection = storyController.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)).add(origin);
         for (let i = 0; i < moments.length; i++) {
             if (origin.distanceTo(moments[i].getPosition()) > INTERACTION_DISTANCE) { break; }
             let targeted = Util.hasSphereIntersection(origin, lookDirection, moments[i].getPosition(), moments[i].getSize());
@@ -128,14 +128,14 @@ export function InputManager(camera, renderer, parent) {
             mLastLookTarget = { type: C.LookTarget.UP };
             return mLastLookTarget;
         } else {
-            let userPosition = storyline.worldToLocalPosition(camera.position);
-            let userLookDirection = storyline.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-            let pathLineIntersection = pathLineTarget(userPosition, userLookDirection, storyline.getPathLine())
+            let userPosition = storyController.worldToLocalPosition(camera.position);
+            let userLookDirection = storyController.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+            let pathLineIntersection = pathLineTarget(userPosition, userLookDirection, storyController.getPathLine())
             if (pathLineIntersection.distance < INTERACTION_DISTANCE) {
                 mLastLookTarget = {
                     type: C.LookTarget.LINE_SURFACE,
-                    position: storyline.localToWorldPosition(pathLineIntersection.position),
-                    normal: storyline.localToWorldRotation(pathLineIntersection.normal),
+                    position: storyController.localToWorldPosition(pathLineIntersection.position),
+                    normal: storyController.localToWorldRotation(pathLineIntersection.normal),
                 };
             } else {
                 mLastLookTarget = { type: C.LookTarget.NONE };

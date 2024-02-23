@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { Util } from './utils/utility.js';
+import { Util } from '../utils/utility.js';
 
-export function PathLine(parent) {
+export function PathLineController(parent) {
     const mLinePoints = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)];
     const mPointNormals = [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 1, 0)];
     const mPointTangents = [new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, -1)];
@@ -11,8 +11,13 @@ export function PathLine(parent) {
     let mCurveLength = 1;
     const mLine = new THREE.CatmullRomCurve3(mLinePoints);
 
-    function loadFromObject(obj) {
-        mLinePoints.splice(0, mLinePoints.length, ...obj.line.map(p => new THREE.Vector3().fromArray(p)))
+    function updatePath(path) {
+        if (!Array.isArray(path)) { console.error("Invalid Path"); return; }
+        if (path.length == 0) {
+            path = [[0, 0, 0], [0, 0, -1]];
+        }
+
+        mLinePoints.splice(0, mLinePoints.length, ...path.map(p => new THREE.Vector3().fromArray(p)))
         mLine.points = mLinePoints;
         mCurveLength = mLine.getLength();
 
@@ -116,7 +121,7 @@ export function PathLine(parent) {
         }
     }
 
-    this.loadFromObject = loadFromObject;
+    this.updatePath = updatePath;
     this.getData = getData;
     this.getClosestPoint = getClosestPoint;
     this.getPoints = () => mLinePoints;

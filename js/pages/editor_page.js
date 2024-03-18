@@ -47,7 +47,7 @@ export function EditorPage(parentContainer) {
     function setTimelineControllerCallbacks() {
         mTimelineController.setCreateMomentCallback(async () => {
             await mModelController.createStorylineMoment();
-            updateModel();
+            await updateModel();
         })
     }
 
@@ -104,7 +104,7 @@ export function EditorPage(parentContainer) {
 
         mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mainCanvas.node() });
         mRenderer.xr.enabled = true;
-        try { mRenderer.setAnimationLoop(render); } catch (e) { console.error(e); }
+        mRenderer.setAnimationLoop(render);
         onResize(mWidth, mHeight);
 
         mInputController = new InputController(mCamera, mRenderer, mScene);
@@ -119,14 +119,13 @@ export function EditorPage(parentContainer) {
             .style("top", "20px")
             .style("bottom", "")
 
-        return updateModel();
+        await updateModel();
     }
 
     async function updateModel() {
         let model = mModelController.getModel();
         mTimelineController.updateModel(model);
-        // async, return for syncronicity handling elsewhere.
-        return mStoryController.updateModel(model);
+        await mStoryController.updateModel(model);
     }
 
     function onResize(width, height) {

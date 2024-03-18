@@ -12,13 +12,15 @@ export function StoryController(scene) {
 
     async function updateModel(model) {
         mModel = model;
-        mStorylineController.updateModel(mModel);
+        await mStorylineController.updateModel(mModel);
         if (mModel.getStory().background) {
             mEnvironmentBox = await AssetUtil.loadEnvironmentCube(mModel.getStory().background);
         } else {
             mEnvironmentBox = await AssetUtil.loadDefaultEnvironmentCube();
         }
         scene.background = mEnvironmentBox;
+
+        mStorylineController.setEnvBox(mEnvironmentBox);
     }
 
     this.getMoments = mStorylineController.getMoments;

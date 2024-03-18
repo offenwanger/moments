@@ -1,23 +1,39 @@
+import THREE from 'three';
+
 import { createCanvas } from './mock_canvas.js'
 import { mockD3 } from './mock_d3.js';
 import { HTMLElement } from './mock_html_element.js';
 import { mockIndexedDB } from './mock_indexedDB.js';
 import * as mockFileSystem from './mock_filesystem.js'
+import * as mockTHREE from './mock_three.js'
 
-jest.mock('three/addons/helpers/VertexNormalsHelper.js', () => { }, { virtual: true });
-jest.mock('three/addons/webxr/VRButton.js', () => { return { VRButton: {} } }, { virtual: true });
-jest.mock('three/addons/loaders/GLTFLoader.js', () => { return { GLTFLoader: {} } }, { virtual: true });
-jest.mock('three/addons/loaders/DRACOLoader.js', () => { return { DRACOLoader: {} } }, { virtual: true });
-jest.mock('three/addons/controls/OrbitControls.js', () => { return { OrbitControls: {} } }, { virtual: true });
-jest.mock('three/addons/webxr/XRControllerModelFactory.js', () => { return { XRControllerModelFactory: {} } }, { virtual: true });
+jest.spyOn(THREE, 'WebGLRenderer').mockReturnValue({
+    setSize: () => { },
+    setAnimationLoop: () => { },
+    xr: {
+        enabled: false,
+        addEventListener: () => { },
+        getController: () => { return new THREE.Object3D(); },
+        getControllerGrip: () => { return new THREE.Object3D(); },
+    },
+});
+jest.spyOn(THREE, 'ImageLoader').mockReturnValue({
+    loadAsync: () => { return createCanvas() }
+});
+jest.mock('three/addons/webxr/VRButton.js', () => { return { VRButton: mockTHREE.mockVRButton } }, { virtual: true });
+jest.mock('three/addons/loaders/GLTFLoader.js', () => { return { GLTFLoader: mockTHREE.mockGLTFLoader } }, { virtual: true });
+jest.mock('three/addons/loaders/DRACOLoader.js', () => { return { DRACOLoader: mockTHREE.mockDRACOLoader } }, { virtual: true });
+jest.mock('three/addons/controls/OrbitControls.js', () => { return { OrbitControls: mockTHREE.mockOrbitControls } }, { virtual: true });
+jest.mock('three/addons/webxr/XRControllerModelFactory.js', () => { return { XRControllerModelFactory: mockTHREE.mockXRControllerModelFactory } }, { virtual: true });
 jest.mock("three-mesh-ui", () => { return { ThreeMeshUI: {} } }, { virtual: true });
+jest.mock('three/addons/helpers/VertexNormalsHelper.js', () => { }, { virtual: true });
 
 // Trap error and trigger a failure. 
 let consoleError = console.error;
 console.error = function (message) {
     if (("" + message).startsWith("TypeError: Cannot read properties of null")) return;
     consoleError(...arguments);
-    assert.equal("No Error", "Error: " + message);
+    expect("").toEqual(message)
 }
 
 export async function setup() {

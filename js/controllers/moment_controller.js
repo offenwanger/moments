@@ -155,18 +155,16 @@ export function MomentController(parent) {
         mPosition = position;
     }
 
-    function setModel(file) {
-        AssetUtil.loadGLTFModel(file).then(gltf=> {
-            mSceneModel = gltf.scene;
-            mScene.add(gltf.scene);
-        })
+    async function setModel(file) {
+        let gltf = await AssetUtil.loadGLTFModel(file)
+        mSceneModel = gltf.scene;
+        mScene.add(gltf.scene);
     }
 
-    function setImage(file) {
-        AssetUtil.loadImage(file).then(image => {
-            mContexts.forEach(ctx => ctx.drawImage(image, 0, 0));
-            mMaterials.forEach(m => m.map.needsUpdate = true);
-        });
+    async function setImage(file) {
+        let image = await AssetUtil.loadImage(file)
+        mContexts.forEach(ctx => ctx.drawImage(image, 0, 0));
+        mMaterials.forEach(m => m.map.needsUpdate = true);
     }
 
     function setEnvBox(envBox) {

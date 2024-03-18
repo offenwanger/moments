@@ -1,5 +1,3 @@
-import * as chai from 'chai';
-
 import { setup, cleanup } from './test_utils/test_environment.js';
 import { mockFileSystemDirectoryHandle } from './test_utils/mock_filesystem.js';
 
@@ -7,9 +5,6 @@ import { WorkspaceManager } from '../js/workspace_manager.js';
 import { Story } from '../js/data_structs.js';
 import { STORY_JSON_FILE, WORKSPACE_DATA_FILE } from '../js/constants.js';
 import { DataModel } from '../js/data_model.js';
-
-let assert = chai.assert;
-let expect = chai.expect;
 
 describe('Test WorkspaceManager', function () {
     beforeEach(async function () {
@@ -19,7 +14,7 @@ describe('Test WorkspaceManager', function () {
     afterEach(async function () {
         await cleanup();
     })
-    
+
     describe('test initialization', function () {
         it('should inialize without error', async function () {
             let fileHandle = new mockFileSystemDirectoryHandle('test');
@@ -32,7 +27,7 @@ describe('Test WorkspaceManager', function () {
             let fileHandle = new mockFileSystemDirectoryHandle(dir);
             let workspace = new WorkspaceManager(fileHandle);
             await workspace.newStory('someId');
-            expect(global.fileSystem[dir + "/workspace.json"]).to.eql(JSON.stringify({ "storyIds": ["someId"] }));
+            expect(global.fileSystem[dir + "/workspace.json"]).toEqual(JSON.stringify({ "storyIds": ["someId"] }));
         });
     })
 
@@ -44,8 +39,8 @@ describe('Test WorkspaceManager', function () {
             let model = new DataModel();
             await workspace.newStory(model.getStory().id);
             await workspace.updateStory(model);
-            expect(global.fileSystem[dir + "/" + WORKSPACE_DATA_FILE]).to.eql(JSON.stringify({ "storyIds": [model.getStory().id] }));
-            expect(global.fileSystem[dir + "/" + model.getStory().id + "/" + STORY_JSON_FILE]).to.eql(JSON.stringify(model.toObject()));
+            expect(global.fileSystem[dir + "/" + WORKSPACE_DATA_FILE]).toEqual(JSON.stringify({ "storyIds": [model.getStory().id] }));
+            expect(global.fileSystem[dir + "/" + model.getStory().id + "/" + STORY_JSON_FILE]).toEqual(JSON.stringify(model.toObject()));
         });
 
         it('should get a list of stories', async function () {
@@ -64,8 +59,8 @@ describe('Test WorkspaceManager', function () {
             model.getStory().name = "Name3";
             await workspace.newStory(model.getStory().id);
             await workspace.updateStory(model);
-            expect(JSON.parse(global.fileSystem[dir + "/" + WORKSPACE_DATA_FILE]).storyIds.length).to.eql(3);
-            expect((await workspace.getStoryList()).map(i => i.name)).to.eql(['Name1', 'Name2', 'Name3']);
+            expect(JSON.parse(global.fileSystem[dir + "/" + WORKSPACE_DATA_FILE]).storyIds.length).toEqual(3);
+            expect((await workspace.getStoryList()).map(i => i.name)).toEqual(['Name1', 'Name2', 'Name3']);
         });
     });
 

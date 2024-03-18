@@ -57,7 +57,7 @@ export function TimelineController(container) {
         }).on('pointerdown', () => {
             mAddMomentButton.attr("filter", "");
         }).on('click', async () => {
-            return mCreateMomentCallback();
+            await mCreateMomentCallback();
         });
 
 

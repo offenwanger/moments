@@ -7,6 +7,7 @@ import { DataModel } from '../data_model.js';
 
 export function StorylineController(parent) {
     let mModel = new DataModel();
+    let mEnvironmentBox;
 
     const mMomentContollers = [];
 
@@ -25,8 +26,8 @@ export function StorylineController(parent) {
         let storyline = mModel.getStory().storyline;
         mPathLineController.updatePath(storyline.path);
 
-        storyline.moments.forEach(momentData => {
-            let pathLineData = mPathLineController.getData(momentData.t, momentData.offset);
+        for (let momentData of storyline.moments) {
+            let pathLineData = mPathLineController.getData(momentData.z, momentData.offset);
             let m = new MomentController(mGroup);
             m.setEnvBox(mEnvironmentBox);
             m.setT(momentData.z);
@@ -35,21 +36,20 @@ export function StorylineController(parent) {
             m.setOrientation(new THREE.Quaternion()
                 .fromArray(momentData.orientation)
                 .multiply(pathLineData.rotation.clone().invert()));
-            m.setPosition(pathLineData.position);
+            m.setPosition(pathLineData.position)
 
+            // await m.setModel(momentData.model);
+            // await m.setImage(momentData.image);
 
-            m.setModel(momentData.model);
-            m.setImage(momentData.image);
-
-            momentData.captions.forEach(captionData => {
-                let caption = new Caption(mGroup);
-                caption.setText(captionData.text);
-                caption.setOffset(captionData.offset);
-                caption.setRoot(new THREE.Vector3().fromArray(captionData.root));
-                m.addCaption(caption);
-            })
+            // momentData.captions.forEach(captionData => {
+            //     let caption = new Caption(mGroup);
+            //     caption.setText(captionData.text);
+            //     caption.setOffset(captionData.offset);
+            //     caption.setRoot(new THREE.Vector3().fromArray(captionData.root));
+            //     m.addCaption(caption);
+            // })
             mMomentContollers.push(m);
-        })
+        }
     }
 
     function update(t, offsetX) {
@@ -62,6 +62,10 @@ export function StorylineController(parent) {
         // mGroup.quaternion.copy(rotation)
         mGroup.rotation.copy(new THREE.Euler());
         mGroup.applyQuaternion(lineData.rotation); // rotate the OBJECT
+    }
+
+    function setEnvBox(box) {
+        mEnvironmentBox = box;
     }
 
     function sortMoments(userOffset) {
@@ -92,6 +96,7 @@ export function StorylineController(parent) {
 
     this.updateModel = updateModel;
     this.update = update;
+    this.setEnvBox = setEnvBox;
     this.sortMoments = sortMoments;
     this.worldToLocalPosition = worldToLocalPosition;
     this.localToWorldPosition = localToWorldPosition;

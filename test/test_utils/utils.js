@@ -1,10 +1,7 @@
-import * as  chai from 'chai';
-let expect = chai.expect;
-
 export function assertVectorEqual(v1, v2, tollerance = 0) {
-    expect(v1.x).to.be.closeTo(v2.x, tollerance);
-    expect(v1.y).to.be.closeTo(v2.y, tollerance);
-    expect(v1.z).to.be.closeTo(v2.z, tollerance);
+    expect(v1.x).toBeCloseTo(v2.x, tollerance);
+    expect(v1.y).toBeCloseTo(v2.y, tollerance);
+    expect(v1.z).toBeCloseTo(v2.z, tollerance);
 }
 
 export function generateStory() {

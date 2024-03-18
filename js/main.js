@@ -6,7 +6,7 @@ import { WelcomePage } from './pages/welcome_page.js';
 import { HandleStorage } from './utils/file_util.js';
 import { WorkspaceManager } from './workspace_manager.js';
 
-function main() {
+export async function main() {
     let mWelcomePage = new WelcomePage(d3.select('#content'));
     let mEditorPage = new EditorPage(d3.select('#content'));
     let mViewerPage = new ViewerPage(d3.select('#content'));
@@ -18,7 +18,10 @@ function main() {
         if (await folder.requestPermission({ mode: 'readwrite' }) === 'granted') {
             await HandleStorage.setItem('folder', folder);
         }
-        updatePage();
+        let params = new URLSearchParams(window.location.search)
+        params.set("list", 'true')
+        window.location.search = params.toString();
+        await updatePage();
     });
 
     mWelcomePage.setLastFolderCallback(async () => {
@@ -26,9 +29,11 @@ function main() {
         if (await folder.requestPermission({ mode: 'readwrite' }) !== 'granted') {
             await HandleStorage.removeItem('folder', () => { console.log('removed') });
         }
-        updatePage();
+        let params = new URLSearchParams(window.location.search)
+        params.set("list", 'true')
+        window.location.search = params.toString();
+        await updatePage();
     });
-
 
     mListPage.setViewCallback(async (storyId) => {
         let params = new URLSearchParams(window.location.search)
@@ -50,7 +55,7 @@ function main() {
         let folder = await HandleStorage.getItem('folder');
         if (folder) {
             if (await folder.queryPermission({ mode: 'readwrite' }) !== 'granted') {
-                setPage(mWelcomePage, [true]);
+                await setPage(mWelcomePage, [true]);
             } else {
                 // folder all set
                 let mWorkspaceManager = new WorkspaceManager(folder);
@@ -58,24 +63,25 @@ function main() {
                 if (story) {
                     let isEditor = new URLSearchParams(window.location.search).get("editor");
                     if (isEditor == 'true') {
-                        setPage(mEditorPage, [mWorkspaceManager]);
+                        await setPage(mEditorPage, [mWorkspaceManager]);
                     } else {
-                        setPage(mViewerPage, [mWorkspaceManager]);
+                        await setPage(mViewerPage, [mWorkspaceManager]);
                     }
+                } else if (new URLSearchParams(window.location.search).get("list") == 'true') {
+                    await setPage(mListPage, [mWorkspaceManager]);
                 } else {
-                    setPage(mListPage, [mWorkspaceManager]);
+                    await setPage(mWelcomePage, [true]);
                 }
             }
         } else {
-            setPage(mWelcomePage, [])
+            await setPage(mWelcomePage, [])
         }
     }
 
-    function setPage(page, args) {
-        page.show(...args);
+    async function setPage(page, args) {
+        await page.show(...args);
         mEventManager.setListener(page);
     }
 
-    updatePage();
+    await updatePage();
 };
-main();

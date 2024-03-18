@@ -4,10 +4,6 @@ import fs from 'fs';
 const RUN = Math.random();
 let fileCount = 0;
 
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
 export function createCanvas() {
     let canvas = createCan(1, 1);
     canvas.internalGetContext = canvas.getContext;

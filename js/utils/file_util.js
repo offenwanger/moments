@@ -15,14 +15,14 @@ export const HandleStorage = function () {
             }
 
             let req = indexedDB.open(DB_NAME, 1);
-            req.onerror = function withStoreOnError() {
+            req.onerror = function () {
                 reject(req.error.name);
             };
-            req.onupgradeneeded = function withStoreOnUpgradeNeeded() {
+            req.onupgradeneeded = function () {
                 // database did not yet exist
                 req.result.createObjectStore(OBJECT_STORE_NAME);
             };
-            req.onsuccess = function withStoreOnSuccess() {
+            req.onsuccess = function () {
                 mDatabase = req.result;
                 resolve(mDatabase);
             };
@@ -30,14 +30,13 @@ export const HandleStorage = function () {
     }
 
     async function executeTransaction(type, storeCall) {
-        let database = await getDatabase();
-        return new Promise((resolve, reject) => {
+        return getDatabase().then(database => new Promise((resolve, reject) => {
             let transaction = database.transaction([OBJECT_STORE_NAME], type);
             let store = transaction.objectStore(OBJECT_STORE_NAME);
             let req = storeCall(store);
             req.onerror = function () { reject(req.error) };
             req.onsuccess = function () { resolve(req.result) }
-        });
+        }));
 
     }
 

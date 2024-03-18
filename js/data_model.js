@@ -16,12 +16,12 @@ export function DataModel() {
         ).filter(item => item.assetId == assetId);
     }
 
-    function copy() {
+    function clone() {
         let dataModel = new DataModel();
-        dataModel.setStory(DataModel.copyItem(mStory, true));
+        dataModel.setStory(DataModel.cloneItem(mStory, true));
         mAssets.forEach(asset => {
             let assetItems = dataModel.getItemsForAsset(asset.id);
-            let newAsset = DataModel.copyItem(asset, true);
+            let newAsset = DataModel.cloneItem(asset, true);
             assetItems.assetId = newAsset.id;
             dataModel.getAssets().push(newAsset);
         })
@@ -30,8 +30,8 @@ export function DataModel() {
 
     function toObject() {
         return {
-            story: DataModel.copyItem(mStory),
-            assets: DataModel.copyItem(mAssets)
+            story: DataModel.cloneItem(mStory),
+            assets: DataModel.cloneItem(mAssets)
         }
     }
 
@@ -39,7 +39,7 @@ export function DataModel() {
     this.getStory = () => mStory;
     this.getAssets = () => mAssets;
     this.getItemsForAsset = getItemsForAsset;
-    this.copy = copy;
+    this.clone = clone;
     this.toObject = toObject;
 }
 
@@ -51,14 +51,14 @@ DataModel.fromObject = function (item) {
         return null;
     }
 
-    dataModel.setStory(DataModel.copyItem(item.story));
+    dataModel.setStory(DataModel.cloneItem(item.story));
     return dataModel;
 }
 
-DataModel.copyItem = function (item, newIds = false) {
+DataModel.cloneItem = function (item, newIds = false) {
     if (Array.isArray(item)) {
-        return item.map(o => DataModel.copyItem(o));
-    } else if (typeof item == 'string' || typeof item == 'number') {
+        return item.map(o => DataModel.cloneItem(o));
+    } else if (typeof item == 'string' || typeof item == 'number' || typeof item == 'boolean') {
         return item;
     } else if (item.id) {
         let ObjClass = IdUtil.getClass(item.id);
@@ -69,7 +69,7 @@ DataModel.copyItem = function (item, newIds = false) {
             if (newIds && key == 'id') return;
 
             if (item[key]) {
-                dataItem[key] = DataModel.copyItem(item[key])
+                dataItem[key] = DataModel.cloneItem(item[key])
             }
         });
         return dataItem;

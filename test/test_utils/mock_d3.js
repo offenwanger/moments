@@ -2,7 +2,7 @@ import { createCanvas } from './mock_canvas.js';
 
 let mJspreadsheet;
 
-function MockElement(type) {
+export function MockElement(type) {
     let mAttrs = {};
     let mStyles = {};
     let mType = type;
@@ -10,6 +10,7 @@ function MockElement(type) {
     let mClasses = [];
     let mCallBacks = {};
     let mCanvas = null;
+    let mTransform = null
 
     this.append = function (appendee) {
         if (typeof appendee == 'string') {
@@ -23,13 +24,30 @@ function MockElement(type) {
     }
     this.select = function (selector) {
         if (selector instanceof MockElement) return selector;
+        if (selector == window) return selector;
+        if (typeof selector == "object") return new MockElement('div');
         let stack = [...mChildren]
         while (stack.length > 0) {
             let found = stack.find(child => child.matches(selector));
             if (found) return found;
             stack = (stack.map(item => item.getChildren())).flat();
         }
-        return { node: () => null, remove: () => null };
+        return null;
+    }
+    this.selectAll = function (selector) {
+        if (selector == '*') {
+            return { remove: () => { mChildren = [] } }
+        } else if (selector == 'circle') {
+            return {
+                data: function () { return this; },
+                attr: function () { return this; },
+                exit: function () { return this; },
+                enter: function () { return this; },
+                remove: function () { return this; },
+                append: function () { return this; },
+                style: function () { return this; },
+            }
+        }
     }
     this.attr = function (att, val = null) {
         if (!att) {
@@ -140,10 +158,11 @@ function MockElement(type) {
     this.getBBox = function () { return { x: mAttrs['x'], y: mAttrs['y'], height: 50, width: 100 } }
     this.getCallbacks = () => mCallBacks;
     this.call = function (something, newZoomTransform) {
-        transform = newZoomTransform;
+        mTransform = newZoomTransform;
+        return this;
     };
     this.getTransform = function () {
-        return transform;
+        return mTransform;
     }
     this.console = {
         log: function () {
@@ -157,22 +176,18 @@ function MockElement(type) {
         delete this;
     }
     this.getChildren = () => mChildren;
+    this.addEventListener = function () { };
+    this.setAttribute = function () {
+        // called by THREE js, can be used to set the context.
+
+    }
 }
 
 export function mockD3() {
-    let rootNode = new MockElement();
-    rootNode.append('div').attr("id", "canvas-view-container").append(new MockElement().classed("canvas-container", true));
-    rootNode.append('div').attr("id", "fdl-view-container").append(new MockElement().classed("canvas-container", true));
-    rootNode.append('div').attr("id", "tabs-container").append(new MockElement().classed("canvas-container", true));
-    rootNode.append('div').attr("id", "color-container");
-    rootNode.append('div').attr("id", "interface-container").append(new MockElement().attr("id", "interface-svg"));
-    rootNode.append('div').attr("id", "dashboard-container");
-    rootNode.append('div').attr("id", "canvas-container");
-    rootNode.append('div').attr("id", "tab-view-container");
-    rootNode.append('div').attr("id", "canvas-container");
-    rootNode.append('div').attr("id", "table-view-container");
-    rootNode.append('div').attr("id", "input-box");
-    rootNode.append('div').attr("id", "dropdown-container");
+    this.root = new MockElement();
+    this.root.append('div').attr("id", "content");
+
+    let mZoomCallback = () => { };
 
     let documentCallbacks = {};
 
@@ -180,10 +195,21 @@ export function mockD3() {
         if (selector.isDocument || selector.isWindow) {
             return { on: (event, callback) => documentCallbacks[event] = callback };
         } else {
-            return rootNode.select(selector);
+            return this.root.select(selector);
         }
     }
 
+    this.scaleLinear = function () { return { domain: function () { return { range: function () { return this; } } } }; }
+    this.axisBottom = function () { return {}; }
+    this.zoom = function () {
+        return {
+            on: function (event, func) { mZoomCallback = func; return this; },
+            extent: function () { return this; },
+            scaleExtent: function () { return this; },
+            translateExtent: function () { return this; },
+        };
+    }
+    this.zoomIdentity = { rescaleX: function () { } }
     this.select = select;
     this.getCallbacks = () => documentCallbacks;
 }

@@ -4,14 +4,13 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { HighlightRingController } from '../controllers/highlight_ring_controller.js';
 import { InputController } from '../controllers/input_controller.js';
 import { StoryController } from '../controllers/story_controller.js';
-import { DataModel } from '../data_model.js';
 import { Util } from '../utils/utility.js';
+import { TimelineController } from '../controllers/timeline_controller.js';
+import { ModelController } from '../controllers/model_controller.js';
 
 export function EditorPage(parentContainer) {
     const RESIZE_TARGET_SIZE = 20;
-
-    let mWorkspace;
-    let mModel = new DataModel();
+    let mModelController;
 
     let mRenderer;
     let mInputController;
@@ -21,7 +20,6 @@ export function EditorPage(parentContainer) {
     let mWidth = 100;
     let mHeight = 100;
 
-    let mTimelineCanvas;
     let mResizeTarget;
 
     let mInteraction = false;
@@ -45,16 +43,22 @@ export function EditorPage(parentContainer) {
     mScene.add(mLight);
 
     const mStoryController = new StoryController(mScene);
+    let mTimelineController = null;
+    function setTimelineControllerCallbacks() {
+        mTimelineController.setCreateMomentCallback(async () => {
+            await mModelController.createStorylineMoment();
+            updateModel();
+        })
+    }
 
     async function show(workspace) {
         parentContainer.selectAll("*").remove();
-        mWorkspace = workspace;
 
         const storyId = new URLSearchParams(window.location.search).get("story");
         if (!storyId) { console.error("Story not set!"); return; }
 
-        mModel = await mWorkspace.getStory(storyId);
-        if (!mModel) return;
+        mModelController = new ModelController(storyId, workspace);
+        await mModelController.init();
 
         let mainContainer = parentContainer.append('div')
             .style('width', '100%')
@@ -79,10 +83,8 @@ export function EditorPage(parentContainer) {
             .attr('id', 'timeline')
             .style('display', 'block')
             .style('border', '1px solid black')
-        let timelineView = timelineContainer.append('canvas')
-            .attr('id', 'timeline-view')
-            .style('display', 'block')
-        mTimelineCanvas = timelineView.node();
+        mTimelineController = new TimelineController(timelineContainer);
+        setTimelineControllerCallbacks();
 
         let sidebar = mainContainer.append('div')
             .attr('id', 'sidebar')
@@ -92,7 +94,7 @@ export function EditorPage(parentContainer) {
 
         mResizeTarget = parentContainer.append('img')
             .attr('id', 'resize-control')
-            .attr('src', 'assets/images/panning_button.png')
+            .attr('src', 'assets/images/buttons/panning_button.png')
             .style('position', 'absolute')
             .style('width', RESIZE_TARGET_SIZE + 'px')
             .style('height', RESIZE_TARGET_SIZE + 'px')
@@ -102,7 +104,7 @@ export function EditorPage(parentContainer) {
 
         mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mainCanvas.node() });
         mRenderer.xr.enabled = true;
-        mRenderer.setAnimationLoop(render);
+        try { mRenderer.setAnimationLoop(render); } catch (e) { console.error(e); }
         onResize(mWidth, mHeight);
 
         mInputController = new InputController(mCamera, mRenderer, mScene);
@@ -117,8 +119,14 @@ export function EditorPage(parentContainer) {
             .style("top", "20px")
             .style("bottom", "")
 
+        return updateModel();
+    }
+
+    async function updateModel() {
+        let model = mModelController.getModel();
+        mTimelineController.updateModel(model);
         // async, return for syncronicity handling elsewhere.
-        return mStoryController.updateModel(mModel);
+        return mStoryController.updateModel(model);
     }
 
     function onResize(width, height) {
@@ -127,8 +135,7 @@ export function EditorPage(parentContainer) {
 
         if (!mRenderer) return;
 
-        mTimelineCanvas.width = Math.round(mWidth * mSidebarDivider);
-        mTimelineCanvas.height = Math.round(mHeight * (1 - mTimelineDivider));
+        mTimelineController.onResize(Math.round(mWidth * mSidebarDivider), Math.round(mHeight * (1 - mTimelineDivider)));
 
         let viewCanvasWidth = Math.round(mWidth * mSidebarDivider)
         let viewCanvasHeight = Math.round(mHeight * mTimelineDivider)

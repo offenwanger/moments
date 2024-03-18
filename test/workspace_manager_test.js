@@ -12,9 +12,17 @@ let assert = chai.assert;
 let expect = chai.expect;
 
 describe('Test WorkspaceManager', function () {
+    beforeEach(async function () {
+        await setup();
+    });
+
+    afterEach(async function () {
+        await cleanup();
+    })
+    
     describe('test initialization', function () {
         it('should inialize without error', async function () {
-            let fileHandle = new mockFileSystemDirectoryHandle();
+            let fileHandle = new mockFileSystemDirectoryHandle('test');
             let workspace = new WorkspaceManager(fileHandle);
             await workspace.getStoryList();
         });

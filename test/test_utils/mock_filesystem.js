@@ -1,8 +1,16 @@
-global.fileSystem = {}
+
+export function setup() {
+    global.fileSystem = {}
+}
+
+export function cleanup() {
+    delete global.fileSystem;
+}
 
 export function mockFileSystemDirectoryHandle(directoryName) {
     this.permission = 'granted';
     this.queryPermission = () => this.permission;
+    this.requestPermission = () => this.permission;
     this.getFileHandle = (fileName, config) => { return new mockFileSystemFileHandle(directoryName + "/" + fileName, config) }
     this.getDirectoryHandle = (dirName) => { return new mockFileSystemDirectoryHandle(directoryName + "/" + dirName) }
 }

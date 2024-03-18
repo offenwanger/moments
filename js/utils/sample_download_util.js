@@ -10,7 +10,7 @@ export async function downloadSample(sampleId, workspace) {
     } catch (error) { console.error(error); return false; }
 
     if (storyModel.getStory().id != sampleId) { console.error("Incorrect label ", sampleId, storyModel.story.id); }
-    workspace.newStory(storyModel.getStory().id);
+    await workspace.newStory(storyModel.getStory().id);
 
     let assets = storyModel.getAssets();
     for (let asset in assets) {

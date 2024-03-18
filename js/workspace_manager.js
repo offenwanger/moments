@@ -98,7 +98,7 @@ export function WorkspaceManager(folderHandle) {
     async function loadStory(file) {
         try {
             let model = await getModelFromZip(file);
-            model = model.copy();
+            model = model.clone();
             let assets = model.getAssets();
             let oldFilenames = Util.unique(assets.map(a => a.filename).filter(f => f));
             let filenameMap = oldFilenames.map(f => { return { oldName: f, newName: IdUtil.getUniqueId({ name: "File" }) } })

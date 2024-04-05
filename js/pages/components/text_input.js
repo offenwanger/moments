@@ -7,7 +7,9 @@ export function TextInput(container, type = 'text') {
     let mInputBox = mInputContainer.append('input')
         .attr('type', type)
         .on('blur', async () => {
-            await mChangeCallback(mInputBox.node().value);
+            let val = mInputBox.node().value;
+            if (type == 'number') val = parseFloat(val);
+            await mChangeCallback(val);
         });
 
     this.show = () => mInputContainer.attr('display', '')

@@ -26,10 +26,11 @@ export function StorylineController(parent) {
         mPathLineController.updatePath(mModel.getStory().path);
 
         for (let momentData of mModel.getMoments()) {
+            if (!momentData.storyline) return;
             let pathLineData = mPathLineController.getData(momentData.z, momentData.offset);
             let m = new MomentController(mGroup);
             m.setEnvBox(mEnvironmentBox);
-            m.setT(momentData.z);
+            m.setT(momentData.t);
             m.setOffset({ x: momentData.x, y: momentData.y });
             m.setSize(momentData.size);
             m.setOrientation(new THREE.Quaternion()

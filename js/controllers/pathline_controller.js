@@ -14,7 +14,7 @@ export function PathLineController(parent) {
     function updatePath(path) {
         if (!Array.isArray(path)) { console.error("Invalid Path"); return; }
         if (path.length == 0) {
-            path = [[0, 0, 0], [0, 0, -1]];
+            path = [[0, 0, 0], [0, 0, -10]];
         }
 
         mLinePoints.splice(0, mLinePoints.length, ...path.map(p => new THREE.Vector3().fromArray(p)))

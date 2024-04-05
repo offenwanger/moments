@@ -1,8 +1,9 @@
-import * as C from '../constants.js';
-import { Util } from '../utils/utility.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+
+import { Util } from '../utils/utility.js';
+import { LookTarget } from '../constants.js';
 
 export function InputController(camera, renderer, parent) {
     const INTERACTION_DISTANCE = 10;
@@ -113,7 +114,7 @@ export function InputController(camera, renderer, parent) {
             let targeted = Util.hasSphereIntersection(origin, lookDirection, moments[i].getPosition(), moments[i].getSize());
             if (targeted) {
                 mLastLookTarget = {
-                    type: C.LookTarget.MOMENT,
+                    type: LookTarget.MOMENT,
                     moment: moments[i]
                 };
                 return mLastLookTarget;
@@ -125,7 +126,7 @@ export function InputController(camera, renderer, parent) {
         let upAngle = Math.PI * 7 / 8;
 
         if (lookAngles.x > upAngle) {
-            mLastLookTarget = { type: C.LookTarget.UP };
+            mLastLookTarget = { type: LookTarget.UP };
             return mLastLookTarget;
         } else {
             let userPosition = storyController.worldToLocalPosition(camera.position);
@@ -133,12 +134,12 @@ export function InputController(camera, renderer, parent) {
             let pathLineIntersection = pathLineTarget(userPosition, userLookDirection, storyController.getPathLine())
             if (pathLineIntersection.distance < INTERACTION_DISTANCE) {
                 mLastLookTarget = {
-                    type: C.LookTarget.LINE_SURFACE,
+                    type: LookTarget.LINE_SURFACE,
                     position: storyController.localToWorldPosition(pathLineIntersection.position),
                     normal: storyController.localToWorldRotation(pathLineIntersection.normal),
                 };
             } else {
-                mLastLookTarget = { type: C.LookTarget.NONE };
+                mLastLookTarget = { type: LookTarget.NONE };
             }
 
             return mLastLookTarget;
@@ -146,7 +147,7 @@ export function InputController(camera, renderer, parent) {
     }
 
     function onSelectStart() {
-        if (mLastLookTarget.type == C.LookTarget.MOMENT &&
+        if (mLastLookTarget.type == LookTarget.MOMENT &&
             (mMode == MODE_CARDBOARD || mMode == MODE_SCREEN)) {
             mDragStartCallback(mLastLookTarget.moment);
             mDragging = true;
@@ -157,8 +158,8 @@ export function InputController(camera, renderer, parent) {
         if (mDragging) {
             mDragging = false;
             mDragEndCallback();
-        } else if (mLastLookTarget.type == C.LookTarget.LINE_SURFACE ||
-            mLastLookTarget.type == C.LookTarget.UP) {
+        } else if (mLastLookTarget.type == LookTarget.LINE_SURFACE ||
+            mLastLookTarget.type == LookTarget.UP) {
             mClickCallback();
         }
     }

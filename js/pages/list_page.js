@@ -27,7 +27,7 @@ export function ListPage(parentContainer) {
             li.append('button').html('🔽')
                 .classed('download-story-button', true)
                 .style('margin-left', '10px')
-                .on('click', async () => workspace.packageStory(story.id));
+                .on('click', async () => await workspace.packageStory(story.id));
         });
 
         parentContainer.append('button')

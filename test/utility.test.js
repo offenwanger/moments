@@ -1,7 +1,6 @@
 import { setup, cleanup } from './test_utils/test_environment.js';
 
 import THREE from 'three'
-import { assertVectorEqual } from './test_utils/utils.js';
 import { Util } from '../js/utils/utility.js';
 
 describe('Test Utility', function () {
@@ -15,36 +14,29 @@ describe('Test Utility', function () {
 
     describe('test get closest point', function () {
         it('should work in simple cases', function () {
-            assertVectorEqual(
-                Util.closestPointOnLine(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 1, 1), new THREE.Vector3(0, 0, 0.5)),
-                new THREE.Vector3(0, 1, 0.5));
-            assertVectorEqual(
-                Util.closestPointOnLine(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 1, 1), new THREE.Vector3(0, 0, -0.5)),
-                new THREE.Vector3(0, 1, -0.5));
+            expect(Util.closestPointOnLine(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 1, 1), new THREE.Vector3(0, 0, 0.5)))
+                .toEqual(new THREE.Vector3(0, 1, 0.5));
+
+            expect(Util.closestPointOnLine(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 1, 1), new THREE.Vector3(0, 0, -0.5)))
+                .toEqual(new THREE.Vector3(0, 1, -0.5));
         });
     })
 
     describe('test get intersection', function () {
         it('should work in simple cases', function () {
-            assertVectorEqual(
-                Util.getSphereIntersection(
-                    new THREE.Vector3(0, 1, 0),
-                    new THREE.Vector3(0, 1, 1),
-                    new THREE.Vector3(0, 1, 1),
-                    0.5
-                ),
-                new THREE.Vector3(0, 1, 0.5)
-            )
+            expect(Util.getSphereIntersection(
+                new THREE.Vector3(0, 1, 0),
+                new THREE.Vector3(0, 1, 1),
+                new THREE.Vector3(0, 1, 1),
+                0.5
+            )).toEqual(new THREE.Vector3(0, 1, 0.5))
 
-            assertVectorEqual(
-                Util.getSphereIntersection(
-                    new THREE.Vector3(0, 1, 0),
-                    new THREE.Vector3(0, 1, 1),
-                    new THREE.Vector3(0, 1, 1),
-                    0.5
-                ),
-                new THREE.Vector3(0, 1, 0.5)
-            )
+            expect(Util.getSphereIntersection(
+                new THREE.Vector3(0, 1, 0),
+                new THREE.Vector3(0, 1, 1),
+                new THREE.Vector3(0, 1, 1),
+                0.5
+            )).toEqual(new THREE.Vector3(0, 1, 0.5))
         });
     })
 
@@ -55,14 +47,14 @@ describe('Test Utility', function () {
                 new THREE.Vector3(0, 1, 1),
                 new THREE.Vector3(0, 1, 1),
                 0.5
-            )).toBe(true)
+            )).toEqual(true)
 
             expect(Util.hasSphereIntersection(
                 new THREE.Vector3(0, 1, 0),
                 new THREE.Vector3(0, 1, 1),
                 new THREE.Vector3(0, 1, 1),
                 0.5
-            )).toBe(true)
+            )).toEqual(true)
         });
 
         it('should handle all angles', function () {

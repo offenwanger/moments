@@ -13,7 +13,7 @@ describe('Test WelcomePage', function () {
 
     describe('init tests', function () {
         it('should have set click on choose-folder-button on initial setup', async function () {
-            expect(Object.keys(d3.select('#choose-folder-button').getCallbacks())).toEqual(["click"]);
+            expect(Object.keys(d3.select('#choose-folder-button').getCallbacks())).toEqual(['click']);
         });
     });
 

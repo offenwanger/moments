@@ -1,6 +1,7 @@
 import { setup, cleanup } from './test_utils/test_environment.js';
 import { mockFileSystemDirectoryHandle } from './test_utils/mock_filesystem.js';
 import { DataModel } from '../js/data_model.js';
+import { TestUtils } from './test_utils/utils.js';
 
 describe('Test TimelineController', function () {
     beforeEach(async function () {
@@ -22,14 +23,10 @@ describe('Test TimelineController', function () {
             await d3.select('#add-moment-button').getCallbacks().click();
 
             expect(Object.keys(global.fileSystem)).toContain('test/workspace.json')
-            let storyFile = Object.keys(global.fileSystem).find(k => k.startsWith("test/Story_"))
-            let model = DataModel.fromObject(JSON.parse(global.fileSystem[storyFile]))
-            expect(model.getStory().storyline.moments.length).toBe(1);
+            expect(TestUtils.model().getMoments().length).toBe(1);
             await d3.select('#add-moment-button').getCallbacks().click();
             await d3.select('#add-moment-button').getCallbacks().click();
-            storyFile = Object.keys(global.fileSystem).find(k => k.startsWith("test/Story_"))
-            model = DataModel.fromObject(JSON.parse(global.fileSystem[storyFile]))
-            expect(model.getStory().storyline.moments.length).toBe(3);
+            expect(TestUtils.model().getMoments().length).toBe(3);
         });
     })
 

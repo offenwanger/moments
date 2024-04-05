@@ -1,9 +1,8 @@
-import * as C from '../constants.js';
+import { LookTarget, USER_HEIGHT } from '../constants.js';
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { HighlightRingController } from '../controllers/highlight_ring_controller.js';
 import { InputController } from '../controllers/input_controller.js';
-import { StorylineController } from '../controllers/storyline_controller.js';
 import { ServerUtil } from '../utils/server_util.js';
 
 export function ViewerPage(parentContainer) {
@@ -27,7 +26,7 @@ export function ViewerPage(parentContainer) {
     let mLastLookTarget = false;
 
     const mCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    mCamera.position.set(0, C.USER_HEIGHT, 0);
+    mCamera.position.set(0, USER_HEIGHT, 0);
 
     const mScene = new THREE.Scene();
     const mHighlightRingController = new HighlightRingController(mScene);
@@ -70,7 +69,7 @@ export function ViewerPage(parentContainer) {
     });
     mInputManager.setClickCallback(() => {
         if (!mLastLookTarget) return;
-        if (mLastLookTarget.type == C.LookTarget.LINE_SURFACE) {
+        if (mLastLookTarget.type == LookTarget.LINE_SURFACE) {
             let zeroT = mTPosition;
 
             let userPosition = mStoryline.worldToLocalPosition(mCamera.position);
@@ -121,21 +120,21 @@ export function ViewerPage(parentContainer) {
             }
         } else {
             mLastLookTarget = mInputManager.getLookTarget(mCamera, mStoryline);
-            if (mLastLookTarget.type == C.LookTarget.MOMENT) {
+            if (mLastLookTarget.type == LookTarget.MOMENT) {
                 let worldPos = mStoryline.localToWorldPosition(mLastLookTarget.moment.getPosition());
                 worldPos.add(new THREE.Vector3(0, -mLastLookTarget.moment.getSize(), 0))
                 mHighlightRing.setPosition(worldPos)
                 mHighlightRing.rotateUp();
                 mHighlightRing.show();
                 interactionTarget = mLastLookTarget.moment;
-            } else if (mLastLookTarget.type == C.LookTarget.LINE_SURFACE) {
+            } else if (mLastLookTarget.type == LookTarget.LINE_SURFACE) {
                 mHighlightRing.setPosition(mLastLookTarget.position)
                 mHighlightRing.rotateUp(mLastLookTarget.normal);
                 mHighlightRing.show();
-            } else if (mLastLookTarget.type == C.LookTarget.UP) {
+            } else if (mLastLookTarget.type == LookTarget.UP) {
                 mHighlightRing.hide();
                 // show the exit
-            } else if (mLastLookTarget.type == C.LookTarget.NONE) {
+            } else if (mLastLookTarget.type == LookTarget.NONE) {
                 mHighlightRing.hide();
             } else {
                 console.error("Type not supported!", mLastLookTarget);

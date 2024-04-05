@@ -1,4 +1,4 @@
-import * as Data from '../data_structs.js';
+import { Data } from "../data_structs.js";
 
 export let IdUtil = function () {
     let idCounter = 0;
@@ -19,7 +19,6 @@ export let IdUtil = function () {
         let className = id.split("_")[0];
         return Data[className] ? Data[className] : false;
     }
-
 
     return {
         getUniqueId,

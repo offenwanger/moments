@@ -3,7 +3,7 @@ import { EditorPage } from './pages/editor_page.js';
 import { ListPage } from './pages/list_page.js';
 import { ViewerPage } from './pages/viewer_page.js';
 import { WelcomePage } from './pages/welcome_page.js';
-import { HandleStorage } from './utils/file_util.js';
+import { HandleStorage } from './utils/handle_storage.js';
 import { WorkspaceManager } from './workspace_manager.js';
 
 export async function main() {
@@ -80,7 +80,7 @@ export async function main() {
 
     async function setPage(page, args) {
         await page.show(...args);
-        mEventManager.setListener(page);
+        await mEventManager.setListener(page);
     }
 
     await updatePage();

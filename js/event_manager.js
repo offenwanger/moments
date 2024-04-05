@@ -5,21 +5,21 @@
 export function EventManager() {
     let mListener = {};
 
-    function setListener(listener) {
+    async function setListener(listener) {
         mListener = listener;
-        if (mListener.onResize) mListener.onResize(window.innerWidth, window.innerHeight)
+        if (mListener.onResize) await mListener.onResize(window.innerWidth, window.innerHeight)
     }
 
-    d3.select(window).on('resize', () => {
-        if (mListener.onResize) mListener.onResize(window.innerWidth, window.innerHeight);
+    d3.select(window).on('resize', async () => {
+        if (mListener.onResize) await mListener.onResize(window.innerWidth, window.innerHeight);
     });
 
-    d3.select(window).on('pointermove', (event) => {
-        if (mListener.onPointerMove) mListener.onPointerMove({ x: event.clientX, y: event.clientY });
+    d3.select(window).on('pointermove', async (event) => {
+        if (mListener.onPointerMove) await mListener.onPointerMove({ x: event.clientX, y: event.clientY });
     });
 
-    d3.select(window).on('pointerup', (event) => {
-        if (mListener.onPointerUp) mListener.onPointerUp({ x: event.clientX, y: event.clientY });
+    d3.select(window).on('pointerup', async (event) => {
+        if (mListener.onPointerUp) await mListener.onPointerUp({ x: event.clientX, y: event.clientY });
     });
 
     /** useful test and development function: */

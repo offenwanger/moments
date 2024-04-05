@@ -2,7 +2,6 @@ import { setup, cleanup } from './test_utils/test_environment.js';
 import { mockFileSystemDirectoryHandle } from './test_utils/mock_filesystem.js';
 
 import { WorkspaceManager } from '../js/workspace_manager.js';
-import { Story } from '../js/data_structs.js';
 import { STORY_JSON_FILE, WORKSPACE_DATA_FILE } from '../js/constants.js';
 import { DataModel } from '../js/data_model.js';
 

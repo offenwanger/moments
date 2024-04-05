@@ -74,6 +74,7 @@ export function MockElement(type) {
     this.html = function (html) {
         if (html) {
             this.innerHtml = html;
+            mChildren = [];
             return this;
         } else {
             return this.innerHtml;

@@ -1,6 +1,6 @@
 import { DataModel } from "../data_model.js";
 
-export async function downloadSample(sampleId, workspace) {
+async function downloadSample(sampleId, workspace) {
     let storyModel;
     try {
         let url = 'assets/stories/' + sampleId + '.json'
@@ -28,9 +28,14 @@ export async function downloadSample(sampleId, workspace) {
     return true;
 }
 
-export async function getSampleList() {
+async function getSampleList() {
     let url = 'assets/samples_list.json'
     let response = await fetch(url);
     let json = await response.json();
     return json;
+}
+
+export const SampleDownloadUtil = {
+    downloadSample,
+    getSampleList,
 }

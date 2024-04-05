@@ -23,10 +23,9 @@ export function StorylineController(parent) {
         mMomentContollers.splice(0, mMomentContollers.length);
         mGroup.remove(...mGroup.children);
 
-        let storyline = mModel.getStory().storyline;
-        mPathLineController.updatePath(storyline.path);
+        mPathLineController.updatePath(mModel.getStory().path);
 
-        for (let momentData of storyline.moments) {
+        for (let momentData of mModel.getMoments()) {
             let pathLineData = mPathLineController.getData(momentData.z, momentData.offset);
             let m = new MomentController(mGroup);
             m.setEnvBox(mEnvironmentBox);

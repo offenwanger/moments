@@ -31,7 +31,7 @@ describe('Test ListPage', function () {
             expect(Object.keys(global.fileSystem)).toContain('test/workspace.json')
             expect(Object.keys(global.fileSystem).some(k => k.startsWith("test/Story_")))
             await d3.select('.edit-story-button').getCallbacks().click();
-            expect(Object.keys(d3.select('#add-moment-button').getCallbacks())).toEqual(["mouseover", "mouseout", "pointerdown", "click"]);
+            expect(Object.keys(d3.select('#add-moment-button').getCallbacks())).toEqual(["mouseover", "mouseout", "pointerdown", 'click']);
         });
     });
 });

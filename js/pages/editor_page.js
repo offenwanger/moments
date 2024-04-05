@@ -7,6 +7,9 @@ import { StoryController } from '../controllers/story_controller.js';
 import { Util } from '../utils/utility.js';
 import { TimelineController } from '../controllers/timeline_controller.js';
 import { ModelController } from '../controllers/model_controller.js';
+import { SidebarController } from '../controllers/sidebar_controller.js';
+import { IdUtil } from '../utils/id_util.js';
+import { Data } from '../data_structs.js';
 
 export function EditorPage(parentContainer) {
     const RESIZE_TARGET_SIZE = 20;
@@ -43,12 +46,40 @@ export function EditorPage(parentContainer) {
     mScene.add(mLight);
 
     const mStoryController = new StoryController(mScene);
+
     let mTimelineController = null;
     function setTimelineControllerCallbacks() {
         mTimelineController.setCreateMomentCallback(async () => {
-            await mModelController.createStorylineMoment();
+            await mModelController.createMoment();
             await updateModel();
         })
+    }
+
+    let mSidebarController = null;
+    function setSidebarControllerCallbacks() {
+        mSidebarController.setAddCallback(addCallback)
+        mSidebarController.setUpdateAttributeCallback(updateAttributeCallback)
+    }
+
+    async function addCallback(parentId, itemClass, config) {
+        // should be undo/redo stuff here. 
+        if (IdUtil.getClass(parentId) == Data.Story) {
+            if (itemClass == Data.Model3D) {
+                await mModelController.createStoryModel3D();
+            } else if (itemClass == Data.Moment) {
+                await mModelController.createMoment();
+            } else if (itemClass == Data.Annotation) {
+                await mModelController.createStoryAnnotation();
+            }
+        }
+        await updateModel();
+    }
+
+    async function updateAttributeCallback(id, attr, value) {
+        // should be undo/redo stuff here. 
+        let item = mModelController.getById(id);
+        if (!item) { console.error('Invalid id', id); return; }
+        mModelController.getById(id)[attr] = value;
     }
 
     async function show(workspace) {
@@ -91,6 +122,10 @@ export function EditorPage(parentContainer) {
             .style('height', '100%')
             .style('display', 'block')
             .style('border', '1px solid black')
+        mSidebarController = new SidebarController(sidebar);
+        setSidebarControllerCallbacks();
+        await mSidebarController.updateModel(mModelController.getModel());
+        await mSidebarController.navigate(mModelController.getModel().getStory().id)
 
         mResizeTarget = parentContainer.append('img')
             .attr('id', 'resize-control')
@@ -124,7 +159,8 @@ export function EditorPage(parentContainer) {
 
     async function updateModel() {
         let model = mModelController.getModel();
-        mTimelineController.updateModel(model);
+        await mTimelineController.updateModel(model);
+        await mSidebarController.updateModel(model);
         await mStoryController.updateModel(model);
     }
 
@@ -135,6 +171,7 @@ export function EditorPage(parentContainer) {
         if (!mRenderer) return;
 
         mTimelineController.onResize(Math.round(mWidth * mSidebarDivider), Math.round(mHeight * (1 - mTimelineDivider)));
+        mSidebarController.onResize(mWidth - Math.round(mWidth * mSidebarDivider), mHeight);
 
         let viewCanvasWidth = Math.round(mWidth * mSidebarDivider)
         let viewCanvasHeight = Math.round(mHeight * mTimelineDivider)

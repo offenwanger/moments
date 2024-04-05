@@ -1,4 +1,4 @@
-import * as Data from "../data_structs.js";
+import { Data } from "../data_structs.js";
 
 export function ModelController(storyId, workspace) {
     let mModel;
@@ -12,16 +12,32 @@ export function ModelController(storyId, workspace) {
         }
     }
 
-    async function createStorylineMoment() {
+    async function createMoment() {
         let newMoment = new Data.Moment();
-        mModel.getStory().storyline.moments.push(newMoment);
+        mModel.getStory().moments.push(newMoment);
         await mWorkspace.updateStory(mModel);
         return newMoment.id;
     }
 
+    async function createStoryModel3D() {
+        let newModel3D = new Data.Model3D();
+        mModel.getStory().model3Ds.push(newModel3D);
+        await mWorkspace.updateStory(mModel);
+        return newModel3D.id;
+    }
+
+    async function createStoryAnnotation() {
+        let newAnnotation = new Data.Annotation();
+        mModel.getStory().annotations.push(newAnnotation);
+        await mWorkspace.updateStory(mModel);
+        return newAnnotation.id;
+    }
+
     return {
         init,
-        createStorylineMoment,
+        createMoment,
+        createStoryModel3D,
+        createStoryAnnotation,
         getModel: () => mModel.clone(),
     }
 }

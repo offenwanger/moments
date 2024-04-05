@@ -1,70 +1,7 @@
 import { AssetTypes, BOX_ASSET_PREFIXES, STORY_JSON_FILE } from '../constants.js';
 import { DataModel } from '../data_model.js';
 
-// needed for storing file handles.
-export const HandleStorage = function () {
-    const DB_NAME = 'FileHandles';
-    const OBJECT_STORE_NAME = 'HandleStore';
-    let mDatabase = null;
-
-    async function getDatabase() {
-        return new Promise((resolve, reject) => {
-            if (mDatabase) {
-                resolve(mDatabase);
-                return;
-            }
-
-            let req = indexedDB.open(DB_NAME, 1);
-            req.onerror = function () {
-                reject(req.error.name);
-            };
-            req.onupgradeneeded = function () {
-                // database did not yet exist
-                req.result.createObjectStore(OBJECT_STORE_NAME);
-            };
-            req.onsuccess = function () {
-                mDatabase = req.result;
-                resolve(mDatabase);
-            };
-        });
-    }
-
-    async function executeTransaction(type, storeCall) {
-        return getDatabase().then(database => new Promise((resolve, reject) => {
-            let transaction = database.transaction([OBJECT_STORE_NAME], type);
-            let store = transaction.objectStore(OBJECT_STORE_NAME);
-            let req = storeCall(store);
-            req.onerror = function () { reject(req.error) };
-            req.onsuccess = function () { resolve(req.result) }
-        }));
-
-    }
-
-    async function getItem(key) {
-        return executeTransaction('readonly', store => store.get(key));
-    }
-
-    async function setItem(key, value) {
-        return executeTransaction('readwrite', store => store.put(value, key));
-    }
-
-    async function removeItem(key) {
-        return executeTransaction('readwrite', store => store.delete(key));
-    }
-
-    async function clear() {
-        return executeTransaction('readwrite', store => store.clear());
-    }
-
-    return {
-        getItem: getItem,
-        setItem: setItem,
-        removeItem: removeItem,
-        clear: clear
-    };
-}();
-
-export async function getJSONFromFile(dir, filename) {
+async function getJSONFromFile(dir, filename) {
     let handle = await dir.getFileHandle(filename)
     let file = await handle.getFile();
     let jsonTxt = await file.text();
@@ -72,7 +9,7 @@ export async function getJSONFromFile(dir, filename) {
     return obj;
 }
 
-export async function getDataUriFromFile(dir, filename) {
+async function getDataUriFromFile(dir, filename) {
     let handle = await dir.getFileHandle(filename)
     let file = await handle.getFile();
 
@@ -86,20 +23,20 @@ export async function getDataUriFromFile(dir, filename) {
     return promise;
 }
 
-export async function getFile(dir, filename) {
+async function getFile(dir, filename) {
     let handle = await dir.getFileHandle(filename)
     let file = await handle.getFile();
     return file;
 }
 
-export async function writeFile(folder, filename, data) {
+async function writeFile(folder, filename, data) {
     let handle = await folder.getFileHandle(filename, { create: true })
     let file = await handle.createWritable();
     await file.write(data);
     await file.close();
 }
 
-export async function pacakgeToZip(model, assetFolder, outputFolder) {
+async function pacakgeToZip(model, assetFolder, outputFolder) {
     const zipFileStream = new TransformStream();
     const zipFileBlobPromise = new Response(zipFileStream.readable).blob();
     const zipWriter = new zip.ZipWriter(zipFileStream.writable);
@@ -127,7 +64,7 @@ export async function pacakgeToZip(model, assetFolder, outputFolder) {
     await writeFile(outputFolder, outputFile, zipFileBlob);
 }
 
-export async function unpackageAssetsFromZip(zipBlob, assetFolder) {
+async function unpackageAssetsFromZip(zipBlob, assetFolder) {
     console.log("We're going to need to come back to this.")
     const zipFileReader = new zip.BlobReader(zipBlob);
     const zipReader = new zip.ZipReader(zipFileReader);
@@ -139,7 +76,7 @@ export async function unpackageAssetsFromZip(zipBlob, assetFolder) {
     await zipReader.close();
 }
 
-export async function getModelFromZip(zipBlob) {
+async function getModelFromZip(zipBlob) {
     const zipFileReader = new zip.BlobReader(zipBlob);
     const zipReader = new zip.ZipReader(zipFileReader);
     let zipEntries = await zipReader.getEntries()
@@ -156,5 +93,15 @@ export async function getModelFromZip(zipBlob) {
     let modelJSON = JSON.parse(fileText);
     let model = DataModel.fromObject(modelJSON);
     return model;
+}
+
+export const FileUtil = {
+    getJSONFromFile,
+    getDataUriFromFile,
+    getFile,
+    writeFile,
+    pacakgeToZip,
+    unpackageAssetsFromZip,
+    getModelFromZip,
 }
 

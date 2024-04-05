@@ -1,19 +1,90 @@
-import * as Data from "./data_structs.js";
+import { Data } from "./data_structs.js";
 import { IdUtil } from "./utils/id_util.js";
 
 export function DataModel() {
     let mStory = new Data.Story();
     let mAssets = []
 
-    function getItemsForAsset(assetId) {
-        return [].concat(
-            mStory.models,
-            mStory.annotations.map(a => a.texts).flat().filter(text => text.assetId == assetId),
-            mStory.annotations.map(a => a.images).flat(),
-            mStory.storyline.moments.map(m => m.annotation.texts).flat(),
-            mStory.storyline.moments.map(m => m.annotation.images).flat(),
-            mStory.storyline.moments.map(m => m.models).flat(),
-        ).filter(item => item.assetId == assetId);
+    function getMoment(id) {
+        return mStory.moments.find(o => o.id == id);
+    }
+
+    function getMoments() {
+        return [...mStory.moments];
+    }
+
+    function getModel3D(id) {
+        return getModel3Ds().find(o => o.id == id);
+    }
+
+    function getModel3Ds() {
+        let momentModel3Ds = mStory.moments.map(m => m.model3Ds).flat();
+        return mStory.annotations.concat(momentModel3Ds);
+    }
+
+    function getAnnotation(id) {
+        return getAnnotations().find(o => o.id == id);
+    }
+
+    function getAnnotations() {
+        return [
+            ...mStory.annotations,
+            ...getMoments().map(m => m.annotations).flat()
+        ];
+    }
+
+    function getAnnotationItem(id) {
+        return getAnnotationItems().find(o => o.id == id);
+    }
+
+    function getAnnotationItems() {
+        return getAnnotations().map(o => o.items).flat();
+    }
+
+    function getAsset(id) {
+        return getAssets().find(o => o.id == id);
+    }
+
+    function getAssets() {
+        return [...mStory.assets];
+    }
+
+    function getItemsForAsset(id) {
+        return [
+            ...getAnnotationItems(),
+            ...getModel3Ds()
+        ].filter(item => item.assetId == id);
+    }
+
+    function getPointer(id) {
+        return getPointers().find(o => o.id == id);
+    }
+
+    function getPointers() {
+        return [...mStory.pointers];
+    }
+
+    function getById(id) {
+        let itemClass = IdUtil.getClass(id);
+        if (itemClass == Data.Story) {
+            return mStory;
+        } else if (itemClass == Data.Moment) {
+            return getMoment(id);
+        } else if (itemClass == Data.Model3D) {
+            return getModel3D(id);
+        } else if (itemClass == Data.Annotation) {
+            return getAnnotation(id);
+        } else if (itemClass == Data.AnnotationItem) {
+            return getAnnotationItem(id)
+        } else if (itemClass == Data.Pointer) {
+            return getPointer(id);
+        } else if (itemClass == Data.Asset) {
+            return getAsset(id);
+        } else {
+            console.error('Invalid navigation!', id);
+            return null;
+        }
+
     }
 
     function clone() {
@@ -37,8 +108,20 @@ export function DataModel() {
 
     this.setStory = (story) => mStory = story;
     this.getStory = () => mStory;
-    this.getAssets = () => mAssets;
+    this.getMoment = getMoment;
+    this.getMoments = getMoments;
+    this.getModel3D = getModel3D;
+    this.getModel3Ds = getModel3Ds;
+    this.getAnnotation = getAnnotation;
+    this.getAnnotations = getAnnotations;
+    this.getAnnotationItem = getAnnotationItem;
+    this.getAnnotationItems = getAnnotationItems;
+    this.getAsset = getAsset;
+    this.getAssets = getAssets;
     this.getItemsForAsset = getItemsForAsset;
+    this.getPointer = getPointer;
+    this.getPointers = getPointers;
+    this.getById = getById;
     this.clone = clone;
     this.toObject = toObject;
 }

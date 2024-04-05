@@ -31,29 +31,28 @@ export function SidebarController(container) {
     }
 
     async function navigate(id) {
-        hideAll();
+        if (!mModel.getById(id)) { console.error('Invalid id', id); return; }
 
+        hideAll();
         mShownItem = id;
-        let item = mModel.getById(id);
         let itemClass = IdUtil.getClass(id);
-        if (!item) { console.error('Invalid id', id); return; }
 
         if (itemClass == Data.Story) {
-            mStoryPanel.show(item);
+            mStoryPanel.show(mModel, id);
         } else if (itemClass == Data.Moment) {
-            mMomentPanel.show(item);
+            mMomentPanel.show(mModel, id);
         } else if (itemClass == Data.Model3D) {
-            mModel3DPanel.show(item);
+            mModel3DPanel.show(mModel, id);
         } else if (itemClass == Data.Annotation) {
-            mAnnotationPanel.show(item);
+            mAnnotationPanel.show(mModel, id);
         } else if (itemClass == Data.AnnotationItem) {
-            mAnnotationItemPanel.show(item);
+            mAnnotationItemPanel.show(mModel, id);
         } else if (itemClass == Data.Pointer) {
-            mPointerPanel.show(item);
+            mPointerPanel.show(mModel, id);
         } else if (itemClass == Data.Asset) {
-            mAssetPanel.show(item);
+            mAssetPanel.show(mModel, id);
         } else {
-            console.error('Invalid navigation!', id);
+            console.error('Invalid navigation!', itemClass, id);
         }
     }
 

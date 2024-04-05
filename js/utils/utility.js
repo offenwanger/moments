@@ -65,6 +65,16 @@ function limit(val, v1, v2) {
     }
 }
 
+function setComponentListLength(arr, length, createCallback) {
+    for (let i = arr.length; i < length; i++) {
+        arr.push(createCallback());
+    }
+    for (let i = length; i < arr; i++) {
+        arr[i].remove();
+        delete arr[i];
+    }
+}
+
 function v(x = 0, y = 0, z = 0) {
     return new THREE.Vector3(x, y, z);
 }
@@ -78,6 +88,7 @@ export const Util = {
     planeIntersection,
     unique,
     limit,
+    setComponentListLength,
 
     //// Debug Utils ////
     console: {

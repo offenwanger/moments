@@ -58,28 +58,28 @@ export function EditorPage(parentContainer) {
     let mSidebarController = null;
     function setSidebarControllerCallbacks() {
         mSidebarController.setAddCallback(addCallback)
-        mSidebarController.setUpdateAttributeCallback(updateAttributeCallback)
+        mSidebarController.setUpdateAttributeCallback(async (id, attr, value) => {
+            await mModelController.setAttribute(id, attr, value);
+            await updateModel();
+        })
     }
 
     async function addCallback(parentId, itemClass, config) {
         // should be undo/redo stuff here. 
-        if (IdUtil.getClass(parentId) == Data.Story) {
+        if ((IdUtil.getClass(parentId) == Data.Story || IdUtil.getClass(parentId) == Data.Moment)
+            && (itemClass == Data.Model3D || itemClass == Data.Annotation)) {
             if (itemClass == Data.Model3D) {
-                await mModelController.createStoryModel3D();
-            } else if (itemClass == Data.Moment) {
-                await mModelController.createMoment();
+                await mModelController.createModel3D(parentId);
             } else if (itemClass == Data.Annotation) {
-                await mModelController.createStoryAnnotation();
+                await mModelController.createAnnotation(parentId);
             }
+        } else if (IdUtil.getClass(parentId) == Data.Story && itemClass == Data.Moment) {
+            await mModelController.createMoment();
+        } else {
+            console.error("Parent + item class not supported", parentId, itemClass);
+            return;
         }
         await updateModel();
-    }
-
-    async function updateAttributeCallback(id, attr, value) {
-        // should be undo/redo stuff here. 
-        let item = mModelController.getById(id);
-        if (!item) { console.error('Invalid id', id); return; }
-        mModelController.getById(id)[attr] = value;
     }
 
     async function show(workspace) {
@@ -122,6 +122,7 @@ export function EditorPage(parentContainer) {
             .style('height', '100%')
             .style('display', 'block')
             .style('border', '1px solid black')
+            .style('overflow-y', 'scroll')
         mSidebarController = new SidebarController(sidebar);
         setSidebarControllerCallbacks();
         await mSidebarController.updateModel(mModelController.getModel());

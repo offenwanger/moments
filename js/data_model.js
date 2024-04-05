@@ -150,8 +150,7 @@ DataModel.cloneItem = function (item, newIds = false) {
         let dataItem = new ObjClass();
         Object.keys(dataItem).forEach(key => {
             if (newIds && key == 'id') return;
-
-            if (item[key]) {
+            if (item[key] != undefined && item[key] != null) {
                 dataItem[key] = DataModel.cloneItem(item[key])
             }
         });

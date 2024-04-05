@@ -11,6 +11,7 @@ export function MockElement(type) {
     let mCallBacks = {};
     let mCanvas = null;
     let mTransform = null
+    let mInnerHtml = "";
 
     this.append = function (appendee) {
         if (typeof appendee == 'string') {
@@ -73,11 +74,11 @@ export function MockElement(type) {
     };
     this.html = function (html) {
         if (html) {
-            this.innerHtml = html;
+            mInnerHtml = html;
             mChildren = [];
             return this;
         } else {
-            return this.innerHtml;
+            return mInnerHtml;
         }
     }
     this.style = function (style, val = null) {

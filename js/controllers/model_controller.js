@@ -1,4 +1,5 @@
 import { Data } from "../data_structs.js";
+import { IdUtil } from "../utils/id_util.js";
 
 export function ModelController(storyId, workspace) {
     let mModel;
@@ -19,25 +20,45 @@ export function ModelController(storyId, workspace) {
         return newMoment.id;
     }
 
-    async function createStoryModel3D() {
+    async function createModel3D(parentId) {
+        let parent;
+        if (IdUtil.getClass(parentId) == Data.Story) {
+            parent = mModel.getStory();
+        } else if (IdUtil.getClass(parentId) == Data.Moment) {
+            parent = mModel.getMoment(parentId);
+        } else { console.error("Parent id is not supported", parentId) }
         let newModel3D = new Data.Model3D();
-        mModel.getStory().model3Ds.push(newModel3D);
+        parent.model3Ds.push(newModel3D);
         await mWorkspace.updateStory(mModel);
         return newModel3D.id;
     }
 
-    async function createStoryAnnotation() {
+    async function createAnnotation(parentId) {
+        let parent;
+        if (IdUtil.getClass(parentId) == Data.Story) {
+            parent = mModel.getStory();
+        } else if (IdUtil.getClass(parentId) == Data.Moment) {
+            parent = mModel.getMoment(parentId);
+        } else { console.error("Parent id is not supported", parentId) }
         let newAnnotation = new Data.Annotation();
-        mModel.getStory().annotations.push(newAnnotation);
+        parent.annotations.push(newAnnotation);
         await mWorkspace.updateStory(mModel);
         return newAnnotation.id;
+    }
+
+    async function setAttribute(id, attr, value) {
+        let item = mModel.getById(id);
+        if (!item) { console.error('Invalid id', id); return; }
+        item[attr] = value;
+        await mWorkspace.updateStory(mModel);
     }
 
     return {
         init,
         createMoment,
-        createStoryModel3D,
-        createStoryAnnotation,
+        createModel3D,
+        createAnnotation,
+        setAttribute,
         getModel: () => mModel.clone(),
     }
 }

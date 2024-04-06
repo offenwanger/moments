@@ -12,8 +12,8 @@ export function TextInput(container, type = 'text') {
             await mChangeCallback(val);
         });
 
-    this.show = () => mInputContainer.attr('display', '')
-    this.hide = () => mInputContainer.attr('display', 'none')
+    this.show = () => mInputContainer.style('display', '')
+    this.hide = () => mInputContainer.style('display', 'none')
     this.setId = (id) => { mInputContainer.attr('id', id); return this; };
     this.setLabel = (text) => { mInputLabel.html(text); return this; };
     this.setText = (text) => { mInputBox.node().value = text; return this; }

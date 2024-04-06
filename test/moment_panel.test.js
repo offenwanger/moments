@@ -18,6 +18,16 @@ describe('Test Moment Panel', function () {
     });
 
     describe('add tests', function () {
+        it('should add a moment model3D', async function () {
+            await TestUtils.createAndOpenMoment();
+            await TestUtils.clickSidebarButton('#moment-model3D-add-button');
+            expect(TestUtils.model().getStory().moments.length).toBe(1);
+            expect(TestUtils.model().getStory().moments[0].model3Ds.length).toBe(1);
+            await TestUtils.clickSidebarButton('#moment-model3D-add-button');
+            await TestUtils.clickSidebarButton('#moment-model3D-add-button');
+            expect(TestUtils.model().getStory().moments[0].model3Ds.length).toBe(3);
+        });
+
         it('should add a moment annotation', async function () {
             await TestUtils.createAndOpenMoment();
             await TestUtils.clickSidebarButton('#moment-annotations-add-button');

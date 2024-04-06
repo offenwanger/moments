@@ -22,6 +22,14 @@ export function DataModel() {
         return mStory.annotations.concat(momentModel3Ds);
     }
 
+    function getModel3DParent(model3DId) {
+        if (mStory.model3Ds.find(o => o.id == model3DId)) {
+            return mStory;
+        } else {
+            return mStory.moments.find(m => m.model3Ds.find(o => o.id == model3DId));
+        }
+    }
+
     function getAnnotation(id) {
         return getAnnotations().find(o => o.id == id);
     }
@@ -62,6 +70,10 @@ export function DataModel() {
 
     function getPointers() {
         return [...mStory.pointers];
+    }
+
+    function getPointersFor(itemId) {
+        return getPointers().filter(p => p.fromId == itemId || p.toId == itemId);
     }
 
     function getById(id) {
@@ -112,6 +124,7 @@ export function DataModel() {
     this.getMoments = getMoments;
     this.getModel3D = getModel3D;
     this.getModel3Ds = getModel3Ds;
+    this.getModel3DParent = getModel3DParent;
     this.getAnnotation = getAnnotation;
     this.getAnnotations = getAnnotations;
     this.getAnnotationItem = getAnnotationItem;
@@ -121,6 +134,7 @@ export function DataModel() {
     this.getItemsForAsset = getItemsForAsset;
     this.getPointer = getPointer;
     this.getPointers = getPointers;
+    this.getPointersFor = getPointersFor;
     this.getById = getById;
     this.clone = clone;
     this.toObject = toObject;

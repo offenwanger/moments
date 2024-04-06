@@ -66,7 +66,7 @@ export function StoryPanel(container) {
     function show(model, storyId) {
         mStory = model.getStory();
         mNameInput.setText(mStory.name)
-        mBackgroundInput.setLabel(mStory.background ? mStory.background.name : "[Not Set]");
+        mBackgroundInput.setLabel(mStory.background ? mStory.background.name : "Default");
         // ensure we have the right number of moments buttons
         Util.setComponentListLength(mMomentsList, mStory.moments.length, () => new ButtonInput(mMomentsContainer))
         for (let i = 0; i < mStory.moments.length; i++) {

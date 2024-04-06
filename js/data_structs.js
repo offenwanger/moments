@@ -36,6 +36,7 @@ function Moment() {
 
 function Model3D() {
     this.id = IdUtil.getUniqueId(Model3D);
+    this.name = "Model"
     // takes it's name from it's asset
     this.assetId = null;
     this.x = 0;

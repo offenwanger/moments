@@ -43,7 +43,7 @@ export function MomentPanel(container) {
 
     // Show if is Storyline
     let mOffsetTDiv = mPanelContainer.append('div').attr('id', 'moment-offset-input');
-    mOffsetTDiv.append('div').html('Offset').style('display', 'none');
+    mOffsetTDiv.append('div').html('Offset');
     let mOffsetXInput = new TextInput(mOffsetTDiv, 'number')
         .setId('moment-offset-x-input')
         .setLabel("x")
@@ -63,8 +63,8 @@ export function MomentPanel(container) {
             await mUpdateAttributeCallback(mMomentId, 't', newNum);
         });
 
-    let mPositionDiv = mPanelContainer.append('div').attr('id', 'moment-offset-input');
-    mPositionDiv.append('div').html('Offset').style('display', 'none');
+    let mPositionDiv = mPanelContainer.append('div').attr('id', 'moment-position-input');
+    mPositionDiv.append('div').html('Position');
     let mPositionXInput = new TextInput(mPositionDiv, 'number')
         .setId('moment-position-x-input')
         .setLabel("x")
@@ -139,9 +139,9 @@ export function MomentPanel(container) {
         })
     let mModel3DsList = [];
 
-
     let mAnnotationButton = new ButtonInput(mPanelContainer)
         .setId('moment-sole-annotation-button')
+        .setLabel('Annotation')
         .setOnClick(async () => {
             await mNavigationCallback(mMoment.annotations[0].id);
         })
@@ -154,12 +154,14 @@ export function MomentPanel(container) {
         })
     let mAnnotationsList = [];
 
-    // <is framed> [Button] Annotation
-    // <not framed> [Button] Annotations [+]
-    // <not framed> [arr][Button] Annotations
-    // [Button] Pointers [+]
-    // [arr][Button] pointers pointing here
-
+    let mPointersContainer = mPanelContainer.append('div').attr('id', 'moment-pointers');
+    let mPointersHeader = new ButtonInput(mPointersContainer)
+        .setId('moment-pointers-add-button')
+        .setLabel('Pointers [+]')
+        .setOnClick(async () => {
+            await mAddCallback(mMoment.id, Data.Pointer, {});
+        })
+    let mPointersList = [];
 
     function show(model, momentId) {
         mModel = model;
@@ -202,6 +204,16 @@ export function MomentPanel(container) {
                 .setOnClick(async () => await mNavigationCallback(mMoment.annotations[i].id));
         }
 
+        let pointers = mModel.getPointersFor(mMomentId);
+        Util.setComponentListLength(mPointersList, pointers.length, () => new ButtonInput(mPointersContainer))
+        for (let i = 0; i < pointers.length; i++) {
+            let item1 = mModel.getById(pointers.fromId);
+            let item2 = mModel.getById(pointers.toId);
+            mPointersList[i].setId("pointer-button-" + pointers[i].id)
+                .setLabel(item1 ? item1.name : "[-]" + "->" + item2 ? item2.name : "[-]")
+                .setOnClick(async () => await mNavigationCallback(pointers[i].id));
+        }
+
         // update the view
         if (mMoment.storyline) {
             mPositionDiv.style('display', 'none')
@@ -212,11 +224,11 @@ export function MomentPanel(container) {
         }
 
         if (mMoment.framed) {
-            mScaleInput.hide()
+            mScaleInput.show()
             mAnnotationsContainer.style('display', 'none');
             mAnnotationButton.show();
         } else {
-            mScaleInput.show()
+            mScaleInput.hide()
             mAnnotationsContainer.style('display', '');
             mAnnotationButton.hide();
         }

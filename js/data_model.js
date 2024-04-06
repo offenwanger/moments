@@ -19,14 +19,14 @@ export function DataModel() {
 
     function getModel3Ds() {
         let momentModel3Ds = mStory.moments.map(m => m.model3Ds).flat();
-        return mStory.annotations.concat(momentModel3Ds);
+        return mStory.model3Ds.concat(momentModel3Ds);
     }
 
     function getModel3DParent(model3DId) {
         if (mStory.model3Ds.find(o => o.id == model3DId)) {
             return mStory;
         } else {
-            return mStory.moments.find(m => m.model3Ds.find(o => o.id == model3DId));
+            return getMoments().find(m => m.model3Ds.find(o => o.id == model3DId));
         }
     }
 

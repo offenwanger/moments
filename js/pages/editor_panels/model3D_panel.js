@@ -94,7 +94,7 @@ export function Model3DPanel(container) {
         mModel3D = mModel.getModel3D(mModel3DId);
         mParent = mModel.getModel3DParent(mModel3DId);
 
-        mBackButton.setLabel("<- " + IdUtil.getClass(mParent.id));
+        mBackButton.setLabel("<- " + IdUtil.getClass(mParent.id).name);
 
         mNameInput.setText(mModel3D.name);
 
@@ -109,6 +109,8 @@ export function Model3DPanel(container) {
         mOrientationZInput.setText(euler.z)
 
         mSizeInput.setText(mModel3D.size);
+
+        mPanelContainer.style('display', '');
     }
 
     function hide() {

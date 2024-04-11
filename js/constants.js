@@ -1,7 +1,6 @@
 export const WORKSPACE_DATA_FILE = "workspace.json";
 export const STORY_JSON_FILE = "story.json";
 export const ASSET_FOLDER = "assets";
-export const OUTPUT_FOLDER = "output";
 
 export const LookTarget = {
     LINE_SURFACE: 'line surface',

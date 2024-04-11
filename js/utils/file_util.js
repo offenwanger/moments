@@ -36,7 +36,7 @@ async function writeFile(folder, filename, data) {
     await file.close();
 }
 
-async function pacakgeToZip(model, assetFolder, outputFolder) {
+async function pacakgeToZip(model, assetFolder) {
     const zipFileStream = new TransformStream();
     const zipFileBlobPromise = new Response(zipFileStream.readable).blob();
     const zipWriter = new zip.ZipWriter(zipFileStream.writable);
@@ -47,11 +47,11 @@ async function pacakgeToZip(model, assetFolder, outputFolder) {
     let assets = model.getAssets();
     for (const asset of assets) {
         if (asset.type == AssetTypes.IMAGE || asset.type == AssetTypes.MODEL) {
-            let file = getFile(assetFolder, asset.filename);
+            let file = await getFile(assetFolder, asset.filename);
             await zipWriter.add(asset.filename, file.stream());
         } else if (asset.type == AssetTypes.BOX) {
             for (const prefix of BOX_ASSET_PREFIXES) {
-                let file = getFile(assetFolder, prefix + asset.filename);
+                let file = await getFile(assetFolder, prefix + asset.filename);
                 await zipWriter.add(prefix + asset.filename, file.stream());
             }
         }
@@ -60,22 +60,23 @@ async function pacakgeToZip(model, assetFolder, outputFolder) {
     await zipWriter.close();
     // Retrieves the Blob object containing the zip content into `zipFileBlob`.
     const zipFileBlob = await zipFileBlobPromise;
-    let outputFile = model.getStory().name + "_" + Date.now() + '.zip';
-    await writeFile(outputFolder, outputFile, zipFileBlob);
+    let outputFile = model.getStory().name + '.zip';
+    await downloadBlob(outputFile, zipFileBlob);
 }
 
 async function unpackageAssetsFromZip(zipBlob, assetFolder) {
-    console.log("We're going to need to come back to this.")
     const zipFileReader = new zip.BlobReader(zipBlob);
     const zipReader = new zip.ZipReader(zipFileReader);
     for (const entry of await zipReader.getEntries()) {
         if (entry.filename == STORY_JSON_FILE) continue;
         const stream = new TransformStream();
-        let assetData = await entry.getData(stream.writable);
+        const fileDataPromise = new Response(stream.readable).arrayBuffer();
+        await entry.getData(stream.writable);
+        let arrayBuffer = await fileDataPromise;
         // this will overwrite files, but only if the name is identical, 
         // which since we edit imported names with name+time-imported, should
         // means it's the same file. 
-        await FileUtil.writeFile(assetFolder, entry.filename, assetData);
+        await FileUtil.writeFile(assetFolder, entry.filename, arrayBuffer);
     }
     await zipReader.close();
 }
@@ -97,6 +98,15 @@ async function getModelFromZip(zipBlob) {
     let modelJSON = JSON.parse(fileText);
     let model = DataModel.fromObject(modelJSON);
     return model;
+}
+
+async function downloadBlob(name, blob) {
+    const elem = window.document.createElement('a');
+    elem.href = window.URL.createObjectURL(blob);
+    elem.download = name;
+    document.body.appendChild(elem);
+    elem.click();
+    document.body.removeChild(elem);
 }
 
 export const FileUtil = {

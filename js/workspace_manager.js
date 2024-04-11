@@ -1,8 +1,6 @@
-import { WORKSPACE_DATA_FILE, STORY_JSON_FILE, ASSET_FOLDER, OUTPUT_FOLDER } from "./constants.js";
+import { ASSET_FOLDER, STORY_JSON_FILE, WORKSPACE_DATA_FILE } from "./constants.js";
 import { DataModel } from "./data_model.js";
 import { FileUtil } from "./utils/file_util.js";
-import { IdUtil } from "./utils/id_util.js";
-import { Util } from './utils/utility.js';
 
 export function WorkspaceManager(folderHandle) {
     let mWorkspaceData = null;
@@ -100,8 +98,7 @@ export function WorkspaceManager(folderHandle) {
             let storyObj = await FileUtil.getJSONFromFile(await mFolderHandle.getDirectoryHandle(storyId), STORY_JSON_FILE)
             let model = DataModel.fromObject(storyObj);
             let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER, { create: true })
-            let outputFolder = await mFolderHandle.getDirectoryHandle(OUTPUT_FOLDER, { create: true })
-            FileUtil.pacakgeToZip(model, assetFolder, outputFolder);
+            FileUtil.pacakgeToZip(model, assetFolder);
         } catch (error) {
             console.error(error);
         }
@@ -111,16 +108,8 @@ export function WorkspaceManager(folderHandle) {
         try {
             let model = await FileUtil.getModelFromZip(file);
             model = model.clone();
-            let assets = model.getAssets();
-            let oldFilenames = Util.unique(assets.map(a => a.filename).filter(f => f));
-            let filenameMap = oldFilenames.map(f => { return { oldName: f, newName: IdUtil.getUniqueId({ name: "File" }) } })
             let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER, { create: true })
-            await FileUtil.unpackageAssetsFromZip(file, filenameMap, assetFolder);
-            assets.forEach(asset => {
-                if (asset.filename) {
-                    asset.filename = filenameMap.find(m => m.oldName == asset.filename).newName;
-                }
-            })
+            await FileUtil.unpackageAssetsFromZip(file, assetFolder);
             await newStory(model.getStory().id);
             await updateStory(model);
         } catch (error) {

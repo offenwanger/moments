@@ -3,7 +3,6 @@ import { IdUtil } from "./utils/id_util.js";
 
 export function DataModel() {
     let mStory = new Data.Story();
-    let mAssets = []
 
     function getMoment(id) {
         return mStory.moments.find(o => o.id == id);
@@ -69,7 +68,7 @@ export function DataModel() {
     }
 
     function getPointers() {
-        return [...mStory.pointers];
+        return mStory.pointers;
     }
 
     function getPointersFor(itemId) {
@@ -102,19 +101,12 @@ export function DataModel() {
     function clone() {
         let dataModel = new DataModel();
         dataModel.setStory(DataModel.cloneItem(mStory, true));
-        mAssets.forEach(asset => {
-            let assetItems = dataModel.getItemsForAsset(asset.id);
-            let newAsset = DataModel.cloneItem(asset, true);
-            assetItems.assetId = newAsset.id;
-            dataModel.getAssets().push(newAsset);
-        })
         return dataModel;
     }
 
     function toObject() {
         return {
-            story: DataModel.cloneItem(mStory),
-            assets: DataModel.cloneItem(mAssets)
+            story: DataModel.cloneItem(mStory)
         }
     }
 

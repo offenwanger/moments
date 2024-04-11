@@ -23,6 +23,7 @@ export function MockElement(type) {
             return appendee;
         }
     }
+    this.appendChild = this.append;
     this.select = function (selector) {
         if (selector instanceof MockElement) return selector;
         if (selector == window) return selector;
@@ -182,6 +183,16 @@ export function MockElement(type) {
     this.setAttribute = function () {
         // called by THREE js, can be used to set the context.
 
+    }
+    this.show = function () {
+        if (type != 'dialog') {
+            throw new Error("show is not defined");
+        }
+        this.open = true;
+    }
+    this.close = function () {
+        this.open = false;
+        mCallBacks.close();
     }
 }
 

@@ -13,7 +13,7 @@ export function TwoButtonInput(container) {
         .style("user-select", "none")
         .style("box-shadow", "0 2px 3px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19)")
         .style("margin", "5px");
-    mButton1.on('click', async () => { await mClickCallback(); })
+    mButton1.on('click', async () => { await mClickCallback1(); })
         .on('pointerup', () => { mButton1.style("background", "#d6d6d6") })
         .on('pointerdown', () => { mButton1.style("background", "#c6c6c6") })
         .on('pointerenter', () => { mButton1.style("background", "#e6e6e6") })
@@ -26,7 +26,7 @@ export function TwoButtonInput(container) {
         .style("user-select", "none")
         .style("box-shadow", "0 2px 3px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19)")
         .style("margin", "5px");
-    mButton2.on('click', async () => { await mSecondClickCallback(); })
+    mButton2.on('click', async () => { await mClickCallback2(); })
         .on('pointerup', () => { mButton2.style("background", "#d6d6d6") })
         .on('pointerdown', () => { mButton2.style("background", "#c6c6c6") })
         .on('pointerenter', () => { mButton2.style("background", "#e6e6e6") })

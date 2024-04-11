@@ -3,7 +3,7 @@ import { IdUtil } from '../utils/id_util.js';
 
 import { StoryPanel } from '../pages/editor_panels/story_panel.js';
 import { MomentPanel } from '../pages/editor_panels/moment_panel.js';
-import { Model3DPanel } from '../pages/editor_panels/model3d_panel.js';
+import { Model3DPanel } from '../pages/editor_panels/model3D_panel.js';
 import { AnnotationPanel } from '../pages/editor_panels/annotation_panel.js';
 import { AnnotationItemPanel } from '../pages/editor_panels/annotation_item_panel.js';
 import { PointerPanel } from '../pages/editor_panels/pointer_panel.js';
@@ -106,4 +106,5 @@ export function SidebarController(container) {
     this.onResize = onResize;
     this.setAddCallback = setAddCallback;
     this.setUpdateAttributeCallback = setUpdateAttributeCallback;
+    this.setSelectAsset = (func) => mModel3DPanel.setSelectAsset(func);
 }

@@ -54,7 +54,7 @@ export function DataModel() {
     }
 
     function getAssets() {
-        return [...mStory.assets];
+        return mStory.assets;
     }
 
     function getItemsForAsset(id) {

@@ -1,19 +1,50 @@
 import { DataModel } from "../data_model.js";
 
+
+
 export function ListPage(parentContainer) {
     let mViewCallback = async () => { };
     let mEditCallback = async () => { };
     let mPackageCallback = async () => { };
 
-    async function show(workspace) {
-        parentContainer.selectAll("*").remove();
+    let mWorkspace;
 
-        parentContainer.append('h3').html("Stories")
-            .style('margin', '10px');
-        let list = parentContainer.append('ul');
-        let stories = await workspace.getStoryList();
+    parentContainer.append('h3').html("Stories")
+        .style('margin', '10px');
+    let mList = parentContainer.append('ul');
+
+    parentContainer.append('button')
+        .attr('id', 'new-story-button')
+        .style('margin-left', "40px")
+        .html("New Story")
+        .on('click', async () => {
+            let newStory = new DataModel();
+            await mWorkspace.newStory(newStory.getStory().id)
+            await mWorkspace.updateStory(newStory);
+            await show(mWorkspace);
+        });
+
+    parentContainer.append('button')
+        .attr('id', 'import-story-button')
+        .style('margin-left', "40px")
+        .html("Import Story")
+        .on('click', async () => {
+            try {
+                let fileHandles = await window.showOpenFilePicker();
+                let file = await fileHandles[0].getFile();
+                await mWorkspace.loadStory(file);
+                await show(mWorkspace);
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+    async function show(workspace) {
+        mWorkspace = workspace;
+
+        let stories = await mWorkspace.getStoryList();
         stories.forEach(story => {
-            let li = list.append('li')
+            let li = mList.append('li')
                 .attr('id', story.id);
             li.append('span').html(story.name);
             li.append('button').html('👁️')
@@ -27,34 +58,8 @@ export function ListPage(parentContainer) {
             li.append('button').html('🔽')
                 .classed('download-story-button', true)
                 .style('margin-left', '10px')
-                .on('click', async () => await workspace.packageStory(story.id));
+                .on('click', async () => await mWorkspace.packageStory(story.id));
         });
-
-        parentContainer.append('button')
-            .attr('id', 'new-story-button')
-            .style('margin-left', "40px")
-            .html("New Story")
-            .on('click', async () => {
-                let newStory = new DataModel();
-                await workspace.newStory(newStory.getStory().id)
-                await workspace.updateStory(newStory);
-                await show(workspace);
-            });
-
-        parentContainer.append('button')
-            .attr('id', 'import-story-button')
-            .style('margin-left', "40px")
-            .html("Import Story")
-            .on('click', async () => {
-                try {
-                    let fileHandles = await window.showOpenFilePicker();
-                    let file = await fileHandles[0].getFile();
-                    await workspace.loadStory(file);
-                    await show(workspace);
-                } catch (error) {
-                    console.error(error);
-                }
-            });
     }
 
     this.show = show;

@@ -20,7 +20,7 @@ export function ModelController(storyId, workspace) {
         return newMoment.id;
     }
 
-    async function createModel3D(parentId) {
+    async function createModel3D(parentId, assetId = null) {
         let parent;
         if (IdUtil.getClass(parentId) == Data.Story) {
             parent = mModel.getStory();
@@ -28,6 +28,12 @@ export function ModelController(storyId, workspace) {
             parent = mModel.getMoment(parentId);
         } else { console.error("Parent id is not supported", parentId) }
         let newModel3D = new Data.Model3D();
+        if (assetId) {
+            let asset = mModel.getAsset(assetId);
+            if (!asset) { console.error('invalid asset id', assetId); return; }
+            newModel3D.assetId = assetId;
+            newModel3D.name = asset.name;
+        }
         parent.model3Ds.push(newModel3D);
         await mWorkspace.updateStory(mModel);
         return newModel3D.id;
@@ -53,12 +59,22 @@ export function ModelController(storyId, workspace) {
         await mWorkspace.updateStory(mModel);
     }
 
+    async function createAsset(name, filename, type) {
+        let newAsset = new Data.Asset(type);
+        newAsset.filename = filename;
+        newAsset.name = name;
+        mModel.getAssets().push(newAsset);
+        await mWorkspace.updateStory(mModel);
+        return newAsset.id;
+    }
+
     return {
         init,
         createMoment,
         createModel3D,
         createAnnotation,
         setAttribute,
+        createAsset,
         getModel: () => mModel.clone(),
     }
 }

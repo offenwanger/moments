@@ -7,80 +7,91 @@ import { HandleStorage } from './utils/handle_storage.js';
 import { WorkspaceManager } from './workspace_manager.js';
 
 export async function main() {
-    let mWelcomePage = new WelcomePage(d3.select('#content'));
-    let mEditorPage = new EditorPage(d3.select('#content'));
-    let mViewerPage = new ViewerPage(d3.select('#content'));
-    let mListPage = new ListPage(d3.select('#content'));
-
     let mEventManager = new EventManager();
 
-    mWelcomePage.setFolderSelectedCallback(async (folder) => {
-        if (await folder.requestPermission({ mode: 'readwrite' }) === 'granted') {
-            await HandleStorage.setItem('folder', folder);
-        }
-        let params = new URLSearchParams(window.location.search)
-        params.set("list", 'true')
-        window.location.search = params.toString();
-        await updatePage();
-    });
-
-    mWelcomePage.setLastFolderCallback(async () => {
-        let folder = await HandleStorage.getItem('folder');
-        if (await folder.requestPermission({ mode: 'readwrite' }) !== 'granted') {
-            await HandleStorage.removeItem('folder', () => { console.log('removed') });
-        }
-        let params = new URLSearchParams(window.location.search)
-        params.set("list", 'true')
-        window.location.search = params.toString();
-        await updatePage();
-    });
-
-    mListPage.setViewCallback(async (storyId) => {
-        let params = new URLSearchParams(window.location.search)
-        params.set("story", storyId)
-        params.set("editor", false)
-        window.location.search = params.toString();
-        await updatePage();
-    });
-
-    mListPage.setEditCallback(async (storyId) => {
-        let params = new URLSearchParams(window.location.search)
-        params.set("story", storyId)
-        params.set("editor", true)
-        window.location.search = params.toString();
-        await updatePage();
-    });
-
     async function updatePage() {
+        d3.select('#content').selectAll("*").remove();
         let folder = await HandleStorage.getItem('folder');
         if (folder) {
             if (await folder.queryPermission({ mode: 'readwrite' }) !== 'granted') {
-                await setPage(mWelcomePage, [true]);
+                await showWelcomePage(true);
             } else {
                 // folder all set
-                let mWorkspaceManager = new WorkspaceManager(folder);
+                let workspaceManager = new WorkspaceManager(folder);
                 let story = new URLSearchParams(window.location.search).get("story")
                 if (story) {
                     let isEditor = new URLSearchParams(window.location.search).get("editor");
                     if (isEditor == 'true') {
-                        await setPage(mEditorPage, [mWorkspaceManager]);
+                        await showEditorPage(workspaceManager)
                     } else {
-                        await setPage(mViewerPage, [mWorkspaceManager]);
+                        await showViewerPage(workspaceManager)
                     }
                 } else if (new URLSearchParams(window.location.search).get("list") == 'true') {
-                    await setPage(mListPage, [mWorkspaceManager]);
+                    await showListPage(workspaceManager);
                 } else {
-                    await setPage(mWelcomePage, [true]);
+                    await showWelcomePage(true);
                 }
             }
-        } else {
-            await setPage(mWelcomePage, [])
-        }
+        } else { await showWelcomePage(false); }
     }
 
-    async function setPage(page, args) {
-        await page.show(...args);
+    async function showWelcomePage(withLastFolder) {
+        let page = new WelcomePage(d3.select('#content'), withLastFolder);
+        page.setFolderSelectedCallback(async (folder) => {
+            if (await folder.requestPermission({ mode: 'readwrite' }) === 'granted') {
+                await HandleStorage.setItem('folder', folder);
+            }
+            let params = new URLSearchParams(window.location.search)
+            params.set("list", 'true')
+            window.location.search = params.toString();
+            await updatePage();
+        });
+
+        page.setLastFolderCallback(async () => {
+            let folder = await HandleStorage.getItem('folder');
+            if (await folder.requestPermission({ mode: 'readwrite' }) !== 'granted') {
+                await HandleStorage.removeItem('folder');
+            }
+            let params = new URLSearchParams(window.location.search)
+            params.set("list", 'true')
+            window.location.search = params.toString();
+            await updatePage();
+        });
+    }
+
+    async function showListPage(workspaceManger) {
+        let page = new ListPage(d3.select('#content'));
+        page.setViewCallback(async (storyId) => {
+            let params = new URLSearchParams(window.location.search)
+            params.set("story", storyId)
+            params.set("editor", false)
+            window.location.search = params.toString();
+            await updatePage();
+        });
+
+        page.setEditCallback(async (storyId) => {
+            let params = new URLSearchParams(window.location.search)
+            params.set("story", storyId)
+            params.set("editor", true)
+            window.location.search = params.toString();
+            await updatePage();
+        });
+
+        await page.show(workspaceManger)
+    }
+
+    async function showEditorPage(workspaceManger) {
+        let page = new EditorPage(d3.select('#content'));
         await mEventManager.setListener(page);
+        // handel all the needed async stuff
+        await page.show(workspaceManger);
+    }
+
+    async function showViewerPage(workspaceManger) {
+        let page = new ViewerPage(d3.select('#content'));
+        await mEventManager.setListener(page);
+        // handel all the needed async stuff
+        await page.show(workspaceManger);
     }
 
     await updatePage();

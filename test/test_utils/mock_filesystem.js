@@ -16,6 +16,7 @@ export function mockFileSystemDirectoryHandle(directoryName) {
 }
 
 export function mockFileSystemFileHandle(fileName, config) {
+    this.name = fileName;
     if (config && config.create && !global.fileSystem[fileName]) { global.fileSystem[fileName] = "new" }
     this.getFile = () => new mockFile(fileName);
     this.createWritable = () => new mockFile(fileName);
@@ -28,4 +29,5 @@ export function mockFile(fileName) {
     this.text = () => global.fileSystem[fileName];
     this.write = (text) => global.fileSystem[fileName] = text;
     this.close = () => { };
+    this.arrayBuffer = this.text;
 }

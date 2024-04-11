@@ -1,5 +1,5 @@
 import { DataModel } from '../../js/data_model';
-import { mockFileSystemDirectoryHandle } from './mock_filesystem';
+import { mockFileSystemDirectoryHandle, mockFileSystemFileHandle } from './mock_filesystem';
 
 async function createAndEditStory() {
     window.directories.push(new mockFileSystemDirectoryHandle('test'));
@@ -10,16 +10,20 @@ async function createAndEditStory() {
 
 async function createAndOpenMoment() {
     await createAndEditStory();
-    await TestUtils.clickSidebarButton('#story-moments-add-button');
+    await TestUtils.clickButtonInput('#story-moments-add-button');
     expect(TestUtils.model().getStory().moments.length).toBe(1);
-    await TestUtils.clickSidebarButton('#moment-button-' + TestUtils.model().getStory().moments[0].id);
+    await TestUtils.clickButtonInput('#moment-button-' + TestUtils.model().getStory().moments[0].id);
 }
 
 async function createAndOpenMomentModel3D() {
     await createAndOpenMoment();
-    await TestUtils.clickSidebarButton('#moment-model3D-add-button');
+    global.fileSystem['test.glb'] = "glbstuff";
+    window.files.push(new mockFileSystemFileHandle('test.glb'));
+    let promise = TestUtils.clickButtonInput('#moment-model3D-add-button');
+    await TestUtils.clickButtonInput('#asset-add-button');
+    await promise;
     expect(TestUtils.model().getStory().moments[0].model3Ds.length).toBe(1);
-    await TestUtils.clickSidebarButton('#model3D-button-' + TestUtils.model().getStory().moments[0].model3Ds[0].id);
+    await TestUtils.clickButtonInput('#model3D-button-' + TestUtils.model().getStory().moments[0].model3Ds[0].id);
 }
 
 function getInputValue(id) {
@@ -49,7 +53,7 @@ async function enterInputValue(id, value) {
     }
 }
 
-async function clickSidebarButton(id) {
+async function clickButtonInput(id) {
     let inputContainer = d3.select(id);
     expect(Object.keys(inputContainer.getCallbacks())).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
     await inputContainer.getCallbacks().pointerenter();
@@ -59,7 +63,7 @@ async function clickSidebarButton(id) {
     await inputContainer.getCallbacks().pointerout();
 }
 
-async function clickSidebarButton1(id) {
+async function clickButtonInput1(id) {
     let inputContainer = d3.select(id);
     expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
     expect(Object.keys(inputContainer.getChildren()[0].getCallbacks())).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
@@ -70,7 +74,7 @@ async function clickSidebarButton1(id) {
     await inputContainer.getChildren()[0].getCallbacks().pointerout();
 }
 
-async function clickSidebarButton2(id) {
+async function clickButtonInput2(id) {
     let inputContainer = d3.select(id);
     expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
     expect(Object.keys(inputContainer.getChildren()[1].getCallbacks())).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
@@ -92,8 +96,8 @@ export const TestUtils = {
     createAndOpenMomentModel3D,
     getInputValue,
     enterInputValue,
-    clickSidebarButton,
-    clickSidebarButton1,
-    clickSidebarButton2,
+    clickButtonInput,
+    clickButtonInput1,
+    clickButtonInput2,
     model,
 }

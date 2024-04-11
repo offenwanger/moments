@@ -1,4 +1,5 @@
 
+import { mockFileSystemFileHandle } from './test_utils/mock_filesystem.js';
 import { setup, cleanup } from './test_utils/test_environment.js';
 import { TestUtils } from './test_utils/utils.js';
 
@@ -20,21 +21,33 @@ describe('Test Moment Panel', function () {
     describe('add tests', function () {
         it('should add a moment model3D', async function () {
             await TestUtils.createAndOpenMoment();
-            await TestUtils.clickSidebarButton('#moment-model3D-add-button');
+            // this appears to work, yet theoretically it's not guarentted the promise 
+            // will have done it's setup before call the next function.
+            global.fileSystem['test.glb'] = "glbstuff";
+            window.files.push(new mockFileSystemFileHandle('test.glb'));
+            let promise = TestUtils.clickButtonInput('#moment-model3D-add-button');
+            await TestUtils.clickButtonInput('#asset-add-button');
+            await promise;
             expect(TestUtils.model().getStory().moments.length).toBe(1);
             expect(TestUtils.model().getStory().moments[0].model3Ds.length).toBe(1);
-            await TestUtils.clickSidebarButton('#moment-model3D-add-button');
-            await TestUtils.clickSidebarButton('#moment-model3D-add-button');
+            window.files.push(new mockFileSystemFileHandle('test.glb'));
+            promise = TestUtils.clickButtonInput('#moment-model3D-add-button');
+            await TestUtils.clickButtonInput('#asset-add-button');
+            await promise;
+            window.files.push(new mockFileSystemFileHandle('test.glb'));
+            promise = TestUtils.clickButtonInput('#moment-model3D-add-button');
+            await TestUtils.clickButtonInput('#asset-add-button');
+            await promise;
             expect(TestUtils.model().getStory().moments[0].model3Ds.length).toBe(3);
         });
 
         it('should add a moment annotation', async function () {
             await TestUtils.createAndOpenMoment();
-            await TestUtils.clickSidebarButton('#moment-annotations-add-button');
+            await TestUtils.clickButtonInput('#moment-annotations-add-button');
             expect(TestUtils.model().getStory().moments.length).toBe(1);
             expect(TestUtils.model().getStory().moments[0].annotations.length).toBe(1);
-            await TestUtils.clickSidebarButton('#moment-annotations-add-button');
-            await TestUtils.clickSidebarButton('#moment-annotations-add-button');
+            await TestUtils.clickButtonInput('#moment-annotations-add-button');
+            await TestUtils.clickButtonInput('#moment-annotations-add-button');
             expect(TestUtils.model().getStory().moments[0].annotations.length).toBe(3);
         });
     });

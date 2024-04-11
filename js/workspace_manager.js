@@ -69,8 +69,20 @@ export function WorkspaceManager(folderHandle) {
         return model;
     }
 
+    async function storeAsset(filehandle) {
+        let oldFilename = filehandle.name;
+        let nameBreakdown = oldFilename.split(".");
+        nameBreakdown.splice(nameBreakdown.length - 1, 0, "" + Date.now());
+        let file = await filehandle.getFile();
+        let arrayBuffer = await file.arrayBuffer();
+        let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER, { create: true });
+        let newName = nameBreakdown.join('.');
+        await FileUtil.writeFile(assetFolder, newName, arrayBuffer);
+        return newName;
+    }
+
     async function getImageAsset(filename) {
-        let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER);
+        let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER, { create: true });
         return getDataUriFromFile(assetFolder, filename);
     }
 
@@ -116,11 +128,11 @@ export function WorkspaceManager(folderHandle) {
             console.error("Failed to load story!");
         }
     }
-
     this.getStoryList = getStoryList;
     this.newStory = newStory;
     this.updateStory = updateStory;
     this.getStory = getStory;
+    this.storeAsset = storeAsset;
     this.getImageAsset = getImageAsset;
     this.loadStory = loadStory;
     this.packageStory = packageStory;

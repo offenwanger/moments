@@ -12,7 +12,7 @@ describe('Test Moment Panel', function () {
     })
 
     describe('init tests', function () {
-        it('should open a moment panel', async function () {
+        it('should open a model3D panel', async function () {
             await TestUtils.createAndOpenMomentModel3D();
         });
     });
@@ -20,8 +20,8 @@ describe('Test Moment Panel', function () {
     describe('edit tests', function () {
         it('should update model name', async function () {
             await TestUtils.createAndOpenMomentModel3D();
-            expect(TestUtils.getInputValue("#model3D-name-input")).toBe('Model');
-            expect(TestUtils.model().getStory().moments[0].model3Ds[0].name).toBe("Model");
+            expect(TestUtils.getInputValue("#model3D-name-input")).toBe('test.glb');
+            expect(TestUtils.model().getStory().moments[0].model3Ds[0].name).toBe('test.glb');
             await TestUtils.enterInputValue("#model3D-name-input", 'new name')
             expect(TestUtils.getInputValue("#model3D-name-input")).toBe('new name');
             expect(TestUtils.model().getStory().moments[0].model3Ds[0].name).toBe("new name");

@@ -71,7 +71,11 @@ async function unpackageAssetsFromZip(zipBlob, assetFolder) {
     for (const entry of await zipReader.getEntries()) {
         if (entry.filename == STORY_JSON_FILE) continue;
         const stream = new TransformStream();
-        await entry.getData(stream.writable);
+        let assetData = await entry.getData(stream.writable);
+        // this will overwrite files, but only if the name is identical, 
+        // which since we edit imported names with name+time-imported, should
+        // means it's the same file. 
+        await FileUtil.writeFile(assetFolder, entry.filename, assetData);
     }
     await zipReader.close();
 }

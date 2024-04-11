@@ -10,20 +10,17 @@ import { ModelController } from '../controllers/model_controller.js';
 import { SidebarController } from '../controllers/sidebar_controller.js';
 import { IdUtil } from '../utils/id_util.js';
 import { Data } from '../data_structs.js';
+import { AssetPicker } from './dialogs/asset_picker.js';
 
 export function EditorPage(parentContainer) {
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;
-
-    let mRenderer;
-    let mInputController;
+    let mWorkspace;
 
     let mSidebarDivider = 0.8;
     let mTimelineDivider = 0.8;
     let mWidth = 100;
     let mHeight = 100;
-
-    let mResizeTarget;
 
     let mInteraction = false;
     let mTPosition = 0;
@@ -47,43 +44,109 @@ export function EditorPage(parentContainer) {
 
     const mStoryController = new StoryController(mScene);
 
-    let mTimelineController = null;
-    function setTimelineControllerCallbacks() {
-        mTimelineController.setCreateMomentCallback(async () => {
-            await mModelController.createMoment();
-            await updateModel();
-        })
-    }
+    let mMainContainer = parentContainer.append('div')
+        .style('width', '100%')
+        .style('height', '100%')
+        .style('display', 'flex')
+        .style('flex-direction', 'row');
 
-    let mSidebarController = null;
-    function setSidebarControllerCallbacks() {
-        mSidebarController.setAddCallback(addCallback)
-        mSidebarController.setUpdateAttributeCallback(async (id, attr, value) => {
-            await mModelController.setAttribute(id, attr, value);
-            await updateModel();
-        })
-    }
+    let mMomentDisplay = mMainContainer.append('div')
+        .attr('id', 'moment-display')
+        .style('display', 'flex')
+        .style('flex-direction', 'column');
 
-    async function addCallback(parentId, itemClass, config) {
-        // should be undo/redo stuff here. 
+    let mViewContainer = mMomentDisplay.append('div')
+        .attr('id', 'canvas-view-container')
+        .style('display', 'block')
+        .style('border', '1px solid black')
+
+    let mMainCanvas = mViewContainer.append('canvas')
+        .attr('id', 'main-canvas')
+        .style('display', 'block')
+
+    let mTimelineContainer = mMomentDisplay.append('div')
+        .attr('id', 'timeline')
+        .style('display', 'block')
+        .style('border', '1px solid black')
+
+    let mSidebarContainer = mMainContainer.append('div')
+        .attr('id', 'sidebar')
+        .style('height', '100%')
+        .style('display', 'block')
+        .style('border', '1px solid black')
+        .style('overflow-y', 'scroll')
+
+    let mResizeTarget = parentContainer.append('img')
+        .attr('id', 'resize-control')
+        .attr('src', 'assets/images/buttons/panning_button.png')
+        .style('position', 'absolute')
+        .style('width', RESIZE_TARGET_SIZE + 'px')
+        .style('height', RESIZE_TARGET_SIZE + 'px')
+        .on('dragstart', (event) => event.preventDefault())
+        .on('pointerdown', () => { mResizingWindows = true; });
+
+
+
+    let mAssetPicker = new AssetPicker(parentContainer);
+    mAssetPicker.setNewAssetCallback(async (fileHandle, type) => {
+        let filename = await mWorkspace.storeAsset(fileHandle);
+        return await mModelController.createAsset(fileHandle.name, filename, type);
+    })
+
+    let mTimelineController = new TimelineController(mTimelineContainer);
+    mTimelineController.setCreateMomentCallback(async () => {
+        await mModelController.createMoment();
+        await updateModel();
+    })
+
+    let mSidebarController = new SidebarController(mSidebarContainer);
+    mSidebarController.setAddCallback(async (parentId, itemClass, config) => {
+        // should be undo/redo stuff here.
+
         if ((IdUtil.getClass(parentId) == Data.Story || IdUtil.getClass(parentId) == Data.Moment)
-            && (itemClass == Data.Model3D || itemClass == Data.Annotation)) {
-            if (itemClass == Data.Model3D) {
-                await mModelController.createModel3D(parentId);
-            } else if (itemClass == Data.Annotation) {
-                await mModelController.createAnnotation(parentId);
-            }
+            && itemClass == Data.Annotation) {
+            await mModelController.createAnnotation(parentId);
         } else if (IdUtil.getClass(parentId) == Data.Story && itemClass == Data.Moment) {
             await mModelController.createMoment();
+        } else if (itemClass == Data.Model3D) {
+            let assetId = await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
+            if (assetId) {
+                await mModelController.createModel3D(parentId, assetId);
+            }
         } else {
             console.error("Parent + item class not supported", parentId, itemClass);
             return;
         }
         await updateModel();
-    }
+    })
+    mSidebarController.setUpdateAttributeCallback(async (id, attr, value) => {
+        await mModelController.setAttribute(id, attr, value);
+        await updateModel();
+    })
+    mSidebarController.setSelectAsset(async () => {
+        return await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
+    })
+
+    let mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mMainCanvas.node() });
+    mRenderer.xr.enabled = true;
+    mRenderer.setAnimationLoop(render);
+
+    let mInputController = new InputController(mCamera, mRenderer, mScene);
+    mInputController.setCameraPositionChangeCallback(onCameraPositionChange);
+    mInputController.setDragStartCallback(onMomentDrag)
+    mInputController.setDragEndCallback(onMomentDragEnd);
+    mInputController.setClickCallback(onClick);
+
+    let vrButton = VRButton.createButton(mRenderer);
+    let vrButtonDiv = parentContainer.append("div")
+        .style('position', 'absolute')
+        .style('top', '40px')
+        .style('left', '20px')
+    vrButtonDiv.node().appendChild(vrButton);
+    d3.select(vrButton).style("position", "relative")
 
     async function show(workspace) {
-        parentContainer.selectAll("*").remove();
+        mWorkspace = workspace;
 
         const storyId = new URLSearchParams(window.location.search).get("story");
         if (!storyId) { console.error("Story not set!"); return; }
@@ -91,69 +154,10 @@ export function EditorPage(parentContainer) {
         mModelController = new ModelController(storyId, workspace);
         await mModelController.init();
 
-        let mainContainer = parentContainer.append('div')
-            .style('width', '100%')
-            .style('height', '100%')
-            .style('display', 'flex')
-            .style('flex-direction', 'row');
-
-        let momentDisplay = mainContainer.append('div')
-            .attr('id', 'moment-display')
-            .style('display', 'flex')
-            .style('flex-direction', 'column');
-
-        let viewContainer = momentDisplay.append('div')
-            .attr('id', 'canvas-view-container')
-            .style('display', 'block')
-            .style('border', '1px solid black')
-        let mainCanvas = viewContainer.append('canvas')
-            .attr('id', 'main-canvas')
-            .style('display', 'block')
-
-        let timelineContainer = momentDisplay.append('div')
-            .attr('id', 'timeline')
-            .style('display', 'block')
-            .style('border', '1px solid black')
-        mTimelineController = new TimelineController(timelineContainer);
-        setTimelineControllerCallbacks();
-
-        let sidebar = mainContainer.append('div')
-            .attr('id', 'sidebar')
-            .style('height', '100%')
-            .style('display', 'block')
-            .style('border', '1px solid black')
-            .style('overflow-y', 'scroll')
-        mSidebarController = new SidebarController(sidebar);
-        setSidebarControllerCallbacks();
-        await mSidebarController.updateModel(mModelController.getModel());
-        await mSidebarController.navigate(mModelController.getModel().getStory().id)
-
-        mResizeTarget = parentContainer.append('img')
-            .attr('id', 'resize-control')
-            .attr('src', 'assets/images/buttons/panning_button.png')
-            .style('position', 'absolute')
-            .style('width', RESIZE_TARGET_SIZE + 'px')
-            .style('height', RESIZE_TARGET_SIZE + 'px')
-            .on('dragstart', (event) => event.preventDefault())
-            .on('pointerdown', () => { mResizingWindows = true; });
-
-
-        mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mainCanvas.node() });
-        mRenderer.xr.enabled = true;
-        mRenderer.setAnimationLoop(render);
         onResize(mWidth, mHeight);
 
-        mInputController = new InputController(mCamera, mRenderer, mScene);
-        mInputController.setCameraPositionChangeCallback(onCameraPositionChange);
-        mInputController.setDragStartCallback(onMomentDrag)
-        mInputController.setDragEndCallback(onMomentDragEnd);
-        mInputController.setClickCallback(onClick);
-
-        let vrButton = VRButton.createButton(mRenderer);
-        document.body.appendChild(vrButton);
-        d3.select(vrButton)
-            .style("top", "20px")
-            .style("bottom", "")
+        await mSidebarController.updateModel(mModelController.getModel());
+        await mSidebarController.navigate(mModelController.getModel().getStory().id);
 
         await updateModel();
     }

@@ -79,9 +79,9 @@ export function WorkspaceManager(folderHandle) {
         return newName;
     }
 
-    async function getImageAsset(filename) {
+    async function getAssetAsURL(filename) {
         let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER, { create: true });
-        return getDataUriFromFile(assetFolder, filename);
+        return FileUtil.getDataUriFromFile(assetFolder, filename);
     }
 
     async function updateWorkspaceData() {
@@ -122,7 +122,7 @@ export function WorkspaceManager(folderHandle) {
     this.updateStory = updateStory;
     this.getStory = getStory;
     this.storeAsset = storeAsset;
-    this.getImageAsset = getImageAsset;
+    this.getAssetAsURL = getAssetAsURL;
     this.loadStory = loadStory;
     this.packageStory = packageStory;
 }

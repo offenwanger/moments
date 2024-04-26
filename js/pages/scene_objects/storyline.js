@@ -1,58 +1,54 @@
 
 import * as THREE from 'three';
-import { MomentController } from "./moment_controller.js";
-import { CaptionController } from "./caption_controller.js";
-import { PathLineController } from './pathline_controller.js';
-import { DataModel } from '../data_model.js';
 
-export function StorylineController(parent) {
-    let mModel = new DataModel();
-    let mEnvironmentBox;
+export function Storyline(parent) {
+    // let mModel = new DataModel();
+    // let mEnvironmentBox;
 
-    const mMomentContollers = [];
+    // const mMomentContollers = [];
 
-    const mGroup = new THREE.Group();
-    parent.add(mGroup);
+    // const mGroup = new THREE.Group();
+    // parent.add(mGroup);
 
-    const mPathLineController = new PathLineController(mGroup);
+    // const mPathLineController = new PathLineController(mGroup);
 
     async function updateModel(dataModel) {
-        if (!dataModel) { console.error("Invalid model"); return; }
-        mModel = dataModel;
+    //     if (!dataModel) { console.error("Invalid model"); return; }
+    //     mModel = dataModel;
 
-        mMomentContollers.splice(0, mMomentContollers.length);
-        mGroup.remove(...mGroup.children);
+    //     mMomentContollers.splice(0, mMomentContollers.length);
+    //     mGroup.remove(...mGroup.children);
 
-        mPathLineController.updatePath(mModel.getStory().path);
+    //     mPathLineController.updatePath(mModel.getStory().path);
 
-        for (let momentData of mModel.getMoments()) {
-            if (!momentData.storyline) return;
-            let pathLineData = mPathLineController.getData(momentData.z, momentData.offset);
-            let m = new MomentController(mGroup);
-            m.setEnvBox(mEnvironmentBox);
-            m.setT(momentData.t);
-            m.setOffset({ x: momentData.x, y: momentData.y });
-            m.setSize(momentData.size);
-            m.setOrientation(new THREE.Quaternion()
-                .fromArray(momentData.orientation)
-                .multiply(pathLineData.rotation.clone().invert()));
-            m.setPosition(pathLineData.position)
+    //     for (let momentData of mModel.getMoments()) {
+    //         if (!momentData.storyline) return;
+    //         let pathLineData = mPathLineController.getData(momentData.z, momentData.offset);
+    //         let m = new MomentController(mGroup);
+    //         m.setEnvBox(mEnvironmentBox);
+    //         m.setT(momentData.t);
+    //         m.setOffset({ x: momentData.x, y: momentData.y });
+    //         m.setSize(momentData.size);
+    //         m.setOrientation(new THREE.Quaternion()
+    //             .fromArray(momentData.orientation)
+    //             .multiply(pathLineData.rotation.clone().invert()));
+    //         m.setPosition(pathLineData.position)
 
-            // await m.setModel(momentData.model);
-            // await m.setImage(momentData.image);
+    //         // await m.setModel(momentData.model);
+    //         // await m.setImage(momentData.image);
 
-            // momentData.captions.forEach(captionData => {
-            //     let caption = new Caption(mGroup);
-            //     caption.setText(captionData.text);
-            //     caption.setOffset(captionData.offset);
-            //     caption.setRoot(new THREE.Vector3().fromArray(captionData.root));
-            //     m.addCaption(caption);
-            // })
-            mMomentContollers.push(m);
-        }
+    //         // momentData.captions.forEach(captionData => {
+    //         //     let caption = new Caption(mGroup);
+    //         //     caption.setText(captionData.text);
+    //         //     caption.setOffset(captionData.offset);
+    //         //     caption.setRoot(new THREE.Vector3().fromArray(captionData.root));
+    //         //     m.addCaption(caption);
+    //         // })
+    //         mMomentContollers.push(m);
+    //     }
     }
 
-    function update(t, offsetX) {
+    async function update(t, offsetX) {
         let lineData = mPathLineController.getData(t, { x: offsetX, y: 0 });
 
         mGroup.position.copy(new THREE.Vector3());

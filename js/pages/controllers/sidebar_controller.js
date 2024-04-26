@@ -1,13 +1,13 @@
-import { Data } from '../data_structs.js';
-import { IdUtil } from '../utils/id_util.js';
+import { Data } from '../../data_structs.js';
+import { IdUtil } from '../../utils/id_util.js';
 
-import { StoryPanel } from '../pages/editor_panels/story_panel.js';
-import { MomentPanel } from '../pages/editor_panels/moment_panel.js';
-import { Model3DPanel } from '../pages/editor_panels/model3D_panel.js';
-import { AnnotationPanel } from '../pages/editor_panels/annotation_panel.js';
-import { AnnotationItemPanel } from '../pages/editor_panels/annotation_item_panel.js';
-import { PointerPanel } from '../pages/editor_panels/pointer_panel.js';
-import { AssetPanel } from '../pages/editor_panels/asset_panel.js';
+import { StoryPanel } from '../editor_panels/story_panel.js';
+import { MomentPanel } from '../editor_panels/moment_panel.js';
+import { Model3DPanel } from '../editor_panels/model3D_panel.js';
+import { AnnotationPanel } from '../editor_panels/annotation_panel.js';
+import { AnnotationItemPanel } from '../editor_panels/annotation_item_panel.js';
+import { PointerPanel } from '../editor_panels/pointer_panel.js';
+import { AssetPanel } from '../editor_panels/asset_panel.js';
 
 export function SidebarController(container) {
     let mShownItem = null;

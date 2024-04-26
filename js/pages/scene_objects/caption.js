@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import * as ThreeMeshUI from "three-mesh-ui";
 import { Util } from '../utils/utility.js';
-import { AssetUtil } from '../utils/assets_util.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
-export function CaptionController(parent) {
+export function CaptionController(parent, assetUtil) {
     let mTextString = "text";
     let mOffset = { x: 1, y: 1 };
     let mRoot = new THREE.Vector3();
@@ -27,7 +26,7 @@ export function CaptionController(parent) {
     });
     mBubble.add(mTextNode);
 
-    AssetUtil.loadTexture('speech_bubble.png').then(image => {
+    assetUtil.loadTexture('speech_bubble.png').then(image => {
         mBubble.set({ backgroundTexture: image });
     });
 
@@ -38,7 +37,7 @@ export function CaptionController(parent) {
     const curveObject = new THREE.Line(geometry, material);
     parent.add(curveObject)
 
-    function update(momentPos, radius, cameraPos, tailEnd) {
+    async function update(momentPos, radius, cameraPos, tailEnd) {
         let normal = new THREE.Vector3().subVectors(momentPos, cameraPos).normalize();
         let position = Util.planeCoordsToWorldCoords(mOffset, normal, UP, momentPos);
         mBubble.position.copy(position);

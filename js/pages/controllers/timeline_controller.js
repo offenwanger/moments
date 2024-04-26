@@ -1,5 +1,5 @@
-import { DataModel } from "../data_model.js"
-import { SvgUtil } from "../utils/svg_util.js"
+import { DataModel } from "../../data_model.js";
+import { SvgUtil } from "../../utils/svg_util.js"
 
 
 export function TimelineController(container) {

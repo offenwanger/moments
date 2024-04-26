@@ -2,10 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
-import { Util } from '../utils/utility.js';
-import { LookTarget } from '../constants.js';
-
-export function InputController(camera, renderer, parent) {
+export function SceneInputController(camera, renderer, parent) {
     const INTERACTION_DISTANCE = 10;
     const MODE_CARDBOARD = 'cardboard';
     const MODE_SCREEN = 'screen';
@@ -105,46 +102,46 @@ export function InputController(camera, renderer, parent) {
         }
     })
 
-    function getLookTarget(camera, storyController) {
-        let moments = storyController.getMoments();
-        let origin = storyController.worldToLocalPosition(camera.position);
-        let lookDirection = storyController.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)).add(origin);
-        for (let i = 0; i < moments.length; i++) {
-            if (origin.distanceTo(moments[i].getPosition()) > INTERACTION_DISTANCE) { break; }
-            let targeted = Util.hasSphereIntersection(origin, lookDirection, moments[i].getPosition(), moments[i].getSize());
-            if (targeted) {
-                mLastLookTarget = {
-                    type: LookTarget.MOMENT,
-                    moment: moments[i]
-                };
-                return mLastLookTarget;
-            }
-        }
+    // function getLookTarget(camera, storyController) {
+    //     let moments = storyController.getMoments();
+    //     let origin = storyController.worldToLocalPosition(camera.position);
+    //     let lookDirection = storyController.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)).add(origin);
+    //     for (let i = 0; i < moments.length; i++) {
+    //         if (origin.distanceTo(moments[i].getPosition()) > INTERACTION_DISTANCE) { break; }
+    //         let targeted = Util.hasSphereIntersection(origin, lookDirection, moments[i].getPosition(), moments[i].getSize());
+    //         if (targeted) {
+    //             mLastLookTarget = {
+    //                 type: LookTarget.MOMENT,
+    //                 moment: moments[i]
+    //             };
+    //             return mLastLookTarget;
+    //         }
+    //     }
 
-        let lookAngles = new THREE.Euler().setFromQuaternion(camera.quaternion, "YXZ");
-        // X => Pi/2 = straight up, -PI/2 straight down, 0 = horizon
-        let upAngle = Math.PI * 7 / 8;
+    //     let lookAngles = new THREE.Euler().setFromQuaternion(camera.quaternion, "YXZ");
+    //     // X => Pi/2 = straight up, -PI/2 straight down, 0 = horizon
+    //     let upAngle = Math.PI * 7 / 8;
 
-        if (lookAngles.x > upAngle) {
-            mLastLookTarget = { type: LookTarget.UP };
-            return mLastLookTarget;
-        } else {
-            let userPosition = storyController.worldToLocalPosition(camera.position);
-            let userLookDirection = storyController.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-            let pathLineIntersection = pathLineTarget(userPosition, userLookDirection, storyController.getPathLine())
-            if (pathLineIntersection.distance < INTERACTION_DISTANCE) {
-                mLastLookTarget = {
-                    type: LookTarget.LINE_SURFACE,
-                    position: storyController.localToWorldPosition(pathLineIntersection.position),
-                    normal: storyController.localToWorldRotation(pathLineIntersection.normal),
-                };
-            } else {
-                mLastLookTarget = { type: LookTarget.NONE };
-            }
+    //     if (lookAngles.x > upAngle) {
+    //         mLastLookTarget = { type: LookTarget.UP };
+    //         return mLastLookTarget;
+    //     } else {
+    //         let userPosition = storyController.worldToLocalPosition(camera.position);
+    //         let userLookDirection = storyController.worldToLocalRotation(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+    //         let pathLineIntersection = pathLineTarget(userPosition, userLookDirection, storyController.getPathLine())
+    //         if (pathLineIntersection.distance < INTERACTION_DISTANCE) {
+    //             mLastLookTarget = {
+    //                 type: LookTarget.LINE_SURFACE,
+    //                 position: storyController.localToWorldPosition(pathLineIntersection.position),
+    //                 normal: storyController.localToWorldRotation(pathLineIntersection.normal),
+    //             };
+    //         } else {
+    //             mLastLookTarget = { type: LookTarget.NONE };
+    //         }
 
-            return mLastLookTarget;
-        }
-    }
+    //         return mLastLookTarget;
+    //     }
+    // }
 
     function onSelectStart() {
         if (mLastLookTarget.type == LookTarget.MOMENT &&
@@ -207,7 +204,7 @@ export function InputController(camera, renderer, parent) {
         }
     }
 
-    this.getLookTarget = getLookTarget;
+    // this.getLookTarget = getLookTarget;
     this.setClickCallback = (callback) => mClickCallback = callback;
     this.setDragStartCallback = (callback) => mDragStartCallback = callback;
     this.setDragEndCallback = (callback) => mDragEndCallback = callback;

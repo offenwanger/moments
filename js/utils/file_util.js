@@ -109,6 +109,16 @@ async function downloadBlob(name, blob) {
     document.body.removeChild(elem);
 }
 
+async function downloadPNG(name, canvas) {
+    let blob = await new Promise(resolve => canvas.toBlob(resolve));
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = name + ".png";
+    link.click();
+    // delete the internal blob reference to clear memory
+    URL.revokeObjectURL(link.href);
+}
+
 export const FileUtil = {
     getJSONFromFile,
     getDataUriFromFile,
@@ -117,5 +127,7 @@ export const FileUtil = {
     pacakgeToZip,
     unpackageAssetsFromZip,
     getModelFromZip,
+    downloadBlob,
+    downloadPNG,
 }
 

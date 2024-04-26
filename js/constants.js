@@ -1,6 +1,10 @@
+import * as THREE from 'three';
+
 export const WORKSPACE_DATA_FILE = "workspace.json";
 export const STORY_JSON_FILE = "story.json";
 export const ASSET_FOLDER = "assets";
+
+export const UP = new THREE.Vector3(0, 1, 0);
 
 export const LookTarget = {
     LINE_SURFACE: 'line surface',

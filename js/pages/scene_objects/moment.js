@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { Util } from '../utils/utility.js';
-import { AssetUtil } from '../utils/assets_util.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const BLUR_MAX = 0.1;
@@ -82,7 +81,7 @@ export function MomentController(parent) {
     mSphere.position.copy(mPosition);
     parent.add(mSphere);
 
-    function update(userPos) {
+    async function update(userPos) {
         // face lenses at camera
         mLenses.forEach(lens => {
             let rotationMatrix = new THREE.Matrix4().lookAt(userPos, lens.position, UP);

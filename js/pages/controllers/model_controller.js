@@ -1,5 +1,5 @@
-import { Data } from "../data_structs.js";
-import { IdUtil } from "../utils/id_util.js";
+import { Data } from "../../data_structs.js";
+import { IdUtil } from "../../utils/id_util.js";
 
 export function ModelController(storyId, workspace) {
     let mModel;

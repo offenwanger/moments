@@ -17,5 +17,6 @@ export function TextInput(container, type = 'text') {
     this.setId = (id) => { mInputContainer.attr('id', id); return this; };
     this.setLabel = (text) => { mInputLabel.html(text); return this; };
     this.setText = (text) => { mInputBox.node().value = text; return this; }
+    this.getText = () => { return mInputBox.node().value; }
     this.setOnChange = (func) => { mChangeCallback = func; return this; };
 }

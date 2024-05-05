@@ -72,9 +72,10 @@ export function Model3DPanel(container) {
         .setLabel("x")
         .setOnChange(async (newNum) => {
             let x = newNum;
-            let y = d3.select('#model3D-orientation-y-input').node().value;
-            let z = d3.select('#model3D-orientation-z-input').node().value;
-            let quat = new THREE.Quaternion().setFromEuler(x, y, z, 'XYZ');
+            let y = parseFloat(mOrientationYInput.getText());
+            let z = parseFloat(mOrientationZInput.getText());
+            let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
+            console.log(quat, x, y, z);
             await mUpdateAttributeCallback(mModel3DId, 'orientation', quat.toArray());
         });
     let mOrientationYInput = new TextInput(mPanelContainer, 'number')
@@ -82,9 +83,9 @@ export function Model3DPanel(container) {
         .setLabel("y")
         .setOnChange(async (newNum) => {
             let y = newNum;
-            let x = d3.select('#model3D-orientation-x-input').node().value;
-            let z = d3.select('#model3D-orientation-z-input').node().value;
-            let quat = new THREE.Quaternion().setFromEuler(x, y, z, 'XYZ');
+            let x = parseFloat(mOrientationXInput.getText());
+            let z = parseFloat(mOrientationZInput.getText());
+            let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
             await mUpdateAttributeCallback(mModel3DId, 'orientation', quat.toArray());
         });
     let mOrientationZInput = new TextInput(mPanelContainer, 'number')
@@ -92,9 +93,9 @@ export function Model3DPanel(container) {
         .setLabel("z")
         .setOnChange(async (newNum) => {
             let z = newNum;
-            let x = d3.select('#model3D-orientation-x-input').node().value;
-            let y = d3.select('#model3D-orientation-y-input').node().value;
-            let quat = new THREE.Quaternion().setFromEuler(x, y, z, 'XYZ');
+            let x = parseFloat(mOrientationXInput.getText());
+            let y = parseFloat(mOrientationYInput.getText());
+            let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
             await mUpdateAttributeCallback(mModel3DId, 'orientation', quat.toArray());
         });
 
@@ -120,7 +121,7 @@ export function Model3DPanel(container) {
 
         mPositionXInput.setText(mModel3D.x);
         mPositionYInput.setText(mModel3D.y);
-        mPositionZInput.setText(mModel3D.t);
+        mPositionZInput.setText(mModel3D.z);
 
         let euler = (new THREE.Euler()).setFromQuaternion(
             new THREE.Quaternion().fromArray(mModel3D.orientation), "XYZ")

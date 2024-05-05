@@ -1,9 +1,11 @@
+import * as THREE from 'three';
 import { Data } from "../../data_structs.js";
 
 export function Model3DScene(parent) {
     let mParent = parent;
     let mModel3D = new Data.Model3D();
     let mGLTF = null;
+    let mModelSize = 1;
 
     async function update(model3D, model, assetUtil) {
         let oldModel = mModel3D;
@@ -14,10 +16,17 @@ export function Model3DScene(parent) {
             try {
                 mGLTF = await assetUtil.loadGLTFModel(mModel3D.assetId)
                 mParent.add(mGLTF.scene);
+                const box = new THREE.Box3().setFromObject(mGLTF.scene);
+                mModelSize = Math.max(...box.getSize(new THREE.Vector3()).toArray());
             } catch (error) {
                 console.error(error);
             }
         }
+
+        mGLTF.scene.setRotationFromQuaternion(new THREE.Quaternion().fromArray(model3D.orientation));
+        console.log(new THREE.Vector3().fromArray([model3D.x, model3D.y, model3D.z]))
+        mGLTF.scene.position.set(model3D.x, model3D.y, model3D.z);
+        mGLTF.scene.scale.set(model3D.size / mModelSize, model3D.size / mModelSize, model3D.size / mModelSize);
     }
 
     function getId() {

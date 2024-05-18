@@ -75,7 +75,6 @@ export function Model3DPanel(container) {
             let y = parseFloat(mOrientationYInput.getText());
             let z = parseFloat(mOrientationZInput.getText());
             let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
-            console.log(quat, x, y, z);
             await mUpdateAttributeCallback(mModel3DId, 'orientation', quat.toArray());
         });
     let mOrientationYInput = new TextInput(mPanelContainer, 'number')

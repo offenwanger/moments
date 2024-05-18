@@ -1,58 +1,48 @@
 import * as THREE from 'three';
-import { VRButton } from 'three/addons/webxr/VRButton.js';
-import { USER_HEIGHT } from '../../constants.js';
 import { DataModel } from "../../data_model.js";
 import { Data } from '../../data_structs.js';
 import { StoryScene } from '../scene_objects/story_scene.js';
-import { SceneInputController } from './scene_input_controller.js';
+import { CanvasViewController } from './canvas_view_controller.js';
+import { XRSessionController } from './xr_session_controller.js';
 
+/**
+ * Handles the display of the story, including the event handling and 
+ * transitions between VR and canvas viewing. 
+ * @param {*} parentContainer 
+ */
 export function StoryDisplayController(parentContainer) {
+
     let mModel = new DataModel();
     let mStory = new Data.Story();
 
     let mWidth = 100;
     let mHeight = 100;
 
-    let mMainCanvas = parentContainer.append('canvas')
-        .attr('id', 'main-canvas')
-        .style('display', 'block')
-
-    const fov = 75, aspect = 2, near = 0.1, far = 200;
-    const mCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    mCamera.position.set(0, USER_HEIGHT, 0);
-
     let mScene = new THREE.Scene();
     let mEnvironmentBox;
     let mStoryScene = new StoryScene(mScene);
 
-    let mRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mMainCanvas.node() });
-    mRenderer.xr.enabled = true;
-    mRenderer.setAnimationLoop(render);
+    let mCanvasViewController = new CanvasViewController(parentContainer, mScene, mStoryScene);
+    mCanvasViewController.startRendering();
+    let mXRSessionController = new XRSessionController(parentContainer, mScene);
+    let isVR = false;
 
-    let vrButton = VRButton.createButton(mRenderer);
-    let vrButtonDiv = parentContainer.append("div")
-        .style('position', 'absolute')
-        .style('top', '40px')
-        .style('left', '20px')
-    vrButtonDiv.node().appendChild(vrButton);
-    d3.select(vrButton).style("position", "relative")
-
-    let mSceneInputController = new SceneInputController(mCamera, mRenderer, mScene);
-    mSceneInputController.setCameraPositionChangeCallback(() => {
-        mStoryScene.onCameraMove(mCamera.position);
-    });
-
-    mSceneInputController.setDragStartCallback(() => {
-
+    mXRSessionController.onSessionStart(() => {
+        if (!isVR) {
+            isVR = true;
+            mCanvasViewController.stopRendering();
+            mXRSessionController.startRendering();
+        }
     })
 
-    mSceneInputController.setDragEndCallback(() => {
+    mXRSessionController.onSessionEnd(() => {
+        if (isVR) {
+            isVR = false;
+            mCanvasViewController.startRendering();
+            mXRSessionController.stopRendering();
+        }
+    })
 
-    });
-
-    mSceneInputController.setClickCallback(() => {
-
-    });
 
     async function updateModel(model, assetUtil) {
         let oldModel = mModel;
@@ -76,30 +66,22 @@ export function StoryDisplayController(parentContainer) {
     function onResize(width, height) {
         mWidth = width;
         mHeight = height;
-
-        if (!mRenderer) return;
-        mRenderer.setSize(width, height, false);
-
-        mCamera.aspect = width / height;
-        mCamera.updateProjectionMatrix();
+        mCanvasViewController.onResize(width, height);
     }
 
-    function render(time) {
-        mRenderer.render(mScene, mCamera);
-    }
 
     /*
 
     function onCameraPositionChange() {
-        mStoryDisplayController.sortMoments(mStoryDisplayController.worldToLocalPosition(mCamera.position));
+        mStoryDisplayController.sortMoments(mStoryDisplayController.worldToLocalPosition(mPageCamera.position));
     }
 
     function onMomentDrag(moment) {
         mInteraction = {
             type: MOMENT_DRAG,
             moment,
-            cameraStartPos: mCamera.position.clone(),
-            toMoment: new THREE.Vector3().subVectors(mStoryDisplayController.localToWorldPosition(moment.getPosition()), mCamera.position).applyQuaternion(mCamera.quaternion.clone().invert())
+            cameraStartPos: mPageCamera.position.clone(),
+            toMoment: new THREE.Vector3().subVectors(mStoryDisplayController.localToWorldPosition(moment.getPosition()), mPageCamera.position).applyQuaternion(mPageCamera.quaternion.clone().invert())
         }
         mHighlightRingController.hide();
     }
@@ -113,7 +95,7 @@ export function StoryDisplayController(parentContainer) {
         if (mLastLookTarget.type == LookTarget.LINE_SURFACE) {
             let zeroT = mTPosition;
 
-            let userPosition = mStoryDisplayController.worldToLocalPosition(mCamera.position);
+            let userPosition = mStoryDisplayController.worldToLocalPosition(mPageCamera.position);
             let userClosestPoint = mStoryDisplayController.getPathLine().getClosestPoint(userPosition);
 
             let position = mStoryDisplayController.worldToLocalPosition(mLastLookTarget.position)
@@ -134,7 +116,7 @@ export function StoryDisplayController(parentContainer) {
         let clock = new THREE.Clock();
         clock.start();
 
-        // let localCameraPos = mStoryDisplayController.worldToLocalPosition(mCamera.position);
+        // let localCameraPos = mStoryDisplayController.worldToLocalPosition(mPageCamera.position);
 
         // for (let i = 0; i < momentsArr.length; i++) {
         //     if (clock.getElapsedTime() > 0.015) { break; }
@@ -146,14 +128,14 @@ export function StoryDisplayController(parentContainer) {
             if (mInteraction.type == MOMENT_DRAG) {
                 interactionTarget = mInteraction.moment;
                 let newWorldPos = mInteraction.toMoment.clone()
-                    .applyQuaternion(mCamera.quaternion)
-                    .add(mCamera.position);
+                    .applyQuaternion(mPageCamera.quaternion)
+                    .add(mPageCamera.position);
                 mInteraction.moment.setPosition(mStoryDisplayController.worldToLocalPosition(newWorldPos))
             } else {
                 console.error("Not supported!", mInteraction);
             }
         } else {
-            let mLastLookTarget = {}//mSceneInputController.getLookTarget(mCamera, mStoryDisplayController);
+            let mLastLookTarget = {}//mSceneInputController.getLookTarget(mPageCamera, mStoryDisplayController);
             if (mLastLookTarget.type == LookTarget.MOMENT) {
                 let worldPos = mStoryDisplayController.localToWorldPosition(mLastLookTarget.moment.getPosition());
                 worldPos.add(new THREE.Vector3(0, -mLastLookTarget.moment.getSize(), 0))
@@ -182,12 +164,12 @@ export function StoryDisplayController(parentContainer) {
 
         let cameraPosition1 = null;
         let cameraPosition2 = null;
-        if (mRenderer.xr.isPresenting) {
-            let cameras = mRenderer.xr.getCamera().cameras;
+        if (mPageRenderer.xr.isPresenting) {
+            let cameras = mPageRenderer.xr.getCamera().cameras;
             // cameraPosition1 = mStoryDisplayController.worldToLocalPosition(cameras[0].position)
             // cameraPosition2 = mStoryDisplayController.worldToLocalPosition(cameras[1].position)
         } else {
-            // cameraPosition1 = mStoryDisplayController.worldToLocalPosition(mCamera.position)
+            // cameraPosition1 = mStoryDisplayController.worldToLocalPosition(mPageCamera.position)
         }
 
         // render the interaction target first
@@ -207,7 +189,7 @@ export function StoryDisplayController(parentContainer) {
         }
         mHighlightRingController.animate(time);
 
-        mRenderer.render(mScene, mCamera);
+        mPageRenderer.render(mScene, mPageCamera);
     }
 
 

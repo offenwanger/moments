@@ -24,7 +24,6 @@ export function Model3DScene(parent) {
         }
 
         mGLTF.scene.setRotationFromQuaternion(new THREE.Quaternion().fromArray(model3D.orientation));
-        console.log(new THREE.Vector3().fromArray([model3D.x, model3D.y, model3D.z]))
         mGLTF.scene.position.set(model3D.x, model3D.y, model3D.z);
         mGLTF.scene.scale.set(model3D.size / mModelSize, model3D.size / mModelSize, model3D.size / mModelSize);
     }

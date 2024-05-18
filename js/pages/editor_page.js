@@ -10,6 +10,9 @@ import { TimelineController } from './controllers/timeline_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 
 export function EditorPage(parentContainer) {
+    console.log('Next up, make models visible in moments.');
+    console.log('also cache loaded models...')
+
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;
     let mWorkspace;

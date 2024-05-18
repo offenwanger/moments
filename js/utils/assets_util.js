@@ -69,7 +69,7 @@ export function AssetUtil(workspace) {
         let fileUrl = await mWorkspace.getAssetAsURL(asset.filename)
         const modelLoader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath('../module/three/examples/jsm/libs/draco/');
+        dracoLoader.setDecoderPath('./node_modules/three/examples/jsm/libs/draco/');
         modelLoader.setDRACOLoader(dracoLoader);
         let model = await modelLoader.loadAsync(fileUrl, null,
             // called while loading is progressing

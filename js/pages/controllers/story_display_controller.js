@@ -31,7 +31,7 @@ export function StoryDisplayController(parentContainer) {
         .style("display", 'none')
         .on('click', async () => {
             mCanvasViewController.setScene(mStorySceneController);
-            mCanvasViewController.setScene(mStorySceneController);
+            mXRSessionController.setScene(mStorySceneController);
             mExitAssetViewButton.style("display", 'none')
             await mExitAssetViewCallback();
         });
@@ -74,7 +74,7 @@ export function StoryDisplayController(parentContainer) {
     async function showAsset(assetId, assetUtil) {
         await mAssetSceneController.showAsset(assetId, assetUtil);
         mCanvasViewController.setScene(mAssetSceneController);
-        mCanvasViewController.setScene(mAssetSceneController);
+        mXRSessionController.setScene(mAssetSceneController);
         mExitAssetViewButton.style('display', '')
     }
 

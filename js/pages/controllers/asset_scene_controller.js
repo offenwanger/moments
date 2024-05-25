@@ -13,6 +13,10 @@ export function AssetSceneController() {
 
     let mEnvironmentBox;
 
+    let mLight = new THREE.DirectionalLight(0xFFFFFF, 3);
+    mLight.position.set(- 1, 2, 4);
+    mScene.add(mLight);
+
     async function updateModel(model, assetUtil) {
         let oldModel = mModel;
         mModel = model;
@@ -34,6 +38,7 @@ export function AssetSceneController() {
         let asset = mModel.getAsset(assetId);
         if (!asset) { console.error("Invalid asset id"); return; }
         mModel3D = new Data.Model3D();
+        mModel3D.z = -1;
         mModel3D.assetId = assetId;
         mModel3DScene.update(mModel3D, null, assetUtil)
     }

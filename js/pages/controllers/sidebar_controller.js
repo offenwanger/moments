@@ -107,4 +107,5 @@ export function SidebarController(container) {
     this.setAddCallback = setAddCallback;
     this.setUpdateAttributeCallback = setUpdateAttributeCallback;
     this.setSelectAsset = (func) => mModel3DPanel.setSelectAsset(func);
+    this.setViewAssetCallback = (func) => mAssetPanel.setViewAssetCallback(func);
 }

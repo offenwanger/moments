@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { DataModel } from "../../data_model.js";
-import { Data } from '../../data_structs.js';
-import { StoryScene } from '../scene_objects/story_scene.js';
 import { CanvasViewController } from './canvas_view_controller.js';
 import { XRSessionController } from './xr_session_controller.js';
+import { AssetSceneController } from './asset_scene_controller.js';
+import { StorySceneController } from './story_scene_controller.js';
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -11,21 +11,43 @@ import { XRSessionController } from './xr_session_controller.js';
  * @param {*} parentContainer 
  */
 export function StoryDisplayController(parentContainer) {
+    let mExitAssetViewCallback = async () => { }
 
     let mModel = new DataModel();
-    let mStory = new Data.Story();
 
     let mWidth = 100;
     let mHeight = 100;
 
-    let mScene = new THREE.Scene();
-    let mEnvironmentBox;
-    let mStoryScene = new StoryScene(mScene);
-
-    let mCanvasViewController = new CanvasViewController(parentContainer, mScene, mStoryScene);
-    mCanvasViewController.startRendering();
-    let mXRSessionController = new XRSessionController(parentContainer, mScene);
     let isVR = false;
+
+    let mAssetSceneController = new AssetSceneController();
+    let mStorySceneController = new StorySceneController();
+
+    let mExitAssetViewButton = parentContainer.append("button")
+        .style('position', 'absolute')
+        .style('top', '80px')
+        .style('left', '20px')
+        .html('x')
+        .style("display", 'none')
+        .on('click', async () => {
+            mCanvasViewController.setScene(mStorySceneController);
+            mCanvasViewController.setScene(mStorySceneController);
+            mExitAssetViewButton.style("display", 'none')
+            await mExitAssetViewCallback();
+        });
+
+    let mCanvasViewController = new CanvasViewController(parentContainer);
+    mCanvasViewController.setScene(mStorySceneController);
+    mCanvasViewController.startRendering();
+
+    let mXRSessionController = new XRSessionController(parentContainer);
+    mXRSessionController.setScene(mStorySceneController);
+    let vrButtonDiv = parentContainer.append("div")
+        .style('position', 'absolute')
+        .style('top', '40px')
+        .style('left', '20px')
+    vrButtonDiv.node().appendChild(mXRSessionController.getVRButton());
+    d3.select(mXRSessionController.getVRButton()).style("position", "relative")
 
     mXRSessionController.onSessionStart(() => {
         if (!isVR) {
@@ -45,22 +67,15 @@ export function StoryDisplayController(parentContainer) {
 
 
     async function updateModel(model, assetUtil) {
-        let oldModel = mModel;
-        mModel = model;
+        await mAssetSceneController.updateModel(model, assetUtil);
+        await mStorySceneController.updateModel(model, assetUtil);
+    }
 
-        let story = mModel.getStory();
-        let oldStory = oldModel.getStory();
-
-        if (story.background != oldStory.background || !mScene.background) {
-            if (story.background) {
-                mEnvironmentBox = await assetUtil.loadEnvironmentCube(story.background);
-            } else {
-                mEnvironmentBox = await assetUtil.loadDefaultEnvironmentCube();
-            }
-            mScene.background = mEnvironmentBox;
-        }
-
-        await mStoryScene.updateModel(model, assetUtil);
+    async function showAsset(assetId, assetUtil) {
+        await mAssetSceneController.showAsset(assetId, assetUtil);
+        mCanvasViewController.setScene(mAssetSceneController);
+        mCanvasViewController.setScene(mAssetSceneController);
+        mExitAssetViewButton.style('display', '')
     }
 
     function onResize(width, height) {
@@ -69,141 +84,9 @@ export function StoryDisplayController(parentContainer) {
         mCanvasViewController.onResize(width, height);
     }
 
-
-    /*
-
-    function onCameraPositionChange() {
-        mStoryDisplayController.sortMoments(mStoryDisplayController.worldToLocalPosition(mPageCamera.position));
-    }
-
-    function onMomentDrag(moment) {
-        mInteraction = {
-            type: MOMENT_DRAG,
-            moment,
-            cameraStartPos: mPageCamera.position.clone(),
-            toMoment: new THREE.Vector3().subVectors(mStoryDisplayController.localToWorldPosition(moment.getPosition()), mPageCamera.position).applyQuaternion(mPageCamera.quaternion.clone().invert())
-        }
-        mHighlightRingController.hide();
-    }
-
-    function onMomentDragEnd() {
-        mInteraction = false;
-    }
-
-    function onClick() {
-        if (!mLastLookTarget) return;
-        if (mLastLookTarget.type == LookTarget.LINE_SURFACE) {
-            let zeroT = mTPosition;
-
-            let userPosition = mStoryDisplayController.worldToLocalPosition(mPageCamera.position);
-            let userClosestPoint = mStoryDisplayController.getPathLine().getClosestPoint(userPosition);
-
-            let position = mStoryDisplayController.worldToLocalPosition(mLastLookTarget.position)
-            let closestPoint = mStoryDisplayController.getPathLine().getClosestPoint(position);
-            let offset = new THREE.Vector3()
-                .subVectors(position, closestPoint.position)
-                .applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), closestPoint.tangent));
-
-            mTPosition = closestPoint.t + zeroT - userClosestPoint.t;
-            mTPosition = Math.max(0, Math.min(1, mTPosition));
-
-            mStoryDisplayController.update(mTPosition, offset.x);
-        }
-    }
-
-    function render(time) {
-        time *= 0.001;
-        let clock = new THREE.Clock();
-        clock.start();
-
-        // let localCameraPos = mStoryDisplayController.worldToLocalPosition(mPageCamera.position);
-
-        // for (let i = 0; i < momentsArr.length; i++) {
-        //     if (clock.getElapsedTime() > 0.015) { break; }
-        //     momentsArr[i].update(localCameraPos);
-        // }
-
-        let interactionTarget;
-        if (mInteraction) {
-            if (mInteraction.type == MOMENT_DRAG) {
-                interactionTarget = mInteraction.moment;
-                let newWorldPos = mInteraction.toMoment.clone()
-                    .applyQuaternion(mPageCamera.quaternion)
-                    .add(mPageCamera.position);
-                mInteraction.moment.setPosition(mStoryDisplayController.worldToLocalPosition(newWorldPos))
-            } else {
-                console.error("Not supported!", mInteraction);
-            }
-        } else {
-            let mLastLookTarget = {}//mSceneInputController.getLookTarget(mPageCamera, mStoryDisplayController);
-            if (mLastLookTarget.type == LookTarget.MOMENT) {
-                let worldPos = mStoryDisplayController.localToWorldPosition(mLastLookTarget.moment.getPosition());
-                worldPos.add(new THREE.Vector3(0, -mLastLookTarget.moment.getSize(), 0))
-                mHighlightRingController.setPosition(worldPos)
-                mHighlightRingController.rotateUp();
-                mHighlightRingController.show();
-                interactionTarget = mLastLookTarget.moment;
-            } else if (mLastLookTarget.type == LookTarget.LINE_SURFACE) {
-                mHighlightRingController.setPosition(mLastLookTarget.position)
-                mHighlightRingController.rotateUp(mLastLookTarget.normal);
-                mHighlightRingController.show();
-            } else if (mLastLookTarget.type == LookTarget.UP) {
-                mHighlightRingController.hide();
-                // show the exit
-            } else if (mLastLookTarget.type == LookTarget.NONE) {
-                mHighlightRingController.hide();
-            } else {
-                console.error("Type not supported!", mLastLookTarget);
-            }
-        }
-
-        // chop the animation time out of rendering, it should be cheap
-        // momentsArr.forEach(moment => {
-        //     moment.animate(time);
-        // })
-
-        let cameraPosition1 = null;
-        let cameraPosition2 = null;
-        if (mPageRenderer.xr.isPresenting) {
-            let cameras = mPageRenderer.xr.getCamera().cameras;
-            // cameraPosition1 = mStoryDisplayController.worldToLocalPosition(cameras[0].position)
-            // cameraPosition2 = mStoryDisplayController.worldToLocalPosition(cameras[1].position)
-        } else {
-            // cameraPosition1 = mStoryDisplayController.worldToLocalPosition(mPageCamera.position)
-        }
-
-        // render the interaction target first
-        if (clock.getElapsedTime() < 0.02 && interactionTarget) {
-            interactionTarget.setBlur(false);
-            interactionTarget.render(cameraPosition1, cameraPosition2);
-        }
-        for (let i = 0; i < momentsArr.length; i++) {
-            if (momentsArr[i] == interactionTarget) continue;
-            if (clock.getElapsedTime() < 0.02) {
-                momentsArr[i].setBlur(false);
-                momentsArr[i].render(cameraPosition1, cameraPosition2);
-            } else {
-                // if we've going to drop below 60fps, stop rendering
-                momentsArr[i].setBlur(true);
-            }
-        }
-        mHighlightRingController.animate(time);
-
-        mPageRenderer.render(mScene, mPageCamera);
-    }
-
-
-    // this.getMoments = mStorylineController.getMoments;
-    // this.sortMoments = mStorylineController.sortMoments;
-    // this.worldToLocalPosition = mStorylineController.worldToLocalPosition;
-    // this.worldToLocalRotation = mStorylineController.worldToLocalRotation;
-    // this.getPathLine = mStorylineController.getPathLine;
-    // this.localToWorldPosition = mStorylineController.localToWorldPosition;
-    // this.localToWorldRotation = mStorylineController.localToWorldRotation;
-
-    */
-
     this.updateModel = updateModel;
+    this.showAsset = showAsset;
     this.onResize = onResize;
+    this.setExitAssetViewCallback = (func) => mExitAssetViewCallback = func;
 }
 

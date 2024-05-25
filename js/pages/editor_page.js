@@ -10,8 +10,9 @@ import { TimelineController } from './controllers/timeline_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 
 export function EditorPage(parentContainer) {
-    console.log('Next up, make models visible in moments.');
-    console.log('also cache loaded models...')
+    console.log('TODO: cache loaded models?')
+    console.log('Work on movel moving/posing in the model viewer')
+    console.log('Maybe add the assetViewer to the URL for quick reloading')
 
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;
@@ -103,11 +104,23 @@ export function EditorPage(parentContainer) {
     mSidebarController.setSelectAsset(async () => {
         return await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
     })
+    mSidebarController.setViewAssetCallback(async (assetId) => {
+        const url = new URL(window.location)
+        url.searchParams.set("assetViewId", assetId)
+        history.replaceState(null, '', url);
+        await mStoryDisplayController.showAsset(assetId, mAssetUtil);
+    })
+    mStoryDisplayController.setExitAssetViewCallback(async (assetId) => {
+        const url = new URL(window.location)
+        url.searchParams.delete("assetViewId")
+        history.replaceState(null, '', url);
+    })
 
     async function show(workspace) {
         mWorkspace = workspace;
 
-        const storyId = new URLSearchParams(window.location.search).get("story");
+        const searchParams = new URLSearchParams(window.location.search)
+        const storyId = searchParams.get("story");
         if (!storyId) { console.error("Story not set!"); return; }
 
         mModelController = new ModelController(storyId, workspace);
@@ -120,6 +133,10 @@ export function EditorPage(parentContainer) {
         await mSidebarController.navigate(mModelController.getModel().getStory().id);
 
         await updateModel();
+
+        if (searchParams.get("assetViewId")) {
+            await mStoryDisplayController.showAsset(searchParams.get("assetViewId"), mAssetUtil);
+        }
     }
 
     async function updateModel() {

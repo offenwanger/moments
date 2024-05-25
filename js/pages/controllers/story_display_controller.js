@@ -3,7 +3,7 @@ import { DataModel } from "../../data_model.js";
 import { CanvasViewController } from './canvas_view_controller.js';
 import { XRSessionController } from './xr_session_controller.js';
 import { AssetSceneController } from './asset_scene_controller.js';
-import { StorySceneController } from './story_scene_controller.js';
+import { StoryWrapperController } from './story_scene_controller.js';
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -21,7 +21,7 @@ export function StoryDisplayController(parentContainer) {
     let isVR = false;
 
     let mAssetSceneController = new AssetSceneController();
-    let mStorySceneController = new StorySceneController();
+    let mStoryWrapperController = new StoryWrapperController();
 
     let mExitAssetViewButton = parentContainer.append("button")
         .style('position', 'absolute')
@@ -30,18 +30,18 @@ export function StoryDisplayController(parentContainer) {
         .html('x')
         .style("display", 'none')
         .on('click', async () => {
-            mCanvasViewController.setScene(mStorySceneController);
-            mXRSessionController.setScene(mStorySceneController);
+            mCanvasViewController.setScene(mStoryWrapperController);
+            mXRSessionController.setScene(mStoryWrapperController);
             mExitAssetViewButton.style("display", 'none')
             await mExitAssetViewCallback();
         });
 
     let mCanvasViewController = new CanvasViewController(parentContainer);
-    mCanvasViewController.setScene(mStorySceneController);
+    mCanvasViewController.setScene(mStoryWrapperController);
     mCanvasViewController.startRendering();
 
     let mXRSessionController = new XRSessionController(parentContainer);
-    mXRSessionController.setScene(mStorySceneController);
+    mXRSessionController.setScene(mStoryWrapperController);
     let vrButtonDiv = parentContainer.append("div")
         .style('position', 'absolute')
         .style('top', '40px')
@@ -68,7 +68,7 @@ export function StoryDisplayController(parentContainer) {
 
     async function updateModel(model, assetUtil) {
         await mAssetSceneController.updateModel(model, assetUtil);
-        await mStorySceneController.updateModel(model, assetUtil);
+        await mStoryWrapperController.updateModel(model, assetUtil);
     }
 
     async function showAsset(assetId, assetUtil) {

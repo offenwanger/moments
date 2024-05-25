@@ -3,9 +3,8 @@ import { UP } from '../../constants.js';
 import { DataModel } from '../../data_model.js';
 import { Data } from "../../data_structs.js";
 import { SceneUtil } from '../../utils/scene_util.js';
-import { AnnotationScene } from './annotation_scene.js';
-import { Model3DScene } from './model3d_scene.js';
-import { FileUtil } from './../../utils/file_util.js'
+import { AnnotationWrapper } from './annotation_wrapper.js';
+import { Model3DWrapper } from './model3D_wrapper.js';
 
 const gCanvas = document.createElement('canvas');
 gCanvas.width = 1024;
@@ -14,7 +13,7 @@ gCanvas.height = 512;
 const gRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: gCanvas });
 gRenderer.setSize(1024, 512, false);
 
-export function MomentScene(parent) {
+export function MomentWrapper(parent) {
     let mMomentGroup = new THREE.Group();
     parent.add(mMomentGroup)
     let mEnvironmentBox;
@@ -22,8 +21,8 @@ export function MomentScene(parent) {
     let mModel = new DataModel();
     let mMoment = new Data.Moment();
 
-    let mModel3DScenes = [];
-    let mAnnotationScenes = [];
+    let mModel3DWrappers = [];
+    let mAnnotationWrappers = [];
 
     let mPosition = new THREE.Vector3();
     let mOrientation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0);
@@ -40,8 +39,8 @@ export function MomentScene(parent) {
     const near = 0.1;
     const far = 200;
 
-    const mMomentScene = new THREE.Scene();
-    mMomentScene.fog = new THREE.Fog(0xcccccc, 0.1, 1000)
+    const mMomentWrapper = new THREE.Scene();
+    mMomentWrapper.fog = new THREE.Fog(0xcccccc, 0.1, 1000)
 
     const mCanvases = [document.createElement('canvas'), document.createElement('canvas')];
     mCanvases.forEach(canvas => {
@@ -106,16 +105,16 @@ export function MomentScene(parent) {
             mSphere.material.envMap = mEnvironmentBox;
         }
 
-        await SceneUtil.syncArray(mModel3DScenes, mMoment.model3Ds, model, assetUtil, async (model3D) => {
-            let newModel3DScene = new Model3DScene(mMomentGroup);
-            await newModel3DScene.update(model3D, mModel, assetUtil)
-            return newModel3DScene;
+        await SceneUtil.syncArray(mModel3DWrappers, mMoment.model3Ds, model, assetUtil, async (model3D) => {
+            let newModel3DWrapper = new Model3DWrapper(mMomentGroup);
+            await newModel3DWrapper.update(model3D, mModel, assetUtil)
+            return newModel3DWrapper;
         });
 
-        await SceneUtil.syncArray(mAnnotationScenes, story.annotations, model, assetUtil, async (annotation) => {
-            let newAnnotationScene = new AnnotationScene(mMomentGroup);
-            await newAnnotationScene.update(annotation, mModel, assetUtil)
-            return newAnnotationScene;
+        await SceneUtil.syncArray(mAnnotationWrappers, story.annotations, model, assetUtil, async (annotation) => {
+            let newAnnotationWrapper = new AnnotationWrapper(mMomentGroup);
+            await newAnnotationWrapper.update(annotation, mModel, assetUtil)
+            return newAnnotationWrapper;
         });
     }
 
@@ -123,12 +122,12 @@ export function MomentScene(parent) {
         gRenderer.clear();
 
         gRenderer.setViewport(0, 0, 512, 512);
-        gRenderer.render(mMomentScene, mCameras[0]);
+        gRenderer.render(mMomentWrapper, mCameras[0]);
         mContexts[0].drawImage(gCanvas, 0, 0, 512, 512, 0, 0, 512, 512);
         mLenses[0].material.map.needsUpdate = true;
 
         gRenderer.setViewport(512, 0, 512, 512);
-        gRenderer.render(mMomentScene, mCameras[1]);
+        gRenderer.render(mMomentWrapper, mCameras[1]);
         mContexts[1].drawImage(gCanvas, 512, 0, 512, 512, 0, 0, 512, 512);
         mLenses[1].material.map.needsUpdate = true;
     }

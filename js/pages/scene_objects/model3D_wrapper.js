@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Data } from "../../data_structs.js";
 
-export function Model3DScene(parent) {
+export function Model3DWrapper(parent) {
     let mParent = parent;
     let mModel3D = new Data.Model3D();
     let mGLTF = null;

@@ -1,17 +1,17 @@
 import { Data } from "../../data_structs.js";
 
-export function PointerScene(parent) {
+export function AnnotationWrapper(parent) {
     let mParent = parent;
-    let mPointer = new Data.Pointer();
+    let mAnnotation = new Data.Annotation();
 
     console.log("Add Self to Scene")
 
-    async function update(pointer, model, assetUtil) {
-        mPointer = pointer;
+    async function update(annotation,  model, assetUtil) {
+        mAnnotation = annotation;
     }
 
     function getId() {
-        return mPointer.id;
+        return mAnnotation.id;
     }
 
     function remove() {

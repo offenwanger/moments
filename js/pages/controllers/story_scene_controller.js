@@ -1,16 +1,16 @@
 import * as THREE from 'three';
-import { StoryScene } from '../scene_objects/story_scene.js';
+import { StoryWrapper } from '../scene_objects/story_wrapper.js';
 import { DataModel } from '../../data_model.js';
 
-export function StorySceneController() {
+export function StoryWrapperController() {
     let mScene = new THREE.Scene();
-    let mStoryScene = new StoryScene(mScene);
+    let mStoryWrapper = new StoryWrapper(mScene);
     let mModel = new DataModel();
 
     let mEnvironmentBox;
 
     function onCameraMove(globalPosition) {
-        mStoryScene.onCameraMove(globalPosition)
+        mStoryWrapper.onCameraMove(globalPosition)
     }
 
     async function updateModel(model, assetUtil) {
@@ -29,7 +29,7 @@ export function StorySceneController() {
             mScene.background = mEnvironmentBox;
         }
 
-        await mStoryScene.updateModel(model, assetUtil);
+        await mStoryWrapper.updateModel(model, assetUtil);
     }
 
     this.updateModel = updateModel;

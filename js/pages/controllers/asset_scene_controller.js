@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { DataModel } from '../../data_model.js';
-import { Model3DScene } from '../scene_objects/model3d_scene.js';
+import { Model3DWrapper } from '../scene_objects/model3D_wrapper.js';
 import { Data } from '../../data_structs.js';
 
 export function AssetSceneController() {
@@ -8,8 +8,8 @@ export function AssetSceneController() {
     let mModel = new DataModel();
 
     let mAssetId = null;
-    let mModel3DScene = new Model3DScene(mScene);
     let mModel3D = new Data.Model3D();
+    let mModel3DWrapper = new Model3DWrapper(mScene);
 
     let mEnvironmentBox;
 
@@ -40,7 +40,7 @@ export function AssetSceneController() {
         mModel3D = new Data.Model3D();
         mModel3D.z = -1;
         mModel3D.assetId = assetId;
-        mModel3DScene.update(mModel3D, null, assetUtil)
+        mModel3DWrapper.update(mModel3D, null, assetUtil)
     }
 
     function onCameraMove() {

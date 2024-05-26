@@ -94,6 +94,7 @@ export const Util = {
     console: {
         log: {
             point,
+            arrow,
             onchange,
             vertexNormalHelper,
         }
@@ -112,6 +113,16 @@ function point(id, vec, scene, color = 0x00ff00) {
 
     }
     debug_data[id].position.copy(vec)
+}
+
+function arrow(id, origin, direction, scene, color = 0x00ff00) {
+    if (!debug_data[id]) {
+        debug_data[id] = new THREE.ArrowHelper(direction, origin, 1, color);
+        debug_data[id].line.material.linewidth = 0.05;
+        scene.add(debug_data[id]);
+    }
+    debug_data[id].setDirection(direction)
+    debug_data[id].position.copy(origin)
 }
 
 function vertexNormalHelper(mesh, scene) {

@@ -5,6 +5,7 @@ import { Data } from "../../data_structs.js";
 import { SceneUtil } from '../../utils/scene_util.js';
 import { AnnotationWrapper } from './annotation_wrapper.js';
 import { Model3DWrapper } from './model3D_wrapper.js';
+import { Util } from '../../utils/utility.js';
 
 const gCanvas = document.createElement('canvas');
 gCanvas.width = 1024;
@@ -39,8 +40,8 @@ export function MomentWrapper(parent) {
     const near = 0.1;
     const far = 200;
 
-    const mMomentWrapper = new THREE.Scene();
-    mMomentWrapper.fog = new THREE.Fog(0xcccccc, 0.1, 1000)
+    const mMomentScene = new THREE.Scene();
+    mMomentScene.fog = new THREE.Fog(0xcccccc, 0.1, 1000)
 
     const mCanvases = [document.createElement('canvas'), document.createElement('canvas')];
     mCanvases.forEach(canvas => {
@@ -122,12 +123,12 @@ export function MomentWrapper(parent) {
         gRenderer.clear();
 
         gRenderer.setViewport(0, 0, 512, 512);
-        gRenderer.render(mMomentWrapper, mCameras[0]);
+        gRenderer.render(mMomentScene, mCameras[0]);
         mContexts[0].drawImage(gCanvas, 0, 0, 512, 512, 0, 0, 512, 512);
         mLenses[0].material.map.needsUpdate = true;
 
         gRenderer.setViewport(512, 0, 512, 512);
-        gRenderer.render(mMomentWrapper, mCameras[1]);
+        gRenderer.render(mMomentScene, mCameras[1]);
         mContexts[1].drawImage(gCanvas, 512, 0, 512, 512, 0, 0, 512, 512);
         mLenses[1].material.map.needsUpdate = true;
     }
@@ -169,9 +170,28 @@ export function MomentWrapper(parent) {
         parent.remove(mMomentGroup);
     }
 
+
+    function getIntersections(ray) {
+        if (mMoment.framed) {
+            return [];
+            let from = ray.ray.origin
+            let to = ray.ray.direction.clone().add(ray.ray.origin.multiply(ray.far));
+            let intersection = Util.getSphereIntersection(from, to, mMoment, mMoment.size);
+            if (intersection) {
+                // add self to return
+            }
+        } else {
+            // not sure what we're going to do here... Do we select the moment as a whole?
+        }
+        return [
+            ...mAnnotationWrappers.map(w => w.getIntersections(ray)),
+        ]
+    }
+
     this.update = update;
     this.getId = getId;
     this.remove = remove;
     this.render = render;
+    this.getIntersections = getIntersections;
     this.onCameraMove = onCameraMove;
 }

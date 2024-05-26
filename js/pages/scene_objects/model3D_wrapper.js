@@ -18,6 +18,13 @@ export function Model3DWrapper(parent) {
                 mParent.add(mGLTF.scene);
                 const box = new THREE.Box3().setFromObject(mGLTF.scene);
                 mModelSize = Math.max(...box.getSize(new THREE.Vector3()).toArray());
+
+                mGLTF.scene.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.material.userData.originalColor = new THREE.Color(0xffffff);
+                        child.material.userData.originalColor.copy(child.material.color);
+                    }
+                });
             } catch (error) {
                 console.error(error);
             }
@@ -36,7 +43,39 @@ export function Model3DWrapper(parent) {
         mParent.remove(mGLTF.scene)
     }
 
+    function getIntersections(ray) {
+        if (!mGLTF) return []
+        const intersects = ray.intersectObjects(mGLTF.scene.children);
+        if (intersects.length > 0) {
+            // TODO add the intersection distance?
+            return [{ id: mModel3D.id, wrapper: this }]
+        } else {
+            return []
+        }
+    }
+
+    const highlightColor = new THREE.Color(0xff0000)
+
+    function highlight() {
+        mGLTF.scene.traverse(function (child) {
+            if (child.isMesh) {
+                child.material.color.copy(highlightColor)
+            }
+        });
+    }
+
+    function unhighlight() {
+        mGLTF.scene.traverse(function (child) {
+            if (child.isMesh) {
+                child.material.color.copy(child.material.userData.originalColor)
+            }
+        });
+    }
+
     this.update = update;
     this.getId = getId;
     this.remove = remove;
+    this.getIntersections = getIntersections;
+    this.highlight = highlight;
+    this.unhighlight = unhighlight;
 }

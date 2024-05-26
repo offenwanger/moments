@@ -170,6 +170,8 @@ export function EditorPage(parentContainer) {
             mTimelineDivider = Util.limit(screenCoords.y / mHeight, 0.01, 0.99);
             onResize(mWidth, mHeight);
         }
+
+        mStoryDisplayController.onPointerMove(screenCoords);
     }
 
     function onPointerUp(screenCoords) {

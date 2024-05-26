@@ -47,8 +47,13 @@ export function AssetSceneController() {
         // do something with regards to rearranging things. 
     }
 
+    function getIntersections(ray) {
+        return [...mModel3DWrapper.getIntersections(ray)];
+    }
+
     this.updateModel = updateModel;
     this.showAsset = showAsset;
+    this.getIntersections = getIntersections;
     this.onCameraMove = onCameraMove;
     this.getScene = () => mScene;
 }

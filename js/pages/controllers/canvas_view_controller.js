@@ -8,6 +8,7 @@ export function CanvasViewController(parentContainer) {
     let mHeight = 10;
 
     let mSceneController;
+    let mRendering = false;
 
     let mMainCanvas = parentContainer.append('canvas')
         .attr('id', 'main-canvas')
@@ -46,10 +47,32 @@ export function CanvasViewController(parentContainer) {
         mPageCamera.updateProjectionMatrix();
     }
 
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let hoveredItems = []
+
+    function onPointerMove(screenCoords) {
+        if (!mRendering) return;
+        let bb = mMainCanvas.node().getBoundingClientRect();
+        pointer.x = ((screenCoords.x - bb.x) / bb.width) * 2 - 1;
+        pointer.y = - ((screenCoords.y - bb.y) / bb.height) * 2 + 1;
+
+        // update the picking ray with the camera and pointer position
+        raycaster.setFromCamera(pointer, mPageCamera);
+
+        let intersections = mSceneController.getIntersections(raycaster);
+        if (intersections.map(i => i.id).sort().join() != hoveredItems.map(i => i.id).sort().join()) {
+            hoveredItems.forEach(item => item.wrapper.unhighlight());
+            hoveredItems = intersections;
+            hoveredItems.forEach(item => item.wrapper.highlight())
+        }
+    }
+
 
     this.onResize = onResize;
 
-    this.startRendering = () => { mPageRenderer.setAnimationLoop(pageRender); }
-    this.stopRendering = () => { mPageRenderer.setAnimationLoop(null); }
+    this.startRendering = () => { mPageRenderer.setAnimationLoop(pageRender); mRendering = true; }
+    this.stopRendering = () => { mPageRenderer.setAnimationLoop(null); mRendering = false; }
     this.setScene = (scene) => { mSceneController = scene }
+    this.onPointerMove = onPointerMove;
 }

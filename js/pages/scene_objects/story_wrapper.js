@@ -71,7 +71,17 @@ export function StoryWrapper(parent) {
         return localPosition;
     }
 
+    function getIntersections(ray) {
+        return [
+            ...mModel3DWrappers.map(w => w.getIntersections(ray)).flat(),
+            ...mMomentWrappers.map(w => w.getIntersections(ray)).flat(),
+            ...mAnnotationWrappers.map(w => w.getIntersections(ray)).flat(),
+            ...mPointerWrappers.map(w => w.getIntersections(ray)).flat(),
+        ]
+    }
+
     this.updateModel = updateModel;
     this.render = render;
     this.onCameraMove = onCameraMove;
+    this.getIntersections = getIntersections;
 }

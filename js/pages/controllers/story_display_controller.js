@@ -84,9 +84,14 @@ export function StoryDisplayController(parentContainer) {
         mCanvasViewController.onResize(width, height);
     }
 
+    function onPointerMove(screenCoords) {
+        mCanvasViewController.onPointerMove(screenCoords);
+    }
+
     this.updateModel = updateModel;
     this.showAsset = showAsset;
     this.onResize = onResize;
+    this.onPointerMove = onPointerMove;
     this.setExitAssetViewCallback = (func) => mExitAssetViewCallback = func;
 }
 

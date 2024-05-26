@@ -32,7 +32,12 @@ export function StoryWrapperController() {
         await mStoryWrapper.updateModel(model, assetUtil);
     }
 
+    function getIntersections(ray) {
+        return [...mStoryWrapper.getIntersections(ray)]
+    }
+
     this.updateModel = updateModel;
+    this.getIntersections = getIntersections;
     this.onCameraMove = onCameraMove;
     this.getScene = () => mScene;
 }

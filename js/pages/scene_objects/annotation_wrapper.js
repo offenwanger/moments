@@ -6,7 +6,7 @@ export function AnnotationWrapper(parent) {
 
     console.log("Add Self to Scene")
 
-    async function update(annotation,  model, assetUtil) {
+    async function update(annotation, model, assetUtil) {
         mAnnotation = annotation;
     }
 
@@ -18,6 +18,12 @@ export function AnnotationWrapper(parent) {
         console.log("Remove Self from Scene")
     }
 
+    function getIntersections(ray) {
+        // probably check where in your plane we're pointed (or pointed through)
+        return [];
+    }
+
+    this.getIntersections = getIntersections;
     this.update = update;
     this.getId = getId;
     this.remove = remove;

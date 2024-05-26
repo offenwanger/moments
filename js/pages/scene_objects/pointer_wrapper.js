@@ -18,7 +18,13 @@ export function PointerWrapper(parent) {
         console.log("Remove Self from Scene")
     }
 
+    function getIntersections(ray) {
+        // probably check where in your plane we're pointed (or pointed through)
+        return [];
+    }
+
     this.update = update;
     this.getId = getId;
     this.remove = remove;
+    this.getIntersections = getIntersections;
 }

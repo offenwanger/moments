@@ -12,7 +12,7 @@ import { AssetPicker } from './editor_panels/asset_picker.js';
 export function EditorPage(parentContainer) {
     console.log('TODO: cache loaded models?')
     console.log('Work on movel moving/posing in the model viewer')
-    console.log('Maybe add the assetViewer to the URL for quick reloading')
+    console.log('enable the click thing in the canvas viewer to bring it up in the sidebar')
 
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;

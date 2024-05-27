@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { Data } from "../../data_structs.js";
+import { InteractionTargetWrapper } from './interaction_target_wrapper.js';
 
 export function Model3DWrapper(parent) {
     let mParent = parent;
     let mModel3D = new Data.Model3D();
     let mGLTF = null;
     let mModelSize = 1;
+    let mInteractionTarget = makeInteractionTarget();
 
     async function update(model3D, model, assetUtil) {
         let oldModel = mModel3D;
@@ -48,7 +50,7 @@ export function Model3DWrapper(parent) {
         const intersects = ray.intersectObjects(mGLTF.scene.children);
         if (intersects.length > 0) {
             // TODO add the intersection distance?
-            return [{ id: mModel3D.id, wrapper: this }]
+            return [mInteractionTarget]
         } else {
             return []
         }
@@ -70,6 +72,23 @@ export function Model3DWrapper(parent) {
                 child.material.color.copy(child.material.userData.originalColor)
             }
         });
+    }
+
+    function makeInteractionTarget() {
+        let interactionTarget = new InteractionTargetWrapper();
+        interactionTarget.getPosition = () => {
+            if (mGLTF) {
+                console.log(mGLTF.scene.getWorldPosition(new THREE.Vector3()))
+                return mGLTF.scene.getWorldPosition(new THREE.Vector3());
+            } else {
+                return new THREE.Vector3();
+            }
+        }
+        interactionTarget.setPosition = (pos) => { if (mGLTF) mGLTF.scene.position.copy(pos) }
+        interactionTarget.highlight = highlight;
+        interactionTarget.unhighlight = unhighlight;
+        interactionTarget.getId = () => mModel3D.id;
+        return interactionTarget;
     }
 
     this.update = update;

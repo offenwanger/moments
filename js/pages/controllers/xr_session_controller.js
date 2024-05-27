@@ -4,12 +4,17 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { Util } from '../../utils/utility.js';
 
+const ONE_HAND_GRAB_MOVE = 'oneHandedGrabMove'
+const TWO_HAND_GRAB_MOVE = 'twoHandedGrabMove'
+const LEFT = 'left'
+const RIGHT = 'right'
+
 export function XRSessionController() {
     let mOnSessionStartCallback = () => { }
     let mOnSessionEndCallback = () => { }
 
     let mSystemState = {
-        interacting: false,
+        interaction: false,
         lHovered: [],
         rHovered: [],
         teleporting: false,
@@ -44,39 +49,39 @@ export function XRSessionController() {
 
     let controllerGroup = new THREE.Group();
 
-    const mController1 = mXRRenderer.xr.getController(0);
-    const mControllerGrip1 = mXRRenderer.xr.getControllerGrip(0);
-    const mController1Tip = new THREE.Mesh(
+    const mControllerR = mXRRenderer.xr.getController(1);
+    const mControllerGripR = mXRRenderer.xr.getControllerGrip(1);
+    const mControllerRTip = new THREE.Mesh(
         new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2),
         new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true }));
-    mController1Tip.position.set(-0.005, 0, -0.03);
-    mController1.addEventListener('connected', function (event) {
-        this.add(mController1Tip);
-        mControllerGrip1.add(new XRControllerModelFactory().createControllerModel(mControllerGrip1));
+    mControllerRTip.position.set(-0.005, 0, -0.03);
+    mControllerR.addEventListener('connected', function (event) {
+        this.add(mControllerRTip);
+        mControllerGripR.add(new XRControllerModelFactory().createControllerModel(mControllerGripR));
     });
-    mController1.addEventListener('disconnected', function () {
-        this.remove(mController1Tip);
+    mControllerR.addEventListener('disconnected', function () {
+        this.remove(mControllerRTip);
     });
 
-    controllerGroup.add(mController1);
-    controllerGroup.add(mControllerGrip1);
+    controllerGroup.add(mControllerR);
+    controllerGroup.add(mControllerGripR);
 
-    const mController2 = mXRRenderer.xr.getController(1);
-    const mControllerGrip2 = mXRRenderer.xr.getControllerGrip(1);
-    const mController2Tip = new THREE.Mesh(
+    const mControllerL = mXRRenderer.xr.getController(0);
+    const mControllerGripL = mXRRenderer.xr.getControllerGrip(0);
+    const mControllerLTip = new THREE.Mesh(
         new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2),
         new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true }));
-    mController2Tip.position.set(0.005, 0, -0.03);
-    mController2.addEventListener('connected', function (event) {
-        this.add(mController2Tip);
-        mControllerGrip2.add(new XRControllerModelFactory().createControllerModel(mControllerGrip2));
+    mControllerLTip.position.set(0.005, 0, -0.03);
+    mControllerL.addEventListener('connected', function (event) {
+        this.add(mControllerLTip);
+        mControllerGripL.add(new XRControllerModelFactory().createControllerModel(mControllerGripL));
     });
-    mController2.addEventListener('disconnected', function () {
-        this.remove(mController2Tip);
+    mControllerL.addEventListener('disconnected', function () {
+        this.remove(mControllerLTip);
     });
 
-    controllerGroup.add(mController2);
-    controllerGroup.add(mControllerGrip2);
+    controllerGroup.add(mControllerL);
+    controllerGroup.add(mControllerGripL);
 
     function setupListeners() {
         if (!mSession) return;
@@ -101,56 +106,103 @@ export function XRSessionController() {
         if (!mSceneController) return;
         mXRRenderer.render(mSceneController.getScene(), mXRCamera);
 
+        if (mSystemState.interaction) {
+            if (mSystemState.interaction.type == ONE_HAND_GRAB_MOVE) {
+                let controller = mSystemState.interaction.hand == LEFT ? mControllerLTip : mControllerRTip;
+                let controllerPos = controller.getWorldPosition(new THREE.Vector3());
+                console.log(controllerPos, mSystemState.interaction.positionDiff, new THREE.Vector3().addVectors(controllerPos, mSystemState.interaction.positionDiff))
+                mSystemState.interaction.target.setPosition(
+                    new THREE.Vector3().addVectors(controllerPos, mSystemState.interaction.positionDiff));
+
+            }
+        }
+
         updateInputState();
     }
 
     function updateInteractionState() {
         let leftController = getLeftContoller();
-        let rightContoller = getRightController();
+        let rightController = getRightController();
+
+        let primaryLPressed = false;
+        let primaryRPressed = false;
+        let gripLPressed = false;
+        let gripRPressed = false;
 
         if (leftController && leftController.gamepad) {
             // trigger button
-            let primaryButton = leftController.gamepad.buttons[0];
-            if (primaryButton && primaryButton.pressed) {
-
-            } else {
-
-            }
-
+            primaryLPressed = leftController.gamepad.buttons[0]
+                && leftController.gamepad.buttons[0].pressed;
             // grip button
-            let secondaryButton = leftController.gamepad.buttons[1]
-            if (secondaryButton && secondaryButton) {
-
-            } else {
-
-            }
+            gripLPressed = leftController.gamepad.buttons[1]
+                && leftController.gamepad.buttons[1].pressed;
         }
 
-        if (rightContoller && rightContoller.gamepad) {
+        if (rightController && rightController.gamepad) {
             // trigger button
-            let primaryButton = leftController.gamepad.buttons[0];
-            if (primaryButton && primaryButton.pressed) {
-
-            } else {
-
-            }
-
+            primaryRPressed = rightController.gamepad.buttons[0]
+                && rightController.gamepad.buttons[0].pressed;
             // grip button
-            let secondaryButton = leftController.gamepad.buttons[1]
-            if (secondaryButton && secondaryButton) {
+            gripRPressed = rightController.gamepad.buttons[1]
+                && rightController.gamepad.buttons[1].pressed;
+        }
 
-            } else {
-
+        if (!(primaryLPressed || primaryRPressed || gripLPressed || gripRPressed)) {
+            endInteraction();
+        } else if ((primaryLPressed && mSystemState.lHovered.length > 0) ||
+            (primaryRPressed && mSystemState.rHovered.length > 0)) {
+            if (!mSystemState.interaction) {
+                let hand = (primaryLPressed && mSystemState.lHovered.length) ? LEFT : RIGHT;
+                let controller = hand == LEFT ? mControllerLTip : mControllerRTip;
+                let target = hand == LEFT ? mSystemState.lHovered[0] : mSystemState.rHovered[0];
+                startDrag(hand, controller, target);
             }
         }
 
+
+        if (!mSystemState.interaction && mSystemState.lHovered.length > 0) {
+            let target = mSystemState.lHovered[0];
+        }
+    }
+
+    function startDrag(hand, controller, target) {
+        let positionDiff = new THREE.Vector3().subVectors(
+            target.getPosition(),
+            controller.getWorldPosition(new THREE.Vector3()));
+        let startRemoteOrientation = controller.quaternion;
+        let startItemOrientation = target.getOrientation();
+        mSystemState.interaction = {
+            type: ONE_HAND_GRAB_MOVE,
+            hand,
+            target,
+            positionDiff,
+            startRemoteOrientation,
+            startItemOrientation,
+        }
+    }
+
+    function dragToTwoHandDrag() {
+
+    }
+
+    function twoHandDragToOneHandDrag() {
+
+    }
+
+    async function endInteraction() {
+        let interaction = mSystemState.interaction;
+        mSystemState.interaction = null;
+
+        if (interaction && interaction.type == ONE_HAND_GRAB_MOVE) {
+            console.log("set values!")
+        }
     }
 
     function updateInputState() {
         // check Axis for forward push
         // if so, teleporting
 
-        if (!mSystemState.interacting && !mSystemState.teleporting) {
+        if (!mSystemState.interaction && !mSystemState.teleporting) {
             updateHoverArray();
         }
 
@@ -166,8 +218,8 @@ export function XRSessionController() {
         mSystemState.lHovered = [];
         mSystemState.rHovered = [];
 
-        let controllerLPos = mController1Tip.getWorldPosition(new THREE.Vector3());
-        let controllerRPos = mController2Tip.getWorldPosition(new THREE.Vector3());
+        let controllerLPos = mControllerLTip.getWorldPosition(new THREE.Vector3());
+        let controllerRPos = mControllerRTip.getWorldPosition(new THREE.Vector3());
 
         let rCalc = false;
         let lCalc = false;
@@ -193,11 +245,10 @@ export function XRSessionController() {
             mSystemState.rHovered.push(...mSceneController.getIntersections(getRay(cameraPosition, controllerRPos)));
         }
 
-        if (mSystemState.lHovered.concat(mSystemState.rHovered).map(i => i.id).sort().join() != oldHovered.map(i => i.id).sort().join()) {
-            oldHovered.forEach(item => item.wrapper.unhighlight());
-            mSystemState.lHovered.concat(mSystemState.rHovered).forEach(item => item.wrapper.highlight())
+        if (mSystemState.lHovered.concat(mSystemState.rHovered).map(i => i.getId()).sort().join() != oldHovered.map(i => i.getId()).sort().join()) {
+            oldHovered.forEach(item => item.unhighlight());
+            mSystemState.lHovered.concat(mSystemState.rHovered).forEach(item => item.highlight())
         }
-        // mSystemState.lHovered.sort((a, b) => )
     }
 
     function getRay(p1, p2) {

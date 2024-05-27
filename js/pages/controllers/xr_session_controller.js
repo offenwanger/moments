@@ -10,7 +10,8 @@ export function XRSessionController() {
 
     let mSystemState = {
         interacting: false,
-        hovered: [],
+        lHovered: [],
+        rHovered: [],
         teleporting: false,
     }
 
@@ -44,33 +45,38 @@ export function XRSessionController() {
     let controllerGroup = new THREE.Group();
 
     const mController1 = mXRRenderer.xr.getController(0);
+    const mControllerGrip1 = mXRRenderer.xr.getControllerGrip(0);
+    const mController1Tip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true }));
+    mController1Tip.position.set(-0.005, 0, -0.03);
     mController1.addEventListener('connected', function (event) {
-        this.add(buildController(event.data));
+        this.add(mController1Tip);
+        mControllerGrip1.add(new XRControllerModelFactory().createControllerModel(mControllerGrip1));
     });
     mController1.addEventListener('disconnected', function () {
-        this.remove(this.children[0]);
+        this.remove(mController1Tip);
     });
 
     controllerGroup.add(mController1);
+    controllerGroup.add(mControllerGrip1);
 
     const mController2 = mXRRenderer.xr.getController(1);
+    const mControllerGrip2 = mXRRenderer.xr.getControllerGrip(1);
+    const mController2Tip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true }));
+    mController2Tip.position.set(0.005, 0, -0.03);
     mController2.addEventListener('connected', function (event) {
-        if (event.data.targetRayMode != 'tracked-pointer') {
-            console.error("I have no idea why this connect is happening. No idea what device might cause it.", event.data.targetRayMode)
-        }
+        this.add(mController2Tip);
+        mControllerGrip2.add(new XRControllerModelFactory().createControllerModel(mControllerGrip2));
     });
     mController2.addEventListener('disconnected', function () {
-        this.remove(this.children[0]);
+        this.remove(mController2Tip);
     });
 
-    // Make controllers for if we have them
-    let controllerGrip1 = mXRRenderer.xr.getControllerGrip(0);
-    controllerGrip1.add(new XRControllerModelFactory().createControllerModel(controllerGrip1));
-    controllerGroup.add(controllerGrip1);
-
-    let controllerGrip2 = mXRRenderer.xr.getControllerGrip(1);
-    controllerGrip2.add(new XRControllerModelFactory().createControllerModel(controllerGrip2));
-    controllerGroup.add(controllerGrip2);
+    controllerGroup.add(mController2);
+    controllerGroup.add(mControllerGrip2);
 
     function setupListeners() {
         if (!mSession) return;
@@ -156,14 +162,12 @@ export function XRSessionController() {
     function updateHoverArray() {
         if (!mSceneController) return;
 
-        let oldHovered = mSystemState.hovered;
-        mSystemState.hovered = [];
+        let oldHovered = mSystemState.lHovered.concat(mSystemState.rHovered);
+        mSystemState.lHovered = [];
+        mSystemState.rHovered = [];
 
-        let controllerLPos = new THREE.Vector3();
-        controllerGrip1.getWorldPosition(controllerLPos);
-
-        let controllerRPos = new THREE.Vector3();
-        controllerGrip2.getWorldPosition(controllerRPos);
+        let controllerLPos = mController1Tip.getWorldPosition(new THREE.Vector3());
+        let controllerRPos = mController2Tip.getWorldPosition(new THREE.Vector3());
 
         let rCalc = false;
         let lCalc = false;
@@ -183,16 +187,17 @@ export function XRSessionController() {
 
         let cameraPosition = new THREE.Vector3(); mXRCamera.getWorldPosition(cameraPosition);
         if (lCalc) {
-            mSystemState.hovered.push(...mSceneController.getIntersections(getRay(cameraPosition, controllerLPos)));
+            mSystemState.lHovered.push(...mSceneController.getIntersections(getRay(cameraPosition, controllerLPos)));
         }
         if (rCalc) {
-            mSystemState.hovered.push(...mSceneController.getIntersections(getRay(cameraPosition, controllerRPos)));
+            mSystemState.rHovered.push(...mSceneController.getIntersections(getRay(cameraPosition, controllerRPos)));
         }
 
-        if (mSystemState.hovered.map(i => i.id).sort().join() != oldHovered.map(i => i.id).sort().join()) {
+        if (mSystemState.lHovered.concat(mSystemState.rHovered).map(i => i.id).sort().join() != oldHovered.map(i => i.id).sort().join()) {
             oldHovered.forEach(item => item.wrapper.unhighlight());
-            mSystemState.hovered.forEach(item => item.wrapper.highlight())
+            mSystemState.lHovered.concat(mSystemState.rHovered).forEach(item => item.wrapper.highlight())
         }
+        // mSystemState.lHovered.sort((a, b) => )
     }
 
     function getRay(p1, p2) {
@@ -201,17 +206,6 @@ export function XRSessionController() {
         dir.normalize();
 
         return new THREE.Raycaster(p1, dir, 0, dist);
-    }
-
-    function buildController(data) {
-        let geometry, material;
-        switch (data.targetRayMode) {
-            case 'tracked-pointer':
-            case 'gaze':
-                geometry = new THREE.RingGeometry(0.02, 0.04, 32).translate(0, 0, - 1);
-                material = new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true });
-                return new THREE.Mesh(geometry, material);
-        }
     }
 
     function getLeftContoller() {

@@ -110,7 +110,6 @@ export function XRSessionController() {
             if (mSystemState.interaction.type == ONE_HAND_GRAB_MOVE) {
                 let controller = mSystemState.interaction.hand == LEFT ? mControllerLTip : mControllerRTip;
                 let controllerPos = controller.getWorldPosition(new THREE.Vector3());
-                console.log(controllerPos, mSystemState.interaction.positionDiff, new THREE.Vector3().addVectors(controllerPos, mSystemState.interaction.positionDiff))
                 mSystemState.interaction.target.setPosition(
                     new THREE.Vector3().addVectors(controllerPos, mSystemState.interaction.positionDiff));
 

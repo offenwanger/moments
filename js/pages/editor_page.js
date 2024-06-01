@@ -1,4 +1,5 @@
 
+import { AssetTypes } from '../constants.js';
 import { Data } from '../data_structs.js';
 import { AssetUtil } from '../utils/assets_util.js';
 import { IdUtil } from '../utils/id_util.js';
@@ -10,9 +11,11 @@ import { TimelineController } from './controllers/timeline_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 
 export function EditorPage(parentContainer) {
-    console.log('TODO: cache loaded models?')
-    console.log('Work on movel moving/posing in the model viewer')
+    console.log('cache loaded models?')
     console.log('enable the click thing in the canvas viewer to bring it up in the sidebar')
+    console.log("move bones on grab")
+
+
 
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;
@@ -68,7 +71,11 @@ export function EditorPage(parentContainer) {
     let mAssetPicker = new AssetPicker(parentContainer);
     mAssetPicker.setNewAssetCallback(async (fileHandle, type) => {
         let filename = await mWorkspace.storeAsset(fileHandle);
-        return await mModelController.createAsset(fileHandle.name, filename, type);
+        let asset = null;
+        if (type == AssetTypes.MODEL) {
+            asset = await mAssetUtil.loadGLTFModel(filename);
+        }
+        return await mModelController.createAsset(fileHandle.name, filename, type, asset);
     })
 
     let mTimelineController = new TimelineController(mTimelineContainer);

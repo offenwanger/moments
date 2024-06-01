@@ -63,10 +63,14 @@ export function AssetUtil(workspace) {
         return texture;
     }
 
-    async function loadGLTFModel(assetId) {
+    async function loadAssetModel(assetId) {
         let asset = mModel.getAsset(assetId);
         if (!asset || asset.type != AssetTypes.MODEL) { console.error("Bad asset", assetId, asset); throw new Error("Invalid image asset: " + assetId); }
-        let fileUrl = await mWorkspace.getAssetAsURL(asset.filename)
+        return loadGLTFModel(asset.filename);
+    }
+
+    async function loadGLTFModel(filename) {
+        let fileUrl = await mWorkspace.getAssetAsURL(filename)
         const modelLoader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('./node_modules/three/examples/jsm/libs/draco/');
@@ -91,4 +95,5 @@ export function AssetUtil(workspace) {
     this.loadTexture = loadTexture;
     this.loadTextureSync = loadTextureSync;
     this.loadGLTFModel = loadGLTFModel;
+    this.loadAssetModel = loadAssetModel;
 }

@@ -61,13 +61,12 @@ export function CanvasViewController(parentContainer) {
         raycaster.setFromCamera(pointer, mPageCamera);
 
         let intersections = mSceneController.getIntersections(raycaster);
-        if (intersections.map(i => i.id).sort().join() != hoveredItems.map(i => i.id).sort().join()) {
-            hoveredItems.forEach(item => item.wrapper.unhighlight());
+        if (intersections.map(i => i.getId()).sort().join() != hoveredItems.map(i => i.getId()).sort().join()) {
+            hoveredItems.forEach(item => item.unhighlight());
             hoveredItems = intersections;
-            hoveredItems.forEach(item => item.wrapper.highlight())
+            hoveredItems.forEach(item => item.highlight())
         }
     }
-
 
     this.onResize = onResize;
 

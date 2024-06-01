@@ -1,3 +1,5 @@
+import { AssetTypes } from "../../constants.js";
+import { DataModel } from "../../data_model.js";
 import { Data } from "../../data_structs.js";
 import { IdUtil } from "../../utils/id_util.js";
 
@@ -33,6 +35,8 @@ export function ModelController(storyId, workspace) {
             if (!asset) { console.error('invalid asset id', assetId); return; }
             newModel3D.assetId = assetId;
             newModel3D.name = asset.name;
+            newModel3D.assetComponentPoses = asset.assetComponentPoses.map(
+                (p) => DataModel.cloneItem(p, true));
         }
         parent.model3Ds.push(newModel3D);
         await mWorkspace.updateStory(mModel);
@@ -59,10 +63,24 @@ export function ModelController(storyId, workspace) {
         await mWorkspace.updateStory(mModel);
     }
 
-    async function createAsset(name, filename, type) {
+    async function createAsset(name, filename, type, asset = null) {
         let newAsset = new Data.Asset(type);
         newAsset.filename = filename;
         newAsset.name = name;
+        if (type == AssetTypes.MODEL) {
+            asset.scene.traverse(child => {
+                if (child.type == "Bone" || (child.type == "Mesh" && (!child.parent || child.parent.type != 'Bone'))) {
+                    let pose = new Data.AssetComponentPose();
+                    pose.type = child.type;
+                    pose.name = child.name;
+                    pose.x = child.position.x;
+                    pose.y = child.position.y;
+                    pose.z = child.position.z;
+                    pose.orientation = child.quaternion.toArray();
+                    newAsset.assetComponentPoses.push(pose);
+                }
+            })
+        }
         mModel.getAssets().push(newAsset);
         await mWorkspace.updateStory(mModel);
         return newAsset.id;

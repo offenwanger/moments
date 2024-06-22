@@ -1,6 +1,6 @@
 import { Data } from "../data_structs.js";
 
-export let IdUtil = function () {
+export const IdUtil = function () {
     let idCounter = 0;
     let lastGet = Date.now();
     function getUniqueId(classDefinition) {

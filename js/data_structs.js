@@ -39,12 +39,18 @@ function Model3D() {
     this.name = "Model"
     // takes it's name from it's asset
     this.assetId = null;
+    this.assetComponentPoses = [];
+}
+
+function AssetComponentPose() {
+    this.id = IdUtil.getUniqueId(AssetComponentPose);
+    this.name = "";
     this.x = 0;
     this.y = 0;
     this.z = 0;
     this.orientation = [0, 0, 0, 1]; // quaternion
     this.size = 1;
-    this.assetComponentPoses = [];
+    this.type = null;
 }
 
 function Annotation() {
@@ -83,17 +89,6 @@ function Asset(type) {
     this.bones = []
     this.meshes = []
     this.assetComponentPoses = [];
-}
-
-function AssetComponentPose() {
-    this.id = IdUtil.getUniqueId(AssetComponentPose);
-    this.name = "";
-    this.x = 0;
-    this.y = 0;
-    this.z = 0;
-    this.orientation = [0, 0, 0, 1]; // quaternion
-    this.size = 1;
-    this.type = null;
 }
 
 function Pointer() {

@@ -7,19 +7,19 @@ export function EventManager() {
 
     async function setListener(listener) {
         mListener = listener;
-        if (mListener.onResize) await mListener.onResize(window.innerWidth, window.innerHeight)
+        if (mListener.resize) await mListener.resize(window.innerWidth, window.innerHeight)
     }
 
     d3.select(window).on('resize', async () => {
-        if (mListener.onResize) await mListener.onResize(window.innerWidth, window.innerHeight);
+        if (mListener.resize) await mListener.resize(window.innerWidth, window.innerHeight);
     });
 
     d3.select(window).on('pointermove', async (event) => {
-        if (mListener.onPointerMove) await mListener.onPointerMove({ x: event.clientX, y: event.clientY });
+        if (mListener.pointerMove) await mListener.pointerMove({ x: event.clientX, y: event.clientY });
     });
 
     d3.select(window).on('pointerup', async (event) => {
-        if (mListener.onPointerUp) await mListener.onPointerUp({ x: event.clientX, y: event.clientY });
+        if (mListener.pointerUp) await mListener.pointerUp({ x: event.clientX, y: event.clientY });
     });
 
     /** useful test and development function: */

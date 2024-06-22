@@ -27,26 +27,21 @@ export function StoryWrapper(parent) {
 
         await SceneUtil.syncArray(mModel3DWrappers, story.model3Ds, mModel, assetUtil, async (model3D) => {
             let newModel3DWrapper = new Model3DWrapper(mStoryGroup);
-            await newModel3DWrapper.update(model3D, mModel, assetUtil)
             return newModel3DWrapper;
         });
 
         await SceneUtil.syncArray(mMomentWrappers, story.moments, mModel, assetUtil, async (moment) => {
             let newMomentWrapper = new MomentWrapper(mStoryGroup);
-            await newMomentWrapper.update(moment, mModel, assetUtil)
-            newMomentWrapper.render();
             return newMomentWrapper;
         });
 
         await SceneUtil.syncArray(mAnnotationWrappers, story.annotations, mModel, assetUtil, async (annotation) => {
             let newAnnotationWrapper = new AnnotationWrapper(mStoryGroup);
-            await newAnnotationWrapper.update(annotation, mModel, assetUtil)
             return newAnnotationWrapper;
         });
 
         await SceneUtil.syncArray(mPointerWrappers, story.pointers, mModel, assetUtil, async (pointer) => {
             let newPointerWrapper = new PointerWrapper(mStoryGroup);
-            await newPointerWrapper.update(pointer, mModel, assetUtil)
             return newPointerWrapper;
         });
     }

@@ -4,7 +4,7 @@ export function AnnotationWrapper(parent) {
     let mParent = parent;
     let mAnnotation = new Data.Annotation();
 
-    console.log("Add Self to Scene")
+    console.error("Add Self to Scene")
 
     async function update(annotation, model, assetUtil) {
         mAnnotation = annotation;
@@ -15,7 +15,7 @@ export function AnnotationWrapper(parent) {
     }
 
     function remove() {
-        console.log("Remove Self from Scene")
+        console.error("Remove Self from Scene")
     }
 
     function getIntersections(ray) {

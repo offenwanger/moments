@@ -78,10 +78,10 @@ export function TimelineController(container) {
             .style("fill", "#61a3a9")
             .style("opacity", 0.5)
 
-        onResize(mWidth, mHeight);
+        resize(mWidth, mHeight);
     }
 
-    function onResize(width, height) {
+    function resize(width, height) {
         mWidth = width;
         mHeight = height;
 
@@ -105,6 +105,6 @@ export function TimelineController(container) {
     }
 
     this.updateModel = updateModel;
-    this.onResize = onResize;
+    this.resize = resize;
     this.setCreateMomentCallback = (func) => { mCreateMomentCallback = func }
 }

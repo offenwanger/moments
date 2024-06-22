@@ -13,7 +13,8 @@ import { AssetPicker } from './editor_panels/asset_picker.js';
 export function EditorPage(parentContainer) {
     console.log('cache loaded models?')
     console.log('enable the click thing in the canvas viewer to bring it up in the sidebar')
-    console.log("move bones on grab")
+    console.log("Test moving bones on grab in VR")
+    console.log("Fix the update delay issue.")
 
 
 
@@ -67,6 +68,10 @@ export function EditorPage(parentContainer) {
         .on('pointerdown', () => { mResizingWindows = true; });
 
     let mStoryDisplayController = new StoryDisplayController(mViewContainer);
+    mStoryDisplayController.onMove(async (id, newPosition) => {
+        await mModelController.updatePosition(id, newPosition);
+        await updateModel();
+    });
 
     let mAssetPicker = new AssetPicker(parentContainer);
     mAssetPicker.setNewAssetCallback(async (fileHandle, type) => {
@@ -117,7 +122,7 @@ export function EditorPage(parentContainer) {
         history.replaceState(null, '', url);
         await mStoryDisplayController.showAsset(assetId, mAssetUtil);
     })
-    mStoryDisplayController.setExitAssetViewCallback(async (assetId) => {
+    mStoryDisplayController.onExitAssetView(async (assetId) => {
         const url = new URL(window.location)
         url.searchParams.delete("assetViewId")
         history.replaceState(null, '', url);
@@ -134,7 +139,7 @@ export function EditorPage(parentContainer) {
         await mModelController.init();
         mAssetUtil = new AssetUtil(mWorkspace);
 
-        onResize(mWidth, mHeight);
+        resize(mWidth, mHeight);
 
         await mSidebarController.updateModel(mModelController.getModel());
         await mSidebarController.navigate(mModelController.getModel().getStory().id);
@@ -155,12 +160,12 @@ export function EditorPage(parentContainer) {
         await mStoryDisplayController.updateModel(model, mAssetUtil);
     }
 
-    function onResize(width, height) {
+    function resize(width, height) {
         mWidth = width;
         mHeight = height;
 
-        mTimelineController.onResize(Math.round(mWidth * mSidebarDivider), Math.round(mHeight * (1 - mTimelineDivider)));
-        mSidebarController.onResize(mWidth - Math.round(mWidth * mSidebarDivider), mHeight);
+        mTimelineController.resize(Math.round(mWidth * mSidebarDivider), Math.round(mHeight * (1 - mTimelineDivider)));
+        mSidebarController.resize(mWidth - Math.round(mWidth * mSidebarDivider), mHeight);
 
         let viewCanvasWidth = Math.round(mWidth * mSidebarDivider)
         let viewCanvasHeight = Math.round(mHeight * mTimelineDivider)
@@ -168,25 +173,27 @@ export function EditorPage(parentContainer) {
         mResizeTarget.style('left', (viewCanvasWidth - RESIZE_TARGET_SIZE / 2) + "px")
         mResizeTarget.style('top', (viewCanvasHeight - RESIZE_TARGET_SIZE / 2) + "px")
 
-        mStoryDisplayController.onResize(viewCanvasWidth, viewCanvasHeight);
+        mStoryDisplayController.resize(viewCanvasWidth, viewCanvasHeight);
     }
 
-    function onPointerMove(screenCoords) {
+    function pointerMove(screenCoords) {
         if (mResizingWindows) {
             mSidebarDivider = Util.limit(screenCoords.x / mWidth, 0.01, 0.99);
             mTimelineDivider = Util.limit(screenCoords.y / mHeight, 0.01, 0.99);
-            onResize(mWidth, mHeight);
+            resize(mWidth, mHeight);
         }
 
-        mStoryDisplayController.onPointerMove(screenCoords);
+        mStoryDisplayController.pointerMove(screenCoords);
     }
 
-    function onPointerUp(screenCoords) {
+    function pointerUp(screenCoords) {
         mResizingWindows = false;
+
+        mStoryDisplayController.pointerUp(screenCoords);
     }
 
     this.show = show;
-    this.onResize = onResize;
-    this.onPointerMove = onPointerMove;
-    this.onPointerUp = onPointerUp;
+    this.resize = resize;
+    this.pointerMove = pointerMove;
+    this.pointerUp = pointerUp;
 }

@@ -7,4 +7,5 @@ export function InteractionTargetWrapper() {
     this.setOrientation = (quaternion) => { }
     this.highlight = () => { };
     this.unhighlight = () => { };
+    this.getIntersection = () => { return {} }
 }

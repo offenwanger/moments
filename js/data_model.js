@@ -21,6 +21,14 @@ export function DataModel() {
         return mStory.model3Ds.concat(momentModel3Ds);
     }
 
+    function getAssetComponentPose(id) {
+        return getAssetComponentPoses().find(o => o.id == id);
+    }
+
+    function getAssetComponentPoses() {
+        return getModel3Ds().map(m => m.assetComponentPoses).flat();
+    }
+
     function getModel3DParent(model3DId) {
         if (mStory.model3Ds.find(o => o.id == model3DId)) {
             return mStory;
@@ -117,11 +125,14 @@ export function DataModel() {
     this.getModel3D = getModel3D;
     this.getModel3Ds = getModel3Ds;
     this.getModel3DParent = getModel3DParent;
+    this.getAssetComponentPose = getAssetComponentPose;
+    this.getAssetComponentPoses = getAssetComponentPoses;
     this.getAnnotation = getAnnotation;
     this.getAnnotations = getAnnotations;
     this.getAnnotationItem = getAnnotationItem;
     this.getAnnotationItems = getAnnotationItems;
     this.getAsset = getAsset;
+    this.getAssets = getAssets;
     this.getAssets = getAssets;
     this.getItemsForAsset = getItemsForAsset;
     this.getPointer = getPointer;

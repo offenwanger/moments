@@ -4,7 +4,7 @@ export function PointerWrapper(parent) {
     let mParent = parent;
     let mPointer = new Data.Pointer();
 
-    console.log("Add Self to Scene")
+    console.error("Add Self to Scene")
 
     async function update(pointer, model, assetUtil) {
         mPointer = pointer;
@@ -15,7 +15,7 @@ export function PointerWrapper(parent) {
     }
 
     function remove() {
-        console.log("Remove Self from Scene")
+        console.error("Remove Self from Scene")
     }
 
     function getIntersections(ray) {

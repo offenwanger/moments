@@ -12,6 +12,7 @@ import { StoryWrapperController } from './story_scene_controller.js';
  */
 export function StoryDisplayController(parentContainer) {
     let mExitAssetViewCallback = async () => { }
+    let mMoveCallback = async () => { }
 
     let mModel = new DataModel();
 
@@ -49,6 +50,10 @@ export function StoryDisplayController(parentContainer) {
     vrButtonDiv.node().appendChild(mXRSessionController.getVRButton());
     d3.select(mXRSessionController.getVRButton()).style("position", "relative")
 
+    mCanvasViewController.onMove(async (id, newPosition) => {
+        await mMoveCallback(id, newPosition);
+    })
+
     mXRSessionController.onSessionStart(() => {
         if (!isVR) {
             isVR = true;
@@ -78,20 +83,26 @@ export function StoryDisplayController(parentContainer) {
         mExitAssetViewButton.style('display', '')
     }
 
-    function onResize(width, height) {
+    function resize(width, height) {
         mWidth = width;
         mHeight = height;
-        mCanvasViewController.onResize(width, height);
+        mCanvasViewController.resize(width, height);
     }
 
-    function onPointerMove(screenCoords) {
-        mCanvasViewController.onPointerMove(screenCoords);
+    function pointerMove(screenCoords) {
+        mCanvasViewController.pointerMove(screenCoords);
+    }
+
+    function pointerUp(screenCoords) {
+        mCanvasViewController.pointerUp(screenCoords);
     }
 
     this.updateModel = updateModel;
     this.showAsset = showAsset;
-    this.onResize = onResize;
-    this.onPointerMove = onPointerMove;
-    this.setExitAssetViewCallback = (func) => mExitAssetViewCallback = func;
+    this.resize = resize;
+    this.pointerMove = pointerMove;
+    this.pointerUp = pointerUp;
+    this.onExitAssetView = (func) => mExitAssetViewCallback = func;
+    this.onMove = (func) => mMoveCallback = func;
 }
 

@@ -56,7 +56,7 @@ export function SidebarController(container) {
         }
     }
 
-    function onResize(width, height) {
+    function resize(width, height) {
         container.style('width', width + "px")
         container.style('height', height + "px")
     }
@@ -103,7 +103,7 @@ export function SidebarController(container) {
 
     this.updateModel = updateModel;
     this.navigate = navigate;
-    this.onResize = onResize;
+    this.resize = resize;
     this.setAddCallback = setAddCallback;
     this.setUpdateAttributeCallback = setUpdateAttributeCallback;
     this.setSelectAsset = (func) => mModel3DPanel.setSelectAsset(func);

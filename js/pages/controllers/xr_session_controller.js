@@ -193,7 +193,7 @@ export function XRSessionController() {
         mSystemState.interaction = null;
 
         if (interaction && interaction.type == ONE_HAND_GRAB_MOVE) {
-            console.log("set values!")
+            console.error("set values!")
         }
     }
 

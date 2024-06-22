@@ -3,6 +3,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { USER_HEIGHT } from '../../constants.js';
 
 export function CanvasViewController(parentContainer) {
+    const DRAGGING = 'dragging'
+
+    let mMoveCallback = async () => { }
 
     let mWidth = 10;
     let mHeight = 10;
@@ -10,9 +13,14 @@ export function CanvasViewController(parentContainer) {
     let mSceneController;
     let mRendering = false;
 
+    let mInteraction = false;
+    let mHovered = []
+    const mRaycaster = new THREE.Raycaster();
+
     let mMainCanvas = parentContainer.append('canvas')
         .attr('id', 'main-canvas')
         .style('display', 'block')
+        .on('pointerdown', (e) => onPointerDown({ x: e.clientX, y: e.clientY }))
 
     let mPageRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mMainCanvas.node() });
 
@@ -36,7 +44,7 @@ export function CanvasViewController(parentContainer) {
         mPageRenderer.render(mSceneController.getScene(), mPageCamera);
     }
 
-    function onResize(width, height) {
+    function resize(width, height) {
         mWidth = width;
         mHeight = height;
 
@@ -47,31 +55,79 @@ export function CanvasViewController(parentContainer) {
         mPageCamera.updateProjectionMatrix();
     }
 
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    let hoveredItems = []
+    function onPointerDown(screenCoords) {
+        if (mHovered.length > 0) {
+            let target = mHovered[0];
+            let intersection = target.getIntersection();
+            let targetToPos = new THREE.Vector3().subVectors(
+                target.getPosition(), intersection.point)
 
-    function onPointerMove(screenCoords) {
-        if (!mRendering) return;
-        let bb = mMainCanvas.node().getBoundingClientRect();
-        pointer.x = ((screenCoords.x - bb.x) / bb.width) * 2 - 1;
-        pointer.y = - ((screenCoords.y - bb.y) / bb.height) * 2 + 1;
-
-        // update the picking ray with the camera and pointer position
-        raycaster.setFromCamera(pointer, mPageCamera);
-
-        let intersections = mSceneController.getIntersections(raycaster);
-        if (intersections.map(i => i.getId()).sort().join() != hoveredItems.map(i => i.getId()).sort().join()) {
-            hoveredItems.forEach(item => item.unhighlight());
-            hoveredItems = intersections;
-            hoveredItems.forEach(item => item.highlight())
+            mInteraction = {
+                type: DRAGGING,
+                start: screenCoords,
+                target,
+                targetToPos,
+                distance: intersection.distance,
+            }
         }
     }
 
-    this.onResize = onResize;
+    function pointerMove(screenCoords) {
+        if (!mRendering) return;
+        if (!mInteraction) {
+            let pointer = screenToNomralizedCoords(screenCoords);
+            mRaycaster.setFromCamera(pointer, mPageCamera);
+
+            let intersections = mSceneController.getIntersections(mRaycaster);
+            if (intersections.map(i => i.getId()).sort().join() != mHovered.map(i => i.getId()).sort().join()) {
+                mHovered.forEach(item => item.unhighlight());
+                mHovered = intersections;
+                mHovered.forEach(item => item.highlight())
+            }
+
+            if (mHovered.length == 0) {
+                mOrbitControls.enabled = true;
+            } else {
+                mOrbitControls.enabled = false;
+            }
+        } else if (mInteraction.type == DRAGGING) {
+            let pointer = screenToNomralizedCoords(screenCoords);
+            mRaycaster.setFromCamera(pointer, mPageCamera);
+            let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
+            position.add(mInteraction.targetToPos)
+            mInteraction.target.setPosition(position);
+        }
+    }
+
+    async function pointerUp(screenCoords) {
+        let interaction = mInteraction;
+        mInteraction = false;
+        if (interaction) {
+            if (interaction.type == DRAGGING) {
+                let pointer = screenToNomralizedCoords(screenCoords);
+                mRaycaster.setFromCamera(pointer, mPageCamera);
+                let position = mRaycaster.ray.at(interaction.distance, new THREE.Vector3());
+                position.add(interaction.targetToPos)
+
+                await mMoveCallback(interaction.target.getId(), position);
+            }
+        }
+    }
+
+    function screenToNomralizedCoords(screenCoords) {
+        let bb = mMainCanvas.node().getBoundingClientRect();
+        let x = ((screenCoords.x - bb.x) / bb.width) * 2 - 1;
+        let y = - ((screenCoords.y - bb.y) / bb.height) * 2 + 1;
+        return { x, y }
+    }
+
+    this.resize = resize;
 
     this.startRendering = () => { mPageRenderer.setAnimationLoop(pageRender); mRendering = true; }
     this.stopRendering = () => { mPageRenderer.setAnimationLoop(null); mRendering = false; }
     this.setScene = (scene) => { mSceneController = scene }
-    this.onPointerMove = onPointerMove;
+    this.pointerMove = pointerMove;
+    this.pointerUp = pointerUp;
+
+    this.onMove = (func) => { mMoveCallback = func }
 }

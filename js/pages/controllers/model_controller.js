@@ -86,6 +86,19 @@ export function ModelController(storyId, workspace) {
         return newAsset.id;
     }
 
+    async function updatePosition(id, position) {
+        if (IdUtil.getClass(id) == Data.AssetComponentPose) {
+            let pose = mModel.getAssetComponentPose(id);
+            if (!pose) { console.error('Invalid id!', id); return; }
+            pose.x = position.x;
+            pose.y = position.y;
+            pose.z = position.z;
+        } else {
+            console.error("Not handled", id);
+        }
+        await mWorkspace.updateStory(mModel);
+    }
+
     return {
         init,
         createMoment,
@@ -93,6 +106,7 @@ export function ModelController(storyId, workspace) {
         createAnnotation,
         setAttribute,
         createAsset,
+        updatePosition,
         getModel: () => mModel.clone(),
     }
 }

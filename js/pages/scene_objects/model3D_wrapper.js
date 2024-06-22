@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import { Data } from "../../data_structs.js";
 import { InteractionTargetWrapper } from './interaction_target_wrapper.js';
+import { Util } from '../../utils/utility.js';
 
 export function Model3DWrapper(parent) {
     let mParent = parent;
     let mModel3D = new Data.Model3D();
     let mGLTF = null;
-    let mModelSize = 1;
     let mInteractionTargets = [];
+
+    let mHighlightMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 })
 
     async function update(model3D, model, assetUtil) {
         let oldModel = mModel3D;
@@ -18,13 +20,10 @@ export function Model3DWrapper(parent) {
             try {
                 mGLTF = await assetUtil.loadAssetModel(mModel3D.assetId)
                 mParent.add(mGLTF.scene);
-                const box = new THREE.Box3().setFromObject(mGLTF.scene);
-                mModelSize = Math.max(...box.getSize(new THREE.Vector3()).toArray());
 
                 mGLTF.scene.traverse(function (child) {
                     if (child.isMesh) {
-                        child.material.userData.originalColor = new THREE.Color(0xffffff);
-                        child.material.userData.originalColor.copy(child.material.color);
+                        child.userData.originalMaterial = child.material;
                     }
                 });
             } catch (error) {
@@ -32,9 +31,14 @@ export function Model3DWrapper(parent) {
             }
         }
 
-        mGLTF.scene.setRotationFromQuaternion(new THREE.Quaternion().fromArray(model3D.orientation));
-        mGLTF.scene.position.set(model3D.x, model3D.y, model3D.z);
-        mGLTF.scene.scale.set(model3D.size / mModelSize, model3D.size / mModelSize, model3D.size / mModelSize);
+        mModel3D.assetComponentPoses.forEach(pose => {
+            let object = mGLTF.scene.getObjectByName(pose.name);
+            if (!object) { console.error("Invalid pose!", pose); return; }
+            object.setRotationFromQuaternion(new THREE.Quaternion().fromArray(pose.orientation));
+            object.position.set(pose.x, pose.y, pose.z);
+            // object.scale.set(model3D.size / mModelSize, model3D.size / mModelSize, model3D.size / mModelSize);
+        })
+
 
         mInteractionTargets = makeInteractionTargets();
     }
@@ -82,27 +86,20 @@ export function Model3DWrapper(parent) {
 
             let pose = mModel3D.assetComponentPoses.find(p => p.name == name);
             if (!pose) { console.error("Invalid object!", i.object); return null; };
-            return mInteractionTargets.find(t => t.getId() == pose.id);
+
+            let target = mInteractionTargets.find(t => t.getId() == pose.id);
+            target.getIntersection = () => { return i }
+            target.highlight = () => {
+                if (!i.object.isMesh) { console.error("I'm confused.", i.object); return; }
+                i.object.material = mHighlightMaterial;
+            };
+            target.unhighlight = () => {
+                if (!i.object.isMesh) { console.error("I'm confused.", i.object); return; }
+                i.object.material = i.object.userData.originalMaterial
+            }
+            return target;
         }).filter(t => t);
         return targets;
-    }
-
-    const highlightColor = new THREE.Color(0xff0000)
-
-    function highlight() {
-        mGLTF.scene.traverse(function (child) {
-            if (child.isMesh) {
-                child.material.color.copy(highlightColor)
-            }
-        });
-    }
-
-    function unhighlight() {
-        mGLTF.scene.traverse(function (child) {
-            if (child.isMesh) {
-                child.material.color.copy(child.material.userData.originalColor)
-            }
-        });
     }
 
     function makeInteractionTargets() {
@@ -110,13 +107,18 @@ export function Model3DWrapper(parent) {
             let interactionTarget = new InteractionTargetWrapper();
 
             interactionTarget.getPosition = () => {
-                return pose.getWorldPosition(new THREE.Vector3());
+                return { x: pose.x, y: pose.y, z: pose.z };
             }
+
             interactionTarget.setPosition = (pos) => {
-                if (mGLTF) mGLTF.scene.getObjectByName(pose.name).position.copy(pos)
+                if (mGLTF) {
+                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    Util.console.log.point("Mousepos", pos, mParent)
+                    Util.console.log.point("Mousepos2", new THREE.Vector3().addVectors(new THREE.Vector3(0, 0.5, 0), pos), mParent, "#005500")
+                    obj.position.copy(pos)
+                }
             }
-            interactionTarget.highlight = highlight;
-            interactionTarget.unhighlight = unhighlight;
+
             interactionTarget.getId = () => pose.id;
             return interactionTarget;
         });
@@ -126,6 +128,4 @@ export function Model3DWrapper(parent) {
     this.getId = getId;
     this.remove = remove;
     this.getIntersections = getIntersections;
-    this.highlight = highlight;
-    this.unhighlight = unhighlight;
 }

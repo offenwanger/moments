@@ -7,6 +7,7 @@ import { TwoButtonInput } from '../components/two_button_input.js';
 export function Model3DPanel(container) {
     let mAddCallback = async (parentId, itemClass, config) => { };
     let mUpdateAttributeCallback = async (id, attr, value) => { };
+    let mDeleteCallback = async (id) => { };
     let mSelectAsset = async () => { return false };
     let mNavigationCallback = async (id) => { };
 
@@ -45,65 +46,13 @@ export function Model3DPanel(container) {
             }
         })
 
-    let mPositionDiv = mPanelContainer.append('div').attr('id', 'model3D-position-input');
-    mPositionDiv.append('div').html('Position');
-    let mPositionXInput = new TextInput(mPositionDiv, 'number')
-        .setId('model3D-position-x-input')
-        .setLabel("x")
-        .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mModel3DId, 'x', newNum);
-        });
-    let mPositionYInput = new TextInput(mPositionDiv, 'number')
-        .setId('model3D-position-y-input')
-        .setLabel("y")
-        .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mModel3DId, 'y', newNum);
-        });
-    let mPositionZInput = new TextInput(mPositionDiv, 'number')
-        .setId('model3D-position-z-input')
-        .setLabel("z")
-        .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mModel3DId, 'z', newNum);
-        });
-
-    mPanelContainer.append('div').html('Orientation');
-    let mOrientationXInput = new TextInput(mPanelContainer, 'number')
-        .setId('model3D-orientation-x-input')
-        .setLabel("x")
-        .setOnChange(async (newNum) => {
-            let x = newNum;
-            let y = parseFloat(mOrientationYInput.getText());
-            let z = parseFloat(mOrientationZInput.getText());
-            let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
-            await mUpdateAttributeCallback(mModel3DId, 'orientation', quat.toArray());
-        });
-    let mOrientationYInput = new TextInput(mPanelContainer, 'number')
-        .setId('model3D-orientation-y-input')
-        .setLabel("y")
-        .setOnChange(async (newNum) => {
-            let y = newNum;
-            let x = parseFloat(mOrientationXInput.getText());
-            let z = parseFloat(mOrientationZInput.getText());
-            let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
-            await mUpdateAttributeCallback(mModel3DId, 'orientation', quat.toArray());
-        });
-    let mOrientationZInput = new TextInput(mPanelContainer, 'number')
-        .setId('model3D-orientation-z-input')
-        .setLabel("z")
-        .setOnChange(async (newNum) => {
-            let z = newNum;
-            let x = parseFloat(mOrientationXInput.getText());
-            let y = parseFloat(mOrientationYInput.getText());
-            let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
-            await mUpdateAttributeCallback(mModel3DId, 'orientation', quat.toArray());
-        });
-
-    let mSizeInput = new TextInput(mPanelContainer, 'number')
-        .setId('model3D-size-input')
-        .setLabel("Size")
-        .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mModel3DId, 'size', newNum);
-        });
+    let mDeleteButton = new ButtonInput(mPanelContainer)
+        .setId('model3D-delete-button')
+        .setLabel('Delete')
+        .setOnClick(async () => {
+            await mDeleteCallback(mModel3DId);
+            await mNavigationCallback(mParent.id);
+        })
 
     function show(model, model3DId) {
         mModel = model;
@@ -118,18 +67,6 @@ export function Model3DPanel(container) {
         let asset = model.getAsset(mModel3D.assetId);
         mAssetButton.setLabel(1, asset ? asset.name : "<i>Not Set<i/>")
 
-        mPositionXInput.setText(mModel3D.x);
-        mPositionYInput.setText(mModel3D.y);
-        mPositionZInput.setText(mModel3D.z);
-
-        let euler = (new THREE.Euler()).setFromQuaternion(
-            new THREE.Quaternion().fromArray(mModel3D.orientation), "XYZ")
-        mOrientationXInput.setText(euler.x)
-        mOrientationYInput.setText(euler.y)
-        mOrientationZInput.setText(euler.z)
-
-        mSizeInput.setText(mModel3D.size);
-
         mPanelContainer.style('display', '');
     }
 
@@ -141,6 +78,7 @@ export function Model3DPanel(container) {
     this.hide = hide;
     this.setAddCallback = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
+    this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
     this.setSelectAsset = (func) => mSelectAsset = func;
 }

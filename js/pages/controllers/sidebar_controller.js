@@ -101,11 +101,21 @@ export function SidebarController(container) {
         mAssetPanel.setUpdateAttributeCallback(func);
     }
 
+    function setDeleteCallback(func) {
+        mMomentPanel.setDeleteCallback(func);
+        mModel3DPanel.setDeleteCallback(func);
+        mAnnotationPanel.setDeleteCallback(func);
+        mAnnotationItemPanel.setDeleteCallback(func);
+        mPointerPanel.setDeleteCallback(func);
+        mAssetPanel.setDeleteCallback(func);
+    }
+
     this.updateModel = updateModel;
     this.navigate = navigate;
     this.resize = resize;
     this.setAddCallback = setAddCallback;
     this.setUpdateAttributeCallback = setUpdateAttributeCallback;
+    this.setDeleteCallback = setDeleteCallback;
     this.setSelectAsset = (func) => mModel3DPanel.setSelectAsset(func);
     this.setViewAssetCallback = (func) => mAssetPanel.setViewAssetCallback(func);
 }

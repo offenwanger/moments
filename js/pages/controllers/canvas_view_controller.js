@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { USER_HEIGHT } from '../../constants.js';
+import { DOUBLE_CLICK_SPEED, USER_HEIGHT } from '../../constants.js';
 
 export function CanvasViewController(parentContainer) {
     const DRAGGING = 'dragging'
+    const NAVIGATING = 'navigating'
 
     let mMoveCallback = async () => { }
 
@@ -15,6 +16,10 @@ export function CanvasViewController(parentContainer) {
 
     let mInteraction = false;
     let mHovered = []
+    let mFreeze = []
+    let mHighlight = [];
+    let mHold = null;
+    let mLastPointerDown = { time: 0, pos: { x: 0, y: 0 } }
     const mRaycaster = new THREE.Raycaster();
 
     let mMainCanvas = parentContainer.append('canvas')
@@ -56,11 +61,19 @@ export function CanvasViewController(parentContainer) {
     }
 
     function onPointerDown(screenCoords) {
-        if (mHovered.length > 0) {
-            let target = mHovered[0];
+        if (Date.now() - mLastPointerDown.time < DOUBLE_CLICK_SPEED && new THREE.Vector2().subVectors(screenCoords, mLastPointerDown.pos).length() < 10) {
+            onDoubleDown(screenCoords);
+            return;
+        }
+        mLastPointerDown.time = Date.now();
+        mLastPointerDown.pos = screenCoords;
+
+        let validHoverTargets = mHovered.filter(h => !mFreeze.find(f => f.getId() == h.getId()));
+
+        if (validHoverTargets.length > 0) {
+            let target = validHoverTargets[0];
             let intersection = target.getIntersection();
-            let targetToPos = new THREE.Vector3().subVectors(
-                target.getPosition(), intersection.point)
+            let targetToPos = new THREE.Vector3().subVectors(target.getPosition(), intersection.point)
 
             mInteraction = {
                 type: DRAGGING,
@@ -68,6 +81,19 @@ export function CanvasViewController(parentContainer) {
                 target,
                 targetToPos,
                 distance: intersection.distance,
+            }
+        } else {
+            mInteraction = { type: NAVIGATING }
+        }
+    }
+
+    function onDoubleDown() {
+        if (mHovered.length > 0) {
+            let target = mHovered[0];
+            if (mFreeze.find(f => f.getId() == target.getId())) {
+                mFreeze.splice(mFreeze.findIndex(f => f.getId() == target.getId()), 1);
+            } else {
+                mFreeze.push(target);
             }
         }
     }
@@ -80,9 +106,8 @@ export function CanvasViewController(parentContainer) {
 
             let intersections = mSceneController.getIntersections(mRaycaster);
             if (intersections.map(i => i.getId()).sort().join() != mHovered.map(i => i.getId()).sort().join()) {
-                mHovered.forEach(item => item.unhighlight());
                 mHovered = intersections;
-                mHovered.forEach(item => item.highlight())
+                updateHighlight();
             }
 
             if (mHovered.length == 0) {
@@ -108,10 +133,25 @@ export function CanvasViewController(parentContainer) {
                 mRaycaster.setFromCamera(pointer, mPageCamera);
                 let position = mRaycaster.ray.at(interaction.distance, new THREE.Vector3());
                 position.add(interaction.targetToPos)
+                let localPos = interaction.target.setPosition(position);
 
-                await mMoveCallback(interaction.target.getId(), position);
+                await mMoveCallback(interaction.target.getId(), localPos);
             }
         }
+    }
+
+    function updateHighlight() {
+        mHighlight.forEach(item => item.unhighlight());
+        mHighlight = mHovered.concat(mFreeze);
+        if (mHold) mHighlight.push(mHold.target);
+        // some basic validation.
+        mHighlight = mHighlight.filter(item => {
+            if (!item || typeof item.unhighlight != "function" || typeof item.highlight != "function") {
+                return false;
+            }
+            return true;
+        });
+        mHighlight.forEach(item => item.highlight())
     }
 
     function screenToNomralizedCoords(screenCoords) {

@@ -29,3 +29,5 @@ AssetExtensions[AssetTypes.IMAGE] = '.png'
 AssetExtensions[AssetTypes.BOX] = '.png'
 
 export const BOX_ASSET_PREFIXES = ['px_', 'nx_', 'py_', 'ny_', 'pz_', 'nz_'];
+
+export const DOUBLE_CLICK_SPEED = 500;

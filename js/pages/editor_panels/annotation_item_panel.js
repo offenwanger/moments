@@ -1,6 +1,7 @@
 export function AnnotationItemPanel(container) {
     let mAddCallback = async (parentId, itemClass, config) => { };
     let mUpdateAttributeCallback = async (id, attr, value) => { };
+    let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
     let mScrollHeight = 0;
 
@@ -24,5 +25,6 @@ export function AnnotationItemPanel(container) {
     this.hide = hide;
     this.setAddCallback = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
+    this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
 }

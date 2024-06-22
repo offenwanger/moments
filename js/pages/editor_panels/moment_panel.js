@@ -8,6 +8,7 @@ import { Util } from '../../utils/utility.js';
 export function MomentPanel(container) {
     let mAddCallback = async (parentId, itemClass, config) => { };
     let mUpdateAttributeCallback = async (id, attr, value) => { };
+    let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
     let mScrollHeight = 0;
 
@@ -20,7 +21,7 @@ export function MomentPanel(container) {
         .setId('moment-back-button')
         .setLabel('<- Story')
         .setOnClick(async () => {
-            mNavigationCallback(mModel.getStory().id);
+            await mNavigationCallback(mModel.getStory().id);
         })
     let mNameInput = new TextInput(mPanelContainer)
         .setId('moment-name-input')
@@ -163,6 +164,14 @@ export function MomentPanel(container) {
         })
     let mPointersList = [];
 
+    let mDeleteButton = new ButtonInput(mPanelContainer)
+        .setId('model3D-delete-button')
+        .setLabel('Delete')
+        .setOnClick(async () => {
+            await mDeleteCallback(mMomentId);
+            await mNavigationCallback(mModel.getStory().id);
+        })
+
     function show(model, momentId) {
         mModel = model;
         mMomentId = momentId;
@@ -244,5 +253,6 @@ export function MomentPanel(container) {
     this.hide = hide;
     this.setAddCallback = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
+    this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
 }

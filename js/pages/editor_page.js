@@ -113,6 +113,10 @@ export function EditorPage(parentContainer) {
         await mModelController.setAttribute(id, attr, value);
         await updateModel();
     })
+    mSidebarController.setDeleteCallback(async (id) => {
+        await mModelController.deleteItem(id);
+        await updateModel();
+    })
     mSidebarController.setSelectAsset(async () => {
         return await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
     })

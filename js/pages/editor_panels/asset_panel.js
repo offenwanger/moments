@@ -7,6 +7,7 @@ import { TwoButtonInput } from "../components/two_button_input.js";
 export function AssetPanel(container) {
     let mAddCallback = async (parentId, itemClass, config) => { };
     let mUpdateAttributeCallback = async (id, attr, value) => { };
+    let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
     let mViewAssetCallback = async (assetId) => { }
 
@@ -58,6 +59,14 @@ export function AssetPanel(container) {
     mUsedByContainer.append('div').html('Position');
     let mUsedByList = [];
 
+    let mDeleteButton = new ButtonInput(mPanelContainer)
+        .setId('model3D-delete-button')
+        .setLabel('Delete')
+        .setOnClick(async () => {
+            await mDeleteCallback(mAssetId);
+            await mNavigationCallback(mModel.getStory().id);
+        })
+
     function show(model, assetId) {
         mModel = model;
         mAssetId = assetId;
@@ -94,6 +103,7 @@ export function AssetPanel(container) {
     this.hide = hide;
     this.setAddCallback = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
+    this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
     this.setViewAssetCallback = (func) => mViewAssetCallback = func;
 }

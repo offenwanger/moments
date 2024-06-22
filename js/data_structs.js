@@ -88,7 +88,7 @@ function Asset(type) {
     this.filename = null;
     this.bones = []
     this.meshes = []
-    this.assetComponentPoses = [];
+    this.baseAssetComponentPoses = [];
 }
 
 function Pointer() {

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { Data } from "../../data_structs.js";
-import { InteractionTargetWrapper } from './interaction_target_wrapper.js';
 import { Util } from '../../utils/utility.js';
+import { InteractionTargetWrapper } from './interaction_target_wrapper.js';
+import { CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 
 export function Model3DWrapper(parent) {
     let mParent = parent;
@@ -57,8 +58,7 @@ export function Model3DWrapper(parent) {
         let targets = intersects.map(i => {
             let name;
             if (i.object.type == "Mesh") {
-                name = (i.object.parent && i.object.parent.type == "Bone") ?
-                    i.object.parent.name : i.object.name;
+                name = (i.object.parent && i.object.parent.type == "Bone") ? i.object.parent.name : i.object.name;
             } else if (i.object.type == 'SkinnedMesh') {
                 let skinnedMesh = i.object;
                 if (!i.face) { console.error("Not sure why this happened.", i); return null; }
@@ -107,17 +107,31 @@ export function Model3DWrapper(parent) {
             let interactionTarget = new InteractionTargetWrapper();
 
             interactionTarget.getPosition = () => {
-                return { x: pose.x, y: pose.y, z: pose.z };
+                let obj = mGLTF.scene.getObjectByName(pose.name);
+                let worldPos = new THREE.Vector3();
+                obj.getWorldPosition(worldPos);
+                return worldPos;
             }
 
-            interactionTarget.setPosition = (pos) => {
+            interactionTarget.setPosition = (worldPos) => {
                 if (mGLTF) {
                     let obj = mGLTF.scene.getObjectByName(pose.name);
-                    Util.console.log.point("Mousepos", pos, mParent)
-                    Util.console.log.point("Mousepos2", new THREE.Vector3().addVectors(new THREE.Vector3(0, 0.5, 0), pos), mParent, "#005500")
-                    obj.position.copy(pos)
+                    let localPosition = obj.parent.worldToLocal(worldPos);
+                    obj.position.copy(localPosition)
+                    return localPosition;
                 }
             }
+
+            /**
+                const iks = [
+                    {
+                        target: 5, // "target"
+                        effector: 4, // "bone3"
+                        links: [{ index: 3 }, { index: 2 }, { index: 1 }] // "bone2", "bone1", "bone0"
+                    }
+                ];
+                ikSolver = new CCDIKSolver(mesh, iks);
+             */
 
             interactionTarget.getId = () => pose.id;
             return interactionTarget;

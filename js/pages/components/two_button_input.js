@@ -50,6 +50,7 @@ export function TwoButtonInput(container) {
 
     this.show = () => { mButtonContainer.style('display', 'flex') }
     this.hide = () => { mButtonContainer.display('display', 'none') }
+    this.remove = () => { mButtonContainer.remove() }
     this.setId = (id) => { mButtonContainer.attr('id', id); return this; }
     this.setLabel = setLabel;
     this.setOnClick = (button, func) => { button == 2 ? mClickCallback2 = func : mClickCallback1 = func; return this; };

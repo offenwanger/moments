@@ -14,6 +14,7 @@ export function TextInput(container, type = 'text') {
 
     this.show = () => mInputContainer.style('display', '')
     this.hide = () => mInputContainer.style('display', 'none')
+    this.remove = () => { mInputContainer.remove() }
     this.setId = (id) => { mInputContainer.attr('id', id); return this; };
     this.setLabel = (text) => { mInputLabel.html(text); return this; };
     this.setText = (text) => { mInputBox.node().value = text; return this; }

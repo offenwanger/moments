@@ -16,6 +16,7 @@ export function ButtonInput(container) {
 
     this.show = () => mButton.style('display', '')
     this.hide = () => mButton.style('display', 'none')
+    this.remove = () => { mButton.remove() }
     this.setId = (id) => { mButton.attr('id', id); return this; }
     this.setLabel = (label) => { mButton.html(label); return this; };
     this.setOnClick = (func) => { mClickCallback = func; return this; };

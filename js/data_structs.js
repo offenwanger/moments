@@ -45,6 +45,7 @@ function Model3D() {
 function AssetComponentPose() {
     this.id = IdUtil.getUniqueId(AssetComponentPose);
     this.name = "";
+    this.type = "";
     this.x = 0;
     this.y = 0;
     this.z = 0;

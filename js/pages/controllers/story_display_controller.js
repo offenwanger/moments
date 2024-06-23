@@ -1,9 +1,8 @@
-import * as THREE from 'three';
 import { DataModel } from "../../data_model.js";
-import { CanvasViewController } from './canvas_view_controller.js';
-import { XRSessionController } from './xr_session_controller.js';
 import { AssetSceneController } from './asset_scene_controller.js';
+import { CanvasViewController } from './canvas_view_controller.js';
 import { StoryWrapperController } from './story_scene_controller.js';
+import { XRSessionController } from './xr_session_controller.js';
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -13,6 +12,7 @@ import { StoryWrapperController } from './story_scene_controller.js';
 export function StoryDisplayController(parentContainer) {
     let mExitAssetViewCallback = async () => { }
     let mMoveCallback = async () => { }
+    let mMoveChainCallback = async () => { }
 
     let mModel = new DataModel();
 
@@ -52,6 +52,10 @@ export function StoryDisplayController(parentContainer) {
 
     mCanvasViewController.onMove(async (id, newPosition) => {
         await mMoveCallback(id, newPosition);
+    })
+
+    mCanvasViewController.onMoveChain(async (id, newPosition) => {
+        await mMoveChainCallback(id, newPosition);
     })
 
     mXRSessionController.onSessionStart(() => {
@@ -104,5 +108,6 @@ export function StoryDisplayController(parentContainer) {
     this.pointerUp = pointerUp;
     this.onExitAssetView = (func) => mExitAssetViewCallback = func;
     this.onMove = (func) => mMoveCallback = func;
+    this.onMoveChain = (func) => mMoveChainCallback = func;
 }
 

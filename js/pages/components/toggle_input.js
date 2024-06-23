@@ -11,6 +11,7 @@ export function ToggleInput(container) {
 
     this.show = () => mInputContainer.attr('display', '')
     this.hide = () => mInputContainer.attr('display', 'none')
+    this.remove = () => { mInputContainer.remove() }
     this.setId = (id) => { mInputContainer.attr('id', id); return this; };
     this.setLabel = (text) => { mInputLabel.html(text); return this; };
     this.setValue = (bool) => { mInputBox.node().checked = bool; return this; }

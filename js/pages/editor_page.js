@@ -73,6 +73,11 @@ export function EditorPage(parentContainer) {
         await updateModel();
     });
 
+    mStoryDisplayController.onMoveChain(async (items) => {
+        await mModelController.updatePositionsAndOrientations(items);
+        await updateModel();
+    });
+
     let mAssetPicker = new AssetPicker(parentContainer);
     mAssetPicker.setNewAssetCallback(async (fileHandle, type) => {
         let filename = await mWorkspace.storeAsset(fileHandle);

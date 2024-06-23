@@ -100,6 +100,24 @@ export function ModelController(storyId, workspace) {
         await mWorkspace.updateStory(mModel);
     }
 
+    async function updatePositionsAndOrientations(items) {
+        try {
+            items.forEach(({ id, position, orientation }) => {
+                if (IdUtil.getClass(id) == Data.AssetComponentPose) {
+                    let pose = mModel.getAssetComponentPose(id);
+                    if (!pose) { console.error('Invalid id!', id); return; }
+                    pose.x = position.x;
+                    pose.y = position.y;
+                    pose.z = position.z;
+                    pose.orientation = orientation.toArray();
+                } else {
+                    console.error("Not handled", id);
+                }
+            });
+        } catch (e) { console.error(e); }
+        await mWorkspace.updateStory(mModel);
+    }
+
     async function deleteItem(id) {
         let type = IdUtil.getClass(id);
         if (type == Data.Model3D) {
@@ -124,6 +142,7 @@ export function ModelController(storyId, workspace) {
         setAttribute,
         createAsset,
         updatePosition,
+        updatePositionsAndOrientations,
         deleteItem,
         getModel: () => mModel.clone(),
     }

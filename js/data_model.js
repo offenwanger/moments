@@ -99,8 +99,10 @@ export function DataModel() {
             return getPointer(id);
         } else if (itemClass == Data.Asset) {
             return getAsset(id);
+        } else if (itemClass == Data.AssetComponentPose) {
+            return getAssetComponentPose(id);
         } else {
-            console.error('Invalid navigation!', id);
+            console.error('Invalid type!', id);
             return null;
         }
 

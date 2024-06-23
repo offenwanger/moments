@@ -84,7 +84,6 @@ export function SidebarController(container) {
     function setAddCallback(func) {
         mStoryPanel.setAddCallback(func);
         mMomentPanel.setAddCallback(func);
-        mModel3DPanel.setAddCallback(func);
         mAnnotationPanel.setAddCallback(func);
         mAnnotationItemPanel.setAddCallback(func);
         mPointerPanel.setAddCallback(func);

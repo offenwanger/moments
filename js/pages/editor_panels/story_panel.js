@@ -36,7 +36,7 @@ export function StoryPanel(container) {
         })
 
     let mMomentsContainer = mPanelContainer.append('div').attr('id', 'story-moments');
-    let mMomentsHeader = new ButtonInput(mMomentsContainer)
+    let mMomentsAddButton = new ButtonInput(mMomentsContainer)
         .setId('story-moments-add-button')
         .setLabel('Moments [+]')
         .setOnClick(async () => {
@@ -45,7 +45,7 @@ export function StoryPanel(container) {
     let mMomentsList = [];
 
     let mModel3DsContainer = mPanelContainer.append('div').attr('id', 'story-moments');
-    let mModel3DsHeader = new ButtonInput(mModel3DsContainer)
+    let mModel3DsAddButton = new ButtonInput(mModel3DsContainer)
         .setId('story-model3D-add-button')
         .setLabel('Model3Ds [+]')
         .setOnClick(async () => {
@@ -54,7 +54,7 @@ export function StoryPanel(container) {
     let mModel3DsList = [];
 
     let mAnnotationsContainer = mPanelContainer.append('div').attr('id', 'story-moments');
-    let mAnnotationsHeader = new ButtonInput(mAnnotationsContainer)
+    let mAnnotationsAddButton = new ButtonInput(mAnnotationsContainer)
         .setId('story-annotations-add-button')
         .setLabel('Annotations [+]')
         .setOnClick(async () => {

@@ -1,11 +1,11 @@
-import * as THREE from 'three';
 import { IdUtil } from "../../utils/id_util.js";
+import { Util } from "../../utils/utility.js";
 import { ButtonInput } from "../components/button_input.js";
+import { ComponentInput } from '../components/component_input.js';
 import { TextInput } from "../components/text_input.js";
 import { TwoButtonInput } from '../components/two_button_input.js';
 
 export function Model3DPanel(container) {
-    let mAddCallback = async (parentId, itemClass, config) => { };
     let mUpdateAttributeCallback = async (id, attr, value) => { };
     let mDeleteCallback = async (id) => { };
     let mSelectAsset = async () => { return false };
@@ -46,6 +46,11 @@ export function Model3DPanel(container) {
             }
         })
 
+
+    mPanelContainer.append('div').html("Component Values")
+    let mAssetComponentContainer = mPanelContainer.append('div').attr('id', 'story-moments');
+    let mAssetComponentList = [];
+
     let mDeleteButton = new ButtonInput(mPanelContainer)
         .setId('model3D-delete-button')
         .setLabel('Delete')
@@ -67,6 +72,23 @@ export function Model3DPanel(container) {
         let asset = model.getAsset(mModel3D.assetId);
         mAssetButton.setLabel(1, asset ? asset.name : "<i>Not Set<i/>")
 
+        Util.setComponentListLength(mAssetComponentList, mModel3D.assetComponentPoses.length, () => {
+            let component = new ComponentInput(mAssetComponentContainer)
+            component.onUpdateAttribute(async (id, attribute, value) => {
+                await mUpdateAttributeCallback(id, attribute, value);
+            });
+            return component;
+        })
+        for (let i = 0; i < mModel3D.assetComponentPoses.length; i++) {
+            mAssetComponentList[i].setId("component-" + mModel3D.assetComponentPoses[i].id)
+                .setPosition(mModel3D.assetComponentPoses[i].type == "Mesh" ?
+                    mModel3D.assetComponentPoses[i] : false)
+                .setOrientation(mModel3D.assetComponentPoses[i].orientation)
+                .setSize(mModel3D.assetComponentPoses[i].size)
+                .setName(mModel3D.assetComponentPoses[i].name)
+                .setComponentId(mModel3D.assetComponentPoses[i].id);
+        }
+
         mPanelContainer.style('display', '');
     }
 
@@ -76,7 +98,6 @@ export function Model3DPanel(container) {
 
     this.show = show;
     this.hide = hide;
-    this.setAddCallback = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
     this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;

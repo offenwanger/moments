@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { Data } from "../../data_structs.js";
-import { Util } from '../../utils/utility.js';
 import { InteractionTargetWrapper } from './interaction_target_wrapper.js';
-import { CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 
 export function Model3DWrapper(parent) {
     let mParent = parent;
@@ -12,6 +10,8 @@ export function Model3DWrapper(parent) {
 
     let mHighlightMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 })
 
+
+    let smesh = null;
     async function update(model3D, model, assetUtil) {
         let oldModel = mModel3D;
         mModel3D = model3D;
@@ -23,6 +23,7 @@ export function Model3DWrapper(parent) {
                 mParent.add(mGLTF.scene);
 
                 mGLTF.scene.traverse(function (child) {
+                    if (child.type == 'SkinnedMesh') smesh = child
                     if (child.isMesh) {
                         child.userData.originalMaterial = child.material;
                     }
@@ -106,32 +107,68 @@ export function Model3DWrapper(parent) {
         return mModel3D.assetComponentPoses.map(pose => {
             let interactionTarget = new InteractionTargetWrapper();
 
-            interactionTarget.getPosition = () => {
-                let obj = mGLTF.scene.getObjectByName(pose.name);
+            interactionTarget.getLocalPosition = () => {
+                let p = new THREE.Vector3();
+                if (mGLTF) {
+                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    p.copy(obj.position)
+                }
+                return p;
+            }
+
+            interactionTarget.getWorldPosition = () => {
                 let worldPos = new THREE.Vector3();
-                obj.getWorldPosition(worldPos);
+                if (mGLTF) {
+                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    obj.getWorldPosition(worldPos);
+                }
                 return worldPos;
             }
 
-            interactionTarget.setPosition = (worldPos) => {
+            interactionTarget.setWorldPosition = (worldPos) => {
                 if (mGLTF) {
                     let obj = mGLTF.scene.getObjectByName(pose.name);
                     let localPosition = obj.parent.worldToLocal(worldPos);
                     obj.position.copy(localPosition)
-                    return localPosition;
                 }
             }
 
-            /**
-                const iks = [
-                    {
-                        target: 5, // "target"
-                        effector: 4, // "bone3"
-                        links: [{ index: 3 }, { index: 2 }, { index: 1 }] // "bone2", "bone1", "bone0"
-                    }
-                ];
-                ikSolver = new CCDIKSolver(mesh, iks);
-             */
+            interactionTarget.getLocalOrientation = () => {
+                let q = new THREE.Quaternion();
+                if (mGLTF) {
+                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    q.copy(obj.quaternion);
+                }
+                return q;
+            }
+
+            interactionTarget.getParent = () => {
+                let obj = mGLTF.scene.getObjectByName(pose.name);
+                if (!obj.parent || obj.parent == mGLTF.scene) return null;
+                let parentPose = mModel3D.assetComponentPoses.find(p => p.name == obj.parent.name);
+                if (!parentPose) { console.error("Invalid target!", obj.parent); return null; };
+                let parentTarget = mInteractionTargets.find(t => t.getId() == parentPose.id);
+                if (!parentTarget) { console.error("Invalid target!", root); return null; };
+                return parentTarget;
+            }
+
+            interactionTarget.getRoot = () => {
+                let obj = mGLTF.scene.getObjectByName(pose.name);
+                let root = obj;
+                while (root.parent && root.parent != mGLTF.scene && root.parent.type == "Bone") {
+                    root = root.parent;
+                }
+
+                let rootPose = mModel3D.assetComponentPoses.find(p => p.name == root.name);
+                if (!rootPose) { console.error("Invalid target!", root); return null; };
+                let target = mInteractionTargets.find(t => t.getId() == rootPose.id);
+                return target;
+            }
+
+            interactionTarget.getObject3D = () => {
+                let obj = mGLTF.scene.getObjectByName(pose.name);
+                return obj
+            }
 
             interactionTarget.getId = () => pose.id;
             return interactionTarget;

@@ -13,8 +13,6 @@ import { AssetPicker } from './editor_panels/asset_picker.js';
 export function EditorPage(parentContainer) {
     console.log('cache loaded models?')
     console.log('enable the click thing in the canvas viewer to bring it up in the sidebar')
-    console.log("Test moving bones on grab in VR")
-    console.log("Fix the update delay issue.")
 
 
 

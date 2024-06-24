@@ -107,7 +107,7 @@ export function Model3DWrapper(parent) {
         return mModel3D.assetComponentPoses.map(pose => {
             let interactionTarget = new InteractionTargetWrapper();
 
-            interactionTarget.getLocalPosition = () => {
+            interactionTarget.getTargetLocalPosition = () => {
                 let p = new THREE.Vector3();
                 if (mGLTF) {
                     let obj = mGLTF.scene.getObjectByName(pose.name);
@@ -116,7 +116,7 @@ export function Model3DWrapper(parent) {
                 return p;
             }
 
-            interactionTarget.getWorldPosition = () => {
+            interactionTarget.getTargetWorldPosition = () => {
                 let worldPos = new THREE.Vector3();
                 if (mGLTF) {
                     let obj = mGLTF.scene.getObjectByName(pose.name);
@@ -125,7 +125,7 @@ export function Model3DWrapper(parent) {
                 return worldPos;
             }
 
-            interactionTarget.setWorldPosition = (worldPos) => {
+            interactionTarget.setTargetWorldPosition = (worldPos) => {
                 if (mGLTF) {
                     let obj = mGLTF.scene.getObjectByName(pose.name);
                     let localPosition = obj.parent.worldToLocal(worldPos);
@@ -133,7 +133,7 @@ export function Model3DWrapper(parent) {
                 }
             }
 
-            interactionTarget.getLocalOrientation = () => {
+            interactionTarget.getTargetLocalOrientation = () => {
                 let q = new THREE.Quaternion();
                 if (mGLTF) {
                     let obj = mGLTF.scene.getObjectByName(pose.name);

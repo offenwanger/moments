@@ -12,7 +12,6 @@ export function AssetUtil(workspace) {
     let mLoadedAssets = {};
 
     function updateModel(model) {
-        console.error("TODO: Check for which loaded assets aren't valid anymore");
         let newAssetIds = model.getAssets().map(a => a.id);
         Object.keys(mLoadedAssets).forEach(id => {
             if (!newAssetIds.includes(id)) { delete mLoadedAssets[id]; }

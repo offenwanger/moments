@@ -1,10 +1,10 @@
 import * as THREE from "three"
 
 export function InteractionTargetWrapper() {
-    this.getLocalPosition = () => { return new THREE.Vector3(); }
-    this.getWorldPosition = () => { return new THREE.Vector3(); }
-    this.setWorldPosition = (worldPosition) => { }
-    this.getLocalOrientation = () => { return new THREE.Quaternion() }
+    this.getTargetLocalPosition = () => { return new THREE.Vector3(); }
+    this.getTargetWorldPosition = () => { return new THREE.Vector3(); }
+    this.setTargetWorldPosition = (worldPosition) => { }
+    this.getTargetLocalOrientation = () => { return new THREE.Quaternion() }
     this.highlight = () => { };
     this.unhighlight = () => { };
     this.getIntersection = () => { return {} }

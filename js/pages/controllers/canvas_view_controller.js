@@ -144,7 +144,7 @@ export function CanvasViewController(parentContainer) {
             } else {
                 let intersection = target.getIntersection();
                 let rootTarget = target.getRoot();
-                let targetToPos = new THREE.Vector3().subVectors(rootTarget.getWorldPosition(), intersection.point)
+                let targetToPos = new THREE.Vector3().subVectors(rootTarget.getTargetWorldPosition(), intersection.point)
 
                 mInteraction = {
                     type: DRAGGING,
@@ -197,7 +197,7 @@ export function CanvasViewController(parentContainer) {
             mRaycaster.setFromCamera(pointer, mPageCamera);
             let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
             position.add(mInteraction.targetToPos)
-            mInteraction.target.setWorldPosition(position);
+            mInteraction.target.setTargetWorldPosition(position);
         } else if (mInteraction.type == DRAGGING_KINEMATIC) {
             let pointer = screenToNomralizedCoords(screenCoords);
             mRaycaster.setFromCamera(pointer, mPageCamera);
@@ -218,15 +218,15 @@ export function CanvasViewController(parentContainer) {
                 mRaycaster.setFromCamera(pointer, mPageCamera);
                 let position = mRaycaster.ray.at(interaction.distance, new THREE.Vector3());
                 position.add(interaction.targetToPos)
-                let localPos = interaction.target.getLocalPosition();
+                let localPos = interaction.target.getTargetLocalPosition();
 
                 await mMoveCallback(interaction.target.getId(), localPos);
             } else if (interaction.type == DRAGGING_KINEMATIC) {
                 mMoveChainCallback(interaction.affectedTargets.map(t => {
                     return {
                         id: t.getId(),
-                        position: t.getLocalPosition(),
-                        orientation: t.getLocalOrientation(),
+                        position: t.getTargetLocalPosition(),
+                        orientation: t.getTargetLocalOrientation(),
                     }
                 }))
             }

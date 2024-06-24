@@ -74,6 +74,14 @@ export function StoryDisplayController(parentContainer) {
         }
     })
 
+    mXRSessionController.onMove(async (id, newPosition) => {
+        await mMoveCallback(id, newPosition);
+    })
+
+    mXRSessionController.onMoveChain(async (id, newPosition) => {
+        await mMoveChainCallback(id, newPosition);
+    })
+
 
     async function updateModel(model, assetUtil) {
         await mAssetSceneController.updateModel(model, assetUtil);

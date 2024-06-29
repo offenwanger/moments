@@ -1,6 +1,7 @@
 import { AssetTypes } from "../../constants.js";
 import { DataModel } from "../../data_model.js";
 import { Data } from "../../data_structs.js";
+import { GLTKUtil } from "../../utils/gltk_util.js";
 import { IdUtil } from "../../utils/id_util.js";
 
 export function ModelController(storyId, workspace) {
@@ -69,17 +70,16 @@ export function ModelController(storyId, workspace) {
         newAsset.filename = filename;
         newAsset.name = name;
         if (type == AssetTypes.MODEL) {
-            asset.scene.traverse(child => {
-                if (child.type == "Bone" || (child.type == "Mesh" && (!child.parent || child.parent.type != 'Bone'))) {
-                    let pose = new Data.AssetComponentPose();
-                    pose.type = child.type;
-                    pose.name = child.name;
-                    pose.x = child.position.x;
-                    pose.y = child.position.y;
-                    pose.z = child.position.z;
-                    pose.orientation = child.quaternion.toArray();
-                    newAsset.baseAssetComponentPoses.push(pose);
-                }
+            let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(asset.scene);
+            targets.forEach(child => {
+                let pose = new Data.AssetComponentPose();
+                pose.type = child.type;
+                pose.name = child.name;
+                pose.x = child.position.x;
+                pose.y = child.position.y;
+                pose.z = child.position.z;
+                pose.orientation = child.quaternion.toArray();
+                newAsset.baseAssetComponentPoses.push(pose);
             })
         }
         mModel.getAssets().push(newAsset);

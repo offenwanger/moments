@@ -107,7 +107,12 @@ function point(id, vec, scene, color = 0x00ff00) {
     if (!debug_data[id]) {
         debug_data[id] = new THREE.Mesh(
             new THREE.IcosahedronGeometry(0.1, 15),
-            new THREE.MeshBasicMaterial({ color })
+            new THREE.MeshBasicMaterial({
+                color,
+                depthTest: false,
+                depthWrite: false,
+                transparent: true
+            })
         )
         scene.add(debug_data[id]);
 

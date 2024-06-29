@@ -1,26 +1,23 @@
 
-async function syncArray(arr, newItems, model, assetUtil, createFunction) {
-    let removeIds = arr.map(i => i.getId());
-    for (const item of newItems) {
-        let idIndex = removeIds.findIndex(id => id == item.id);
-        if (idIndex == -1) {
-            // doesn't exist, make one
-            arr.push(await createFunction(item));
-            idIndex = arr.length - 1
+async function updateWrapperArray(wrappers, dataItems, model, assetUtil, createFunction) {
+    let unusedOldWrappers = [...wrappers];
+    for (const item of dataItems) {
+        let wrapper = unusedOldWrappers.find(w => w.getId() == item.id);
+        if (wrapper) {
+            unusedOldWrappers.splice(unusedOldWrappers.indexOf(wrapper), 1);
         } else {
-            // exists, remove from remove array.
-            removeIds.splice(idIndex, 1);
+            wrapper = await createFunction(item);
+            wrappers.push(wrapper);
         }
-        await arr[idIndex].update(item, model, assetUtil);
+        wrapper.update(item, model, assetUtil);
     }
 
-    for (const id of removeIds) {
-        let index = arr.findIndex(i => i.getId() == id);
-        await arr[index].remove();
-        arr.splice(index, 1);
+    for (const unusedWrapper of unusedOldWrappers) {
+        await unusedWrapper.remove();
+        wrappers.splice(wrappers.indexOf(unusedWrapper), 1);
     }
 }
 
 export const SceneUtil = {
-    syncArray,
+    updateWrapperArray,
 }

@@ -106,13 +106,13 @@ export function MomentWrapper(parent) {
             mSphere.material.envMap = mEnvironmentBox;
         }
 
-        await SceneUtil.syncArray(mModel3DWrappers, mMoment.model3Ds, model, assetUtil, async (model3D) => {
+        await SceneUtil.updateWrapperArray(mModel3DWrappers, mMoment.model3Ds, model, assetUtil, async (model3D) => {
             let newModel3DWrapper = new Model3DWrapper(mMomentGroup);
             await newModel3DWrapper.update(model3D, mModel, assetUtil)
             return newModel3DWrapper;
         });
 
-        await SceneUtil.syncArray(mAnnotationWrappers, story.annotations, model, assetUtil, async (annotation) => {
+        await SceneUtil.updateWrapperArray(mAnnotationWrappers, story.annotations, model, assetUtil, async (annotation) => {
             let newAnnotationWrapper = new AnnotationWrapper(mMomentGroup);
             await newAnnotationWrapper.update(annotation, mModel, assetUtil)
             return newAnnotationWrapper;

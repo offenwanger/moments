@@ -1,33 +1,61 @@
 import * as THREE from 'three';
 import { Data } from "../../data_structs.js";
+import { GLTKUtil } from '../../utils/gltk_util.js';
 import { InteractionTargetWrapper } from './interaction_target_wrapper.js';
 
 export function Model3DWrapper(parent) {
     let mParent = parent;
     let mModel3D = new Data.Model3D();
     let mGLTF = null;
+    let mTargets = [];
     let mInteractionTargets = [];
+    let mModelGroup = new THREE.Group();
+    mParent.add(mModelGroup);
 
-    let mHighlightMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    const mHighlightMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff0000
+    })
+    const BoneMaterial = new THREE.LineBasicMaterial({
+        color: new THREE.Color(0xff0000),
+        depthTest: false,
+        depthWrite: false,
+        transparent: true
+    });
 
-
-    let smesh = null;
     async function update(model3D, model, assetUtil) {
         let oldModel = mModel3D;
         mModel3D = model3D;
+
+        // ensure the interaction targets exist because we're going
+        // to add things to them.
+        mInteractionTargets = makeInteractionTargets();
 
         if (mModel3D.assetId != oldModel.assetId) {
             if (mGLTF) remove();
             try {
                 mGLTF = await assetUtil.loadAssetModel(mModel3D.assetId)
-                mParent.add(mGLTF.scene);
+                mModelGroup.add(mGLTF.scene);
 
-                mGLTF.scene.traverse(function (child) {
-                    if (child.type == 'SkinnedMesh') smesh = child
-                    if (child.isMesh) {
-                        child.userData.originalMaterial = child.material;
+                mTargets = []
+                let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(mGLTF.scene);
+                targets.forEach(target => {
+                    if (target.isMesh) {
+                        let pose = mModel3D.assetComponentPoses.find(p => p.name == target.name);
+                        if (!pose) { console.error("Mismatched Model3D and asset!"); return; }
+                        target.userData.poseId = pose.id;
+                        target.userData.originalMaterial = target.material;
+
+                        mTargets.push(target)
+                    } else if (target.type == "Bone") {
+                        let pose = mModel3D.assetComponentPoses.find(p => p.name == target.name);
+                        if (!pose) { console.error("Mismatched Model3D and asset!"); return; }
+                        let targetGroup = attachBoneTarget(target, pose.id);
+                        mTargets.push(targetGroup);
+                    } else {
+                        console.error("Unexpected target type!", target);
                     }
-                });
+                })
+
             } catch (error) {
                 console.error(error);
             }
@@ -40,9 +68,6 @@ export function Model3DWrapper(parent) {
             object.position.set(pose.x, pose.y, pose.z);
             // object.scale.set(model3D.size / mModelSize, model3D.size / mModelSize, model3D.size / mModelSize);
         })
-
-
-        mInteractionTargets = makeInteractionTargets();
     }
 
     function getId() {
@@ -50,54 +75,20 @@ export function Model3DWrapper(parent) {
     }
 
     function remove() {
-        mParent.remove(mGLTF.scene)
+        mParent.remove(mModelGroup)
     }
 
     function getIntersections(ray) {
         if (!mGLTF) return []
-        const intersects = ray.intersectObjects(mGLTF.scene.children);
+        const intersects = ray.intersectObjects(mTargets);
         let targets = intersects.map(i => {
-            let name;
-            if (i.object.type == "Mesh") {
-                name = (i.object.parent && i.object.parent.type == "Bone") ? i.object.parent.name : i.object.name;
-            } else if (i.object.type == 'SkinnedMesh') {
-                let skinnedMesh = i.object;
-                if (!i.face) { console.error("Not sure why this happened.", i); return null; }
+            if (!i.object) { console.error("Invalid Intersect!"); return null; }
+            let poseId = i.object.userData.poseId;
 
-                let vi = i.face.a;
-                let sw = skinnedMesh.geometry.attributes.skinWeight;
-                let bi = skinnedMesh.geometry.attributes.skinIndex;
-
-                let bindices = [bi.getX(vi), bi.getY(vi), bi.getZ(vi), bi.getW(vi)];
-                let weights = [sw.getX(vi), sw.getY(vi), sw.getZ(vi), sw.getW(vi)];
-                let w = weights[0];
-                let bestI = bindices[0];
-                for (let i = 1; i < 4; i++) {
-                    if (weights[i] > w) {
-                        w = weights[i];
-                        bestI = bindices[i];
-                    }
-                }
-                let bone = skinnedMesh.skeleton.bones[bestI];
-                name = bone.name;
-            } else {
-                console.error("Didn't know there were other types. " + i.object.type);
-                return null;
-            }
-
-            let pose = mModel3D.assetComponentPoses.find(p => p.name == name);
-            if (!pose) { console.error("Invalid object!", i.object); return null; };
-
-            let target = mInteractionTargets.find(t => t.getId() == pose.id);
+            let target = mInteractionTargets.find(t => t.getId() == poseId);
+            if (!target) { console.error("Invalid intersect mesh, no target!", i.object); return null; }
             target.getIntersection = () => { return i }
-            target.highlight = () => {
-                if (!i.object.isMesh) { console.error("I'm confused.", i.object); return; }
-                i.object.material = mHighlightMaterial;
-            };
-            target.unhighlight = () => {
-                if (!i.object.isMesh) { console.error("I'm confused.", i.object); return; }
-                i.object.material = i.object.userData.originalMaterial
-            }
+
             return target;
         }).filter(t => t);
         return targets;
@@ -170,10 +161,67 @@ export function Model3DWrapper(parent) {
                 return obj
             }
 
+            interactionTarget.highlight = () => {
+                let obj = interactionTarget.getObject3D();
+                if (obj.isMesh) {
+                    obj.material = mHighlightMaterial;
+                } else if (obj.type == "Bone") {
+                    let lineGroup = obj.children.find(c => c.userData.boneLines);
+                    if (!lineGroup) { console.error("Malformed target", obj) }
+                    lineGroup.visible = true;
+                } else {
+                    console.error("Unexpected target object!", obj);
+                }
+            };
+            interactionTarget.unhighlight = () => {
+                let obj = interactionTarget.getObject3D();
+                if (obj.isMesh) {
+                    obj.material = obj.userData.originalMaterial
+                } else if (obj.type == "Bone") {
+                    let lineGroup = obj.children.find(c => c.userData.boneLines);
+                    if (!lineGroup) { console.error("Malformed target", obj) }
+                    lineGroup.visible = false;
+                } else {
+                    console.error("Unexpected target object!", obj);
+                }
+            }
+
             interactionTarget.getId = () => pose.id;
             return interactionTarget;
         });
     }
+
+    function attachBoneTarget(bone, poseId) {
+        const group = new THREE.Group();
+        group.userData.boneLines = true;
+        group.visible = false;
+        bone.add(group);
+        // group.visible = false;
+        let childBones = bone.children.filter(i => i.type == "Bone");
+        if (childBones.length > 0) {
+            let point1 = new THREE.Vector3();
+            bone.getWorldPosition(point1);
+
+            childBones.forEach(b => {
+                const point2 = new THREE.Vector3();
+                b.getWorldPosition(point2);
+                const geometry = new THREE.BufferGeometry();
+                geometry.setFromPoints([point1, point2]);
+                const line = new THREE.Line(geometry, BoneMaterial);
+                line.userData.poseId = poseId;
+                group.attach(line);
+            })
+        } else {
+            const geometry = new THREE.SphereGeometry(0.03, 4, 2);
+            const sphere = new THREE.Mesh(geometry, BoneMaterial);
+            sphere.userData.poseId = poseId;
+            bone.getWorldPosition(sphere.position);
+            group.attach(sphere);
+        }
+
+        return group;
+    }
+
 
     this.update = update;
     this.getId = getId;

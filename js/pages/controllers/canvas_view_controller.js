@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { DOUBLE_CLICK_SPEED, USER_HEIGHT } from '../../constants.js';
+import { GLTKUtil } from '../../utils/gltk_util.js';
 
 export function CanvasViewController(parentContainer) {
     const DRAGGING = 'dragging'
@@ -25,6 +26,7 @@ export function CanvasViewController(parentContainer) {
     let mHold = null;
     let mLastPointerDown = { time: 0, pos: { x: 0, y: 0 } }
     const mRaycaster = new THREE.Raycaster();
+    mRaycaster.params.Line.threshold = 0.2;
 
     let mIKSolver
     let mCCDIKHelper
@@ -75,68 +77,25 @@ export function CanvasViewController(parentContainer) {
         mLastPointerDown.time = Date.now();
         mLastPointerDown.pos = screenCoords;
 
-        let validHoverTargets = mHovered.filter(h => !mFreeze.find(f => f.getId() == h.getId()));
+        let nonfrozenTargets = mHovered.filter(h => !mFreeze.find(f => f.getId() == h.getId()));
 
-        if (validHoverTargets.length > 0) {
-            let target = validHoverTargets[0];
+        if (nonfrozenTargets.length > 0) {
+            let target = getClosestTarget(nonfrozenTargets, screenCoords);
             let rootTarget = target.getRoot();
             if (mFreezeRoots.find(f => f.getId() == rootTarget.getId())) {
-                let targetBone = target.getObject3D();
-                let rootBone = rootTarget.getObject3D();
-
-                let intersection = target.getIntersection();
-                let controlBone = new THREE.Bone();
-
-                let targetChild = targetBone.children.find(b => b.type == "Bone");
-                let localPosition = targetChild.worldToLocal(intersection.point);
-
-                controlBone.position.copy(localPosition)
-                targetChild.add(controlBone);
-
-                let bones = []
-                rootBone.traverse(b => {
-                    if (b.type == "Bone") bones.push(b);
-                })
-
-                const skeleton = new THREE.Skeleton(bones);
-                const mesh = new THREE.SkinnedMesh();
-                mesh.bind(skeleton);
-
-                let freezeChain = []
                 let freezeTarget = mFreeze.find(f => f.getRoot().getId() == rootTarget.getId());
-                let freezeParent = freezeTarget;
-                while (freezeParent && freezeParent.getId() != rootTarget.getId()) {
-                    freezeChain.push(freezeParent);
-                    freezeParent = freezeParent.getParent();
-                }
 
-                let affectedTargets = []
-
-                let affectedParent = target;
-                while (affectedParent.getId() != rootTarget.getId() &&
-                    !freezeChain.find(i => i.getId() == affectedParent.getId())) {
-                    affectedTargets.push(affectedParent);
-                    affectedParent = affectedParent.getParent();
-                }
-
-                let links = affectedTargets.map(t => {
-                    return { index: bones.indexOf(t.getObject3D()) };
-                })
-                links.unshift({ index: bones.indexOf(target.getObject3D()) })
-
-                const iks = [{
-                    target: bones.indexOf(controlBone),
-                    effector: bones.indexOf(targetChild),
-                    links,
-                }];
+                let { mesh, iks, affectedTargets, controlBone } = GLTKUtil.createIK(freezeTarget, target);
                 mIKSolver = new CCDIKSolver(mesh, iks);
                 mCCDIKHelper = new CCDIKHelper(mesh, iks, 0.01);
                 mSceneController.getScene().add(mCCDIKHelper);
 
+                let intersection = target.getIntersection();
+                let rootBone = rootTarget.getObject3D();
                 mInteraction = {
                     type: DRAGGING_KINEMATIC,
                     controlBone,
-                    targetChild,
+                    rootBone,
                     affectedTargets,
                     start: screenCoords,
                     distance: intersection.distance,
@@ -159,9 +118,9 @@ export function CanvasViewController(parentContainer) {
         }
     }
 
-    function onDoubleDown() {
+    function onDoubleDown(screenCoords) {
         if (mHovered.length > 0) {
-            let target = mHovered[0];
+            let target = getClosestTarget(mHovered, screenCoords);
             if (mFreeze.find(f => f.getId() == target.getId())) {
                 mFreeze.splice(mFreeze.findIndex(f => f.getId() == target.getId()), 1);
             } else {
@@ -202,7 +161,7 @@ export function CanvasViewController(parentContainer) {
             let pointer = screenToNomralizedCoords(screenCoords);
             mRaycaster.setFromCamera(pointer, mPageCamera);
             let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
-            let localPosition = mInteraction.targetChild.worldToLocal(position);
+            let localPosition = mInteraction.rootBone.worldToLocal(position);
             mInteraction.controlBone.position.copy(localPosition);
         }
     }
@@ -231,6 +190,18 @@ export function CanvasViewController(parentContainer) {
                 }))
             }
         }
+    }
+
+    function getClosestTarget(targets, screenCoords) {
+        let pointer = screenToNomralizedCoords(screenCoords);
+        mRaycaster.setFromCamera(pointer, mPageCamera);
+
+        let sortation = targets.map(t => {
+            return { t, distance: mRaycaster.ray.distanceToPoint(t.getIntersection().point) }
+        })
+
+        sortation.sort((a, b) => a.distance - b.distance)
+        return sortation[0].t;
     }
 
     function updateHighlight() {

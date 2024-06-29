@@ -3,6 +3,7 @@ import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js'
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { USER_HEIGHT } from '../../constants.js';
+import { GLTKUtil } from '../../utils/gltk_util.js';
 
 const LEFT_DRAG = 'leftHandedDragMove'
 const RIGHT_DRAG = 'rightHandedDragMove'
@@ -64,18 +65,31 @@ export function XRSessionController() {
 
     let controllerGroup = new THREE.Group();
 
+    const mControllerOuterMaterial = new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true });
+    const mControllerInnerMaterial = new THREE.MeshBasicMaterial({
+        opacity: 0.5,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+    });
+
     const mControllerR = mXRRenderer.xr.getController(1);
     const mControllerGripR = mXRRenderer.xr.getControllerGrip(1);
+
     const mControllerRTip = new THREE.Mesh(
-        new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2),
-        new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true }));
+        new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2), mControllerOuterMaterial);
     mControllerRTip.position.set(-0.005, 0, -0.03);
+    const mControllerRInnerTip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.007, 0.015, 3).rotateX(-Math.PI / 2), mControllerInnerMaterial);
+    mControllerRInnerTip.position.set(-0.005, 0, -0.03);
     mControllerR.addEventListener('connected', function (event) {
         this.add(mControllerRTip);
+        this.add(mControllerRInnerTip);
         mControllerGripR.add(new XRControllerModelFactory().createControllerModel(mControllerGripR));
     });
     mControllerR.addEventListener('disconnected', function () {
         this.remove(mControllerRTip);
+        this.remove(mControllerRInnerTip);
     });
 
     controllerGroup.add(mControllerR);
@@ -84,15 +98,19 @@ export function XRSessionController() {
     const mControllerL = mXRRenderer.xr.getController(0);
     const mControllerGripL = mXRRenderer.xr.getControllerGrip(0);
     const mControllerLTip = new THREE.Mesh(
-        new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2),
-        new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true }));
+        new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2), mControllerOuterMaterial);
     mControllerLTip.position.set(0.005, 0, -0.03);
+    const mControllerLInnerTip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.007, 0.015, 3).rotateX(-Math.PI / 2), mControllerInnerMaterial);
+    mControllerLInnerTip.position.set(0.005, 0, -0.03);
     mControllerL.addEventListener('connected', function (event) {
         this.add(mControllerLTip);
+        this.add(mControllerLInnerTip);
         mControllerGripL.add(new XRControllerModelFactory().createControllerModel(mControllerGripL));
     });
     mControllerL.addEventListener('disconnected', function () {
         this.remove(mControllerLTip);
+        this.remove(mControllerLInnerTip);
     });
 
     controllerGroup.add(mControllerL);
@@ -138,7 +156,8 @@ export function XRSessionController() {
                 let movingController = mSystemState.interaction.freezeLeft ? mControllerRTip : mControllerLTip;
                 let movingcontrollerPos = new THREE.Vector3();
                 movingController.getWorldPosition(movingcontrollerPos);
-                let localPosition = mSystemState.interaction.rootBone.worldToLocal(movingcontrollerPos);
+                let localPosition = mSystemState.interaction.rootTarget.getObject3D()
+                    .worldToLocal(movingcontrollerPos);
                 mSystemState.interaction.controlBone.position.copy(localPosition);
                 mIKSolver?.update();
             }
@@ -179,14 +198,14 @@ export function XRSessionController() {
         } else if (leftHandDragState()) {
             if (!mSystemState.interaction || mSystemState.interaction.type != LEFT_DRAG) {
                 endInteraction();
-                let target = mSystemState.lHovered[0];
+                let target = getClosestLeftTarget();
                 let rootTarget = target.getRoot();
                 startDrag(LEFT_DRAG, mControllerLTip, rootTarget);
             }
         } else if (rightHandDragState()) {
             if (!mSystemState.interaction || mSystemState.interaction.type != RIGHT_DRAG) {
                 endInteraction();
-                let target = mSystemState.rHovered[0];
+                let target = getClosestRightTarget();
                 let rootTarget = target.getRoot();
                 startDrag(RIGHT_DRAG, mControllerRTip, rootTarget);
             }
@@ -237,13 +256,15 @@ export function XRSessionController() {
     function getKinematicDragTargets() {
         if (!mSystemState.lHovered[0] || !mSystemState.rHovered[0]) return null;
 
-        let leftTarget = mSystemState.lHovered[0];
+        let leftTarget = getClosestLeftTarget();
         let dragRoot = leftTarget.getRoot();
-        let rightTarget = mSystemState.rHovered.find(t => t.getRoot().getId() == dragRoot.getId());
+        let validRightTargets = mSystemState.rHovered.filter(t => t.getRoot().getId() == dragRoot.getId())
+        let rightTarget = validRightTargets.length > 0 ? getClosestTarget(validRightTargets, mControllerRTip.position) : null;
         if (!rightTarget) {
-            rightTarget = mSystemState.rHovered[0]
+            rightTarget = getClosestRightTarget();
             dragRoot = rightTarget.getRoot();
-            leftTarget = mSystemState.lHovered.find(t => t.getRoot().getId() == dragRoot.getId());
+            let validLeftTargets = mSystemState.lHovered.filter(t => t.getRoot().getId() == dragRoot.getId())
+            leftTarget = getClosestTarget(validLeftTargets, mControllerLTip.position);
         }
         if (leftTarget && rightTarget) {
             return { leftTarget, rightTarget };
@@ -259,66 +280,23 @@ export function XRSessionController() {
 
     function getTwoHandDragTarget() {
         if (!mSystemState.lHovered[0] || !mSystemState.rHovered[0]) return null;
-        let target = mSystemState.rHovered.find(h => h.getId() == mSystemState.lHovered[0].getId());
-        if (!target) {
-            target = mSystemState.lHovered.find(h => h.getId() == mSystemState.rHovered[0].getId());
+        let lTarget = getClosestLeftTarget();
+        let rTarget = mSystemState.rHovered.find(h => h.getId() == lTarget.getId());
+        if (!rTarget) {
+            rTarget = getClosestRightTarget()
+            lTarget = mSystemState.lHovered.find(h => h.getId() == rTarget.getId());
         }
-        return target;
+        return lTarget;
     }
 
     function startKinimaticDrag(freezeLeft) {
         let targets = getKinematicDragTargets();
-
         let movingTarget = freezeLeft ? targets.rightTarget : targets.leftTarget;
-
+        let anchorTarget = freezeLeft ? targets.leftTarget : targets.rightTarget;
         let rootTarget = movingTarget.getRoot();
-        let targetBone = movingTarget.getObject3D();
-        let rootBone = rootTarget.getObject3D();
 
-        let intersection = movingTarget.getIntersection();
-        let controlBone = new THREE.Bone();
+        let { mesh, iks, affectedTargets, controlBone } = GLTKUtil.createIK(anchorTarget, movingTarget)
 
-        let targetChild = targetBone.children.find(b => b.type == "Bone");
-        let localPosition = targetChild.worldToLocal(intersection.point);
-
-        controlBone.position.copy(localPosition)
-        rootBone.add(controlBone);
-
-        let bones = []
-        rootBone.traverse(b => {
-            if (b.type == "Bone") bones.push(b);
-        })
-
-        const skeleton = new THREE.Skeleton(bones);
-        const mesh = new THREE.SkinnedMesh();
-        mesh.bind(skeleton);
-
-        let freezeChain = []
-        let freezeTarget = freezeLeft ? targets.leftTarget : targets.rightTarget;
-        let freezeParent = freezeTarget;
-        while (freezeParent && freezeParent.getId() != rootTarget.getId()) {
-            freezeChain.push(freezeParent);
-            freezeParent = freezeParent.getParent();
-        }
-
-        let affectedTargets = [movingTarget]
-        let affectedParent = movingTarget.getParent();
-        while (affectedParent.getId() != rootTarget.getId() &&
-            !freezeChain.find(i => i.getId() == affectedParent.getId())) {
-            affectedTargets.push(affectedParent);
-            affectedParent = affectedParent.getParent();
-        }
-
-        let links = affectedTargets.map(t => {
-            return { index: bones.indexOf(t.getObject3D()) };
-        })
-        links.unshift({ index: bones.indexOf(movingTarget.getObject3D()) })
-
-        const iks = [{
-            target: bones.indexOf(controlBone),
-            effector: bones.indexOf(targetChild),
-            links,
-        }];
         mIKSolver = new CCDIKSolver(mesh, iks);
         mCCDIKHelper = new CCDIKHelper(mesh, iks, 0.01);
         mSceneController.getScene().add(mCCDIKHelper);
@@ -332,13 +310,9 @@ export function XRSessionController() {
 
         mSystemState.interaction = {
             type: KINEMATIC_DRAG,
-            movingTarget,
-            freezeTarget,
-            rootTarget,
-            rootBone,
-            freezeLeft,
             controlBone,
-            targetChild,
+            rootTarget,
+            freezeLeft,
             affectedTargets,
             positionDiff,
         }
@@ -437,7 +411,9 @@ export function XRSessionController() {
         let dist = dir.length();
         dir.normalize();
 
-        return new THREE.Raycaster(p1, dir, 0, dist);
+        let rayCaster = new THREE.Raycaster(p1, dir, 0, dist);
+        rayCaster.params.Line.threshold = 0.2;
+        return rayCaster;
     }
 
     function getLeftContoller() {
@@ -454,32 +430,23 @@ export function XRSessionController() {
         }
     }
 
-    function getOneHandDragStartTarget() {
-        // we only return a valid target if we're not already interacting.
-        if (mSystemState.interaction && (mSystemState.interaction.type == LEFT_DRAG ||
-            mSystemState.interaction.type == RIGHT_DRAG)) return false;
-        if (mSystemState.primaryLPressed && mSystemState.lHovered.length > 0) {
-            return mSystemState.lHovered[0];
-        } else if (mSystemState.primaryRPressed && mSystemState.rHovered.length > 0) {
-            return mSystemState.rHovered[0];
-        };
+    function getClosestTarget(targets, pointerCoords) {
+        if (targets.length == 0) return null;
+
+        let sortation = targets.map(t => {
+            return { t, distance: pointerCoords.distanceTo(t.getIntersection().point) }
+        })
+
+        sortation.sort((a, b) => a.distance - b.distance)
+        return sortation[0].t;
     }
 
-    function getTwoHandDragStartTarget() {
-        if (!mSystemState.interaction || !(mSystemState.interaction.type == LEFT_DRAG ||
-            mSystemState.interaction.type == RIGHT_DRAG)) {
-            return false;
-        }
+    function getClosestLeftTarget() {
+        return getClosestTarget(mSystemState.lHovered, mControllerLTip.position);
+    }
 
-        let dragRoot = mSystemState.interaction.target.getRoot();
-        let otherHandTargets = mSystemState.interaction.type == LEFT_DRAG ?
-            mSystemState.rHovered : mSystemState.lHovered;
-        let validTarget = otherHandTargets.find(t => t.getRoot().getId() == dragRoot.getId());
-        if (validTarget) {
-            return validTarget;
-        }
-
-        return false;
+    function getClosestRightTarget() {
+        return getClosestTarget(mSystemState.rHovered, mControllerRTip.position);
     }
 
     this.onSessionStart = (func) => mOnSessionStartCallback = func;

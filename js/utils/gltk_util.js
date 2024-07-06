@@ -15,52 +15,6 @@ function getInteractionTargetsFromGTLKScene(scene) {
     return targets;
 }
 
-function createIKCanvas() {
-    let targetBone = target.getObject3D();
-    let rootBone = rootTarget.getObject3D();
-
-    let controlBone = new THREE.Bone();
-    targetBone.getWorldPosition(controlBone.position);
-    rootBone.attach(controlBone);
-
-    let bones = []
-    rootBone.traverse(b => {
-        if (b.type == "Bone") bones.push(b);
-    })
-
-    const skeleton = new THREE.Skeleton(bones);
-    const mesh = new THREE.SkinnedMesh();
-    mesh.bind(skeleton);
-
-    let freezeChain = []
-    let freezeTarget = mFreeze.find(f => f.getRoot().getId() == rootTarget.getId());
-    let freezeParent = freezeTarget;
-    while (freezeParent && freezeParent.getId() != rootTarget.getId()) {
-        freezeChain.push(freezeParent);
-        freezeParent = freezeParent.getParent();
-    }
-
-    let affectedTargets = []
-
-    let affectedParent = target;
-    while (affectedParent.getId() != rootTarget.getId() &&
-        !freezeChain.find(i => i.getId() == affectedParent.getId())) {
-        affectedTargets.push(affectedParent);
-        affectedParent = affectedParent.getParent();
-    }
-
-    let links = affectedTargets.map(t => {
-        return { index: bones.indexOf(t.getObject3D()) };
-    })
-    links.unshift({ index: bones.indexOf(target.getObject3D()) })
-
-    const iks = [{
-        target: bones.indexOf(controlBone),
-        effector: bones.indexOf(targetBone),
-        links,
-    }];
-}
-
 function createIK(anchorTarget, movingTarget) {
     let movingBone = movingTarget.getObject3D();
 

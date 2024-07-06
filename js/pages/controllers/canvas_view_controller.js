@@ -26,7 +26,6 @@ export function CanvasViewController(parentContainer) {
     let mHold = null;
     let mLastPointerDown = { time: 0, pos: { x: 0, y: 0 } }
     const mRaycaster = new THREE.Raycaster();
-    mRaycaster.params.Line.threshold = 0.2;
 
     let mIKSolver
     let mCCDIKHelper
@@ -141,8 +140,10 @@ export function CanvasViewController(parentContainer) {
             mRaycaster.setFromCamera(pointer, mPageCamera);
 
             let intersections = mSceneController.getIntersections(mRaycaster);
-            if (intersections.map(i => i.getId()).sort().join() != mHovered.map(i => i.getId()).sort().join()) {
-                mHovered = intersections;
+            let closest = getClosestTarget(intersections, screenCoords);
+            let targets = closest ? [closest] : [];
+            if (targets.map(i => i.getId()).sort().join() != mHovered.map(i => i.getId()).sort().join()) {
+                mHovered = targets;
                 updateHighlight();
             }
 
@@ -193,6 +194,9 @@ export function CanvasViewController(parentContainer) {
     }
 
     function getClosestTarget(targets, screenCoords) {
+        if (targets.length == 0) return null;
+        if (targets.length == 1) return targets[0];
+
         let pointer = screenToNomralizedCoords(screenCoords);
         mRaycaster.setFromCamera(pointer, mPageCamera);
 

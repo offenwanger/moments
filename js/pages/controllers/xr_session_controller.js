@@ -141,21 +141,17 @@ export function XRSessionController() {
 
         if (mSystemState.interaction) {
             if (mSystemState.interaction.type == LEFT_DRAG || mSystemState.interaction.type == RIGHT_DRAG) {
-                let controller = mSystemState.interaction.type == LEFT_DRAG ? mControllerLTip : mControllerRTip;
-                let controllerPos = new THREE.Vector3();
-                controller.getWorldPosition(controllerPos);
-                mSystemState.interaction.target.setTargetWorldPosition(
-                    new THREE.Vector3().addVectors(controllerPos, mSystemState.interaction.positionDiff));
+                mSystemState.interaction.target.setTargetWorldPosition(new THREE.Vector3().addVectors(
+                    mSystemState.interaction.type == LEFT_DRAG ? getLeftControllerPosition() : getRightControllerPosition(),
+                    mSystemState.interaction.positionDiff));
             } else if (mSystemState.interaction.type == KINEMATIC_DRAG) {
-                let freezeController = mSystemState.interaction.freezeLeft ? mControllerLTip : mControllerRTip;
-                let freezeControllerPos = new THREE.Vector3();
-                freezeController.getWorldPosition(freezeControllerPos);
+                let freezeControllerPos = mSystemState.interaction.freezeLeft ?
+                    getLeftControllerPosition() : getRightControllerPosition();
                 mSystemState.interaction.rootTarget.setTargetWorldPosition(
                     new THREE.Vector3().addVectors(freezeControllerPos, mSystemState.interaction.positionDiff));
 
-                let movingController = mSystemState.interaction.freezeLeft ? mControllerRTip : mControllerLTip;
-                let movingcontrollerPos = new THREE.Vector3();
-                movingController.getWorldPosition(movingcontrollerPos);
+                let movingcontrollerPos = mSystemState.interaction.freezeLeft ?
+                    getRightControllerPosition() : getLeftControllerPosition();
                 let localPosition = mSystemState.interaction.rootTarget.getObject3D()
                     .worldToLocal(movingcontrollerPos);
                 mSystemState.interaction.controlBone.position.copy(localPosition);
@@ -200,14 +196,14 @@ export function XRSessionController() {
                 endInteraction();
                 let target = getClosestLeftTarget();
                 let rootTarget = target.getRoot();
-                startDrag(LEFT_DRAG, mControllerLTip, rootTarget);
+                startDrag(LEFT_DRAG, getLeftControllerPosition(), rootTarget);
             }
         } else if (rightHandDragState()) {
             if (!mSystemState.interaction || mSystemState.interaction.type != RIGHT_DRAG) {
                 endInteraction();
                 let target = getClosestRightTarget();
                 let rootTarget = target.getRoot();
-                startDrag(RIGHT_DRAG, mControllerRTip, rootTarget);
+                startDrag(RIGHT_DRAG, getRightControllerPosition(), rootTarget);
             }
         } else if (kinematicDragState()) {
             if (!mSystemState.interaction || mSystemState.interaction.type != KINEMATIC_DRAG) {
@@ -223,12 +219,10 @@ export function XRSessionController() {
         }
     }
 
-    function startDrag(type, controller, target) {
-        let controllerPos = new THREE.Vector3();
-        controller.getWorldPosition(controllerPos)
+    function startDrag(type, startPos, target) {
         let positionDiff = new THREE.Vector3().subVectors(
             target.getTargetWorldPosition(),
-            controllerPos);
+            startPos);
         mSystemState.interaction = {
             type,
             target,
@@ -259,12 +253,12 @@ export function XRSessionController() {
         let leftTarget = getClosestLeftTarget();
         let dragRoot = leftTarget.getRoot();
         let validRightTargets = mSystemState.rHovered.filter(t => t.getRoot().getId() == dragRoot.getId())
-        let rightTarget = validRightTargets.length > 0 ? getClosestTarget(validRightTargets, mControllerRTip.position) : null;
+        let rightTarget = validRightTargets.length > 0 ? getClosestTarget(validRightTargets, getRightControllerPosition()) : null;
         if (!rightTarget) {
             rightTarget = getClosestRightTarget();
             dragRoot = rightTarget.getRoot();
             let validLeftTargets = mSystemState.lHovered.filter(t => t.getRoot().getId() == dragRoot.getId())
-            leftTarget = getClosestTarget(validLeftTargets, mControllerLTip.position);
+            leftTarget = getClosestTarget(validLeftTargets, getLeftControllerPosition());
         }
         if (leftTarget && rightTarget) {
             return { leftTarget, rightTarget };
@@ -301,12 +295,9 @@ export function XRSessionController() {
         mCCDIKHelper = new CCDIKHelper(mesh, iks, 0.01);
         mSceneController.getScene().add(mCCDIKHelper);
 
-        let controller = freezeLeft ? mControllerLTip : mControllerRTip;
-        let controllerPos = new THREE.Vector3();
-        controller.getWorldPosition(controllerPos);
-
         let positionDiff = new THREE.Vector3().subVectors(
-            rootTarget.getTargetWorldPosition(), controllerPos);
+            rootTarget.getTargetWorldPosition(),
+            freezeLeft ? getLeftControllerPosition() : getRightControllerPosition());
 
         mSystemState.interaction = {
             type: KINEMATIC_DRAG,
@@ -332,13 +323,22 @@ export function XRSessionController() {
             let newPosition = interaction.target.getTargetLocalPosition();
             await mMoveCallback(interaction.target.getId(), newPosition);
         } else if (interaction && interaction.type == KINEMATIC_DRAG) {
-            mMoveChainCallback(interaction.affectedTargets.map(t => {
+            let moveUpdates = interaction.affectedTargets.map(t => {
                 return {
                     id: t.getId(),
                     position: t.getTargetLocalPosition(),
                     orientation: t.getTargetLocalOrientation(),
                 }
-            }))
+            })
+            if (interaction.affectedTargets[0]) {
+                let root = interaction.affectedTargets[0].getRoot();
+                moveUpdates.push({
+                    id: root.getId(),
+                    position: root.getTargetLocalPosition(),
+                    orientation: root.getTargetLocalOrientation(),
+                })
+            }
+            mMoveChainCallback(affectedTargets);
 
             mIKSolver = null
         }
@@ -383,20 +383,22 @@ export function XRSessionController() {
 
         if (!mSystemState.primaryLPressed && !mSystemState.gripLPressed) {
             mSystemState.lHovered = [];
-            let controllerLPos = new THREE.Vector3();
-            mControllerLTip.getWorldPosition(controllerLPos);
+            let controllerLPos = getLeftControllerPosition();
             if (frustum.containsPoint(controllerLPos)) {
-                mSystemState.lHovered.push(...mSceneController.getIntersections(getRay(cameraPosition, controllerLPos)));
+                let targets = mSceneController.getIntersections(getRay(cameraPosition, controllerLPos));
+                mSystemState.lHovered.push(getClosestTarget(targets, controllerLPos));
             };
+            mSystemState.lHovered = mSystemState.lHovered.filter(t => t);
         }
 
         if (!mSystemState.primaryRPressed && !mSystemState.gripRPressed) {
             mSystemState.rHovered = [];
-            let controllerRPos = new THREE.Vector3();
-            mControllerRTip.getWorldPosition(controllerRPos);
+            let controllerRPos = getRightControllerPosition();
             if (frustum.containsPoint(controllerRPos)) {
-                mSystemState.rHovered.push(...mSceneController.getIntersections(getRay(cameraPosition, controllerRPos)));
+                let targets = mSceneController.getIntersections(getRay(cameraPosition, controllerRPos))
+                mSystemState.rHovered.push(getClosestTarget(targets, controllerRPos));
             };
+            mSystemState.rHovered = mSystemState.rHovered.filter(t => t);
         }
 
         if (mSystemState.lHovered.concat(mSystemState.rHovered).map(i => i.getId()).sort()
@@ -411,8 +413,7 @@ export function XRSessionController() {
         let dist = dir.length();
         dir.normalize();
 
-        let rayCaster = new THREE.Raycaster(p1, dir, 0, dist);
-        rayCaster.params.Line.threshold = 0.2;
+        let rayCaster = new THREE.Raycaster(p1, dir, 0, dist * 1.1);
         return rayCaster;
     }
 
@@ -432,21 +433,35 @@ export function XRSessionController() {
 
     function getClosestTarget(targets, pointerCoords) {
         if (targets.length == 0) return null;
+        if (targets.length == 1) return targets[0];
 
         let sortation = targets.map(t => {
             return { t, distance: pointerCoords.distanceTo(t.getIntersection().point) }
         })
 
         sortation.sort((a, b) => a.distance - b.distance)
+
         return sortation[0].t;
     }
 
     function getClosestLeftTarget() {
-        return getClosestTarget(mSystemState.lHovered, mControllerLTip.position);
+        return getClosestTarget(mSystemState.lHovered, getLeftControllerPosition());
     }
 
     function getClosestRightTarget() {
-        return getClosestTarget(mSystemState.rHovered, mControllerRTip.position);
+        return getClosestTarget(mSystemState.rHovered, getRightControllerPosition());
+    }
+
+    function getLeftControllerPosition() {
+        let pos = new THREE.Vector3();
+        mControllerLTip.getWorldPosition(pos);
+        return pos;
+    }
+
+    function getRightControllerPosition() {
+        let pos = new THREE.Vector3();
+        mControllerRTip.getWorldPosition(pos);
+        return pos;
     }
 
     this.onSessionStart = (func) => mOnSessionStartCallback = func;

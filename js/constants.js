@@ -6,13 +6,6 @@ export const ASSET_FOLDER = "assets";
 
 export const UP = new THREE.Vector3(0, 1, 0);
 
-export const LookTarget = {
-    LINE_SURFACE: 'line surface',
-    MOMENT: 'moment',
-    UP: 'up',
-    NONE: 'none',
-}
-
 export const USER_HEIGHT = 1.6;
 export const CAST_ONLY_LAYER = 4;
 

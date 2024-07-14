@@ -20,7 +20,7 @@ export function AssetPanel(container) {
     let mPanelContainer = container.append("div"); hide();
 
     let mBackToStoryButton = new ButtonInput(mPanelContainer)
-        .setId('moment-back-button')
+        .setId('back-button')
         .setLabel('<- Story')
         .setOnClick(async () => {
             mNavigationCallback(mModel.getStory().id);
@@ -55,7 +55,7 @@ export function AssetPanel(container) {
             await mViewAssetCallback(mAssetId);
         })
 
-    let mUsedByContainer = mPanelContainer.append('div').attr('id', 'moment-model3Ds');
+    let mUsedByContainer = mPanelContainer.append('div').attr('id', 'model3Ds');
     mUsedByContainer.append('div').html('Position');
     let mUsedByList = [];
 

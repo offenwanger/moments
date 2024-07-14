@@ -4,21 +4,12 @@ import { IdUtil } from "./utils/id_util.js";
 export function DataModel() {
     let mStory = new Data.Story();
 
-    function getMoment(id) {
-        return mStory.moments.find(o => o.id == id);
-    }
-
-    function getMoments() {
-        return [...mStory.moments];
-    }
-
     function getModel3D(id) {
         return getModel3Ds().find(o => o.id == id);
     }
 
     function getModel3Ds() {
-        let momentModel3Ds = mStory.moments.map(m => m.model3Ds).flat();
-        return mStory.model3Ds.concat(momentModel3Ds);
+        return [...mStory.model3Ds];
     }
 
     function getAssetComponentPose(id) {
@@ -29,23 +20,12 @@ export function DataModel() {
         return getModel3Ds().map(m => m.assetComponentPoses).flat();
     }
 
-    function getModel3DParent(model3DId) {
-        if (mStory.model3Ds.find(o => o.id == model3DId)) {
-            return mStory;
-        } else {
-            return getMoments().find(m => m.model3Ds.find(o => o.id == model3DId));
-        }
-    }
-
     function getAnnotation(id) {
         return getAnnotations().find(o => o.id == id);
     }
 
     function getAnnotations() {
-        return [
-            ...mStory.annotations,
-            ...getMoments().map(m => m.annotations).flat()
-        ];
+        return [...mStory.annotations];
     }
 
     function getAnnotationItem(id) {
@@ -71,32 +51,16 @@ export function DataModel() {
         ].filter(item => item.assetId == id);
     }
 
-    function getPointer(id) {
-        return getPointers().find(o => o.id == id);
-    }
-
-    function getPointers() {
-        return mStory.pointers;
-    }
-
-    function getPointersFor(itemId) {
-        return getPointers().filter(p => p.fromId == itemId || p.toId == itemId);
-    }
-
     function getById(id) {
         let itemClass = IdUtil.getClass(id);
         if (itemClass == Data.Story) {
             return mStory;
-        } else if (itemClass == Data.Moment) {
-            return getMoment(id);
         } else if (itemClass == Data.Model3D) {
             return getModel3D(id);
         } else if (itemClass == Data.Annotation) {
             return getAnnotation(id);
         } else if (itemClass == Data.AnnotationItem) {
             return getAnnotationItem(id)
-        } else if (itemClass == Data.Pointer) {
-            return getPointer(id);
         } else if (itemClass == Data.Asset) {
             return getAsset(id);
         } else if (itemClass == Data.AssetComponentPose) {
@@ -122,11 +86,8 @@ export function DataModel() {
 
     this.setStory = (story) => mStory = story;
     this.getStory = () => mStory;
-    this.getMoment = getMoment;
-    this.getMoments = getMoments;
     this.getModel3D = getModel3D;
     this.getModel3Ds = getModel3Ds;
-    this.getModel3DParent = getModel3DParent;
     this.getAssetComponentPose = getAssetComponentPose;
     this.getAssetComponentPoses = getAssetComponentPoses;
     this.getAnnotation = getAnnotation;
@@ -137,9 +98,6 @@ export function DataModel() {
     this.getAssets = getAssets;
     this.getAssets = getAssets;
     this.getItemsForAsset = getItemsForAsset;
-    this.getPointer = getPointer;
-    this.getPointers = getPointers;
-    this.getPointersFor = getPointersFor;
     this.getById = getById;
     this.clone = clone;
     this.toObject = toObject;

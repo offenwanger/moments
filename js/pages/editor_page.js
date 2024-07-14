@@ -14,8 +14,27 @@ export function EditorPage(parentContainer) {
     console.log('cache loaded models?')
     console.log('enable the click thing in the canvas viewer to bring it up in the sidebar')
     console.log("Next order of buisness will be painting, both for timelines and regular type.")
+    console.log("Got tube painter as a starting example.")
+    console.log(`TODO: Create a menu belt 
+        Things to add: 
+        - Edit timeline button 
+            - This will need to open a timeline editor. Nah, it can be the normal storyview, just shrunk 
+        - Add model button
+        - Copy model eyedropper. 
+        - 
 
+        Momenents themselves: 
+            I dont want to fuss with deciding where things go. 
+            Forget the timeline representation, just give everything an xyz. Then add a timeline transformation tool
+            
 
+        Notes:
+            Bubbles clip and have a background image. 
+            This is an advanced feature. 
+            Sadly I think I will have to remove the current bubbles. 
+        
+        *** YOu were refactoring out moment from the system
+            `)
 
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;
@@ -35,17 +54,17 @@ export function EditorPage(parentContainer) {
         .style('display', 'flex')
         .style('flex-direction', 'row');
 
-    let mMomentDisplay = mMainContainer.append('div')
-        .attr('id', 'moment-display')
+    let mStoryDisplay = mMainContainer.append('div')
+        .attr('id', 'story-display')
         .style('display', 'flex')
         .style('flex-direction', 'column');
 
-    let mViewContainer = mMomentDisplay.append('div')
+    let mViewContainer = mStoryDisplay.append('div')
         .attr('id', 'canvas-view-container')
         .style('display', 'block')
         .style('border', '1px solid black')
 
-    let mTimelineContainer = mMomentDisplay.append('div')
+    let mTimelineContainer = mStoryDisplay.append('div')
         .attr('id', 'timeline')
         .style('display', 'block')
         .style('border', '1px solid black')
@@ -88,25 +107,16 @@ export function EditorPage(parentContainer) {
     })
 
     let mTimelineController = new TimelineController(mTimelineContainer);
-    mTimelineController.setCreateMomentCallback(async () => {
-        await mModelController.createMoment();
-        await updateModel();
-    })
 
     let mSidebarController = new SidebarController(mSidebarContainer);
     mSidebarController.setAddCallback(async (parentId, itemClass, config) => {
         // should be undo/redo stuff here.
 
-        if ((IdUtil.getClass(parentId) == Data.Story || IdUtil.getClass(parentId) == Data.Moment)
-            && itemClass == Data.Annotation) {
+        if (IdUtil.getClass(parentId) == Data.Story && itemClass == Data.Annotation) {
             await mModelController.createAnnotation(parentId);
-        } else if (IdUtil.getClass(parentId) == Data.Story && itemClass == Data.Moment) {
-            await mModelController.createMoment();
         } else if (itemClass == Data.Model3D) {
             let assetId = await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
-            if (assetId) {
-                await mModelController.createModel3D(parentId, assetId);
-            }
+            if (assetId) { await mModelController.createModel3D(parentId, assetId); }
         } else {
             console.error("Parent + item class not supported", parentId, itemClass);
             return;

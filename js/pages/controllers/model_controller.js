@@ -16,19 +16,10 @@ export function ModelController(storyId, workspace) {
         }
     }
 
-    async function createMoment() {
-        let newMoment = new Data.Moment();
-        mModel.getStory().moments.push(newMoment);
-        await mWorkspace.updateStory(mModel);
-        return newMoment.id;
-    }
-
     async function createModel3D(parentId, assetId = null) {
         let parent;
         if (IdUtil.getClass(parentId) == Data.Story) {
             parent = mModel.getStory();
-        } else if (IdUtil.getClass(parentId) == Data.Moment) {
-            parent = mModel.getMoment(parentId);
         } else { console.error("Parent id is not supported", parentId) }
         let newModel3D = new Data.Model3D();
         if (assetId) {
@@ -49,8 +40,6 @@ export function ModelController(storyId, workspace) {
         let parent;
         if (IdUtil.getClass(parentId) == Data.Story) {
             parent = mModel.getStory();
-        } else if (IdUtil.getClass(parentId) == Data.Moment) {
-            parent = mModel.getMoment(parentId);
         } else { console.error("Parent id is not supported", parentId) }
         let newAnnotation = new Data.Annotation();
         parent.annotations.push(newAnnotation);
@@ -120,10 +109,7 @@ export function ModelController(storyId, workspace) {
 
     async function deleteItem(id) {
         let type = IdUtil.getClass(id);
-        if (type == Data.Model3D) {
-            let parent = mModel.getModel3DParent(id);
-            parent.model3Ds = parent.model3Ds.filter(o => o.id != id);
-        } else if (type == Data.Asset) {
+        if (type == Data.Asset) {
             let story = mModel.getStory();
             story.assets = story.assets.filter(o => o.id != id);
             let usingItems = mModel.getItemsForAsset(id);
@@ -136,7 +122,6 @@ export function ModelController(storyId, workspace) {
 
     return {
         init,
-        createMoment,
         createModel3D,
         createAnnotation,
         setAttribute,

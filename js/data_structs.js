@@ -5,33 +5,10 @@ function Story() {
     this.name = "A Story in Moments"
 
     this.path = [];
-    this.moments = [];
     this.model3Ds = [];
     this.annotations = [];
-    this.pointers = []
     this.assets = []
-    // Asset
-    this.background = null;
-}
-
-function Moment() {
-    this.id = IdUtil.getUniqueId(Moment);
-    this.name = "Moment"
-    this.storyline = true;
-    this.framed = true;
-
-    this.x = 0;
-    this.y = 0;
-    this.t = 0;
-    this.z = 0;
-
-    this.orientation = [0, 0, 0, 1]; // quaternion
-    this.scale = 1;
-    this.size = 1;
-
-    this.model3Ds = [];
-    // framed moments just have the one annotation
-    this.annotations = [];
+    this.background = null; // Asset
 }
 
 function Model3D() {
@@ -92,27 +69,11 @@ function Asset(type) {
     this.baseAssetComponentPoses = [];
 }
 
-function Pointer() {
-    this.id = IdUtil.getUniqueId(Pointer);
-    // Name is taken from it's targets.   
-    this.fromId = null;
-    this.fromX = 0;
-    this.fromY = 0;
-    this.fromZ = 0;
-    this.toId = null;
-    this.toX = 0;
-    this.toY = 0;
-    this.toZ = 0;
-    // note: this might need an asset at some point for the line.
-}
-
 export const Data = {
     Story,
-    Moment,
     Model3D,
     Annotation,
     AnnotationItem,
-    Pointer,
     Asset,
     AssetComponentPose,
 }

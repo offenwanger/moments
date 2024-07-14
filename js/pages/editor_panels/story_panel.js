@@ -35,16 +35,8 @@ export function StoryPanel(container) {
             console.error("Not implemented");
         })
 
-    let mMomentsContainer = mPanelContainer.append('div').attr('id', 'story-moments');
-    let mMomentsAddButton = new ButtonInput(mMomentsContainer)
-        .setId('story-moments-add-button')
-        .setLabel('Moments [+]')
-        .setOnClick(async () => {
-            await mAddCallback(mStory.id, Data.Moment, {});
-        })
-    let mMomentsList = [];
-
-    let mModel3DsContainer = mPanelContainer.append('div').attr('id', 'story-moments');
+    let mModel3DsContainer = mPanelContainer.append('div')
+        .attr('id', 'story-model3Ds');
     let mModel3DsAddButton = new ButtonInput(mModel3DsContainer)
         .setId('story-model3D-add-button')
         .setLabel('Model3Ds [+]')
@@ -53,7 +45,8 @@ export function StoryPanel(container) {
         })
     let mModel3DsList = [];
 
-    let mAnnotationsContainer = mPanelContainer.append('div').attr('id', 'story-moments');
+    let mAnnotationsContainer = mPanelContainer.append('div')
+        .attr('id', 'story-annotations');
     let mAnnotationsAddButton = new ButtonInput(mAnnotationsContainer)
         .setId('story-annotations-add-button')
         .setLabel('Annotations [+]')
@@ -67,13 +60,6 @@ export function StoryPanel(container) {
         mStory = model.getStory();
         mNameInput.setText(mStory.name)
         mBackgroundInput.setLabel(mStory.background ? mStory.background.name : "Default");
-        // ensure we have the right number of moments buttons
-        Util.setComponentListLength(mMomentsList, mStory.moments.length, () => new ButtonInput(mMomentsContainer))
-        for (let i = 0; i < mStory.moments.length; i++) {
-            mMomentsList[i].setId("moment-button-" + mStory.moments[i].id)
-                .setLabel(mStory.moments[i].name)
-                .setOnClick(async () => await mNavigationCallback(mStory.moments[i].id));
-        }
         Util.setComponentListLength(mModel3DsList, mStory.model3Ds.length, () => new ButtonInput(mModel3DsContainer))
         for (let i = 0; i < mStory.model3Ds.length; i++) {
             mModel3DsList[i].setId("model3D-button-" + mStory.model3Ds[i].id)

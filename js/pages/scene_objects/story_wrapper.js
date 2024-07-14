@@ -2,8 +2,6 @@ import * as THREE from 'three';
 import { DataModel } from "../../data_model.js";
 import { AnnotationWrapper } from "./annotation_wrapper.js";
 import { Model3DWrapper } from "./model3D_wrapper.js";
-import { MomentWrapper } from "./moment_wrapper.js";
-import { PointerWrapper } from "./pointer_wrapper.js";
 import { SceneUtil } from '../../utils/scene_util.js';
 
 export function StoryWrapper(parent) {
@@ -16,10 +14,8 @@ export function StoryWrapper(parent) {
     mLight.position.set(- 1, 2, 4);
     mStoryGroup.add(mLight);
 
-    let mModel3DWrappers = []
-    let mMomentWrappers = [];
+    let mModel3DWrappers = [];
     let mAnnotationWrappers = [];
-    let mPointerWrappers = [];
 
     async function updateModel(model, assetUtil) {
         mModel = model;
@@ -30,19 +26,9 @@ export function StoryWrapper(parent) {
             return newModel3DWrapper;
         });
 
-        await SceneUtil.updateWrapperArray(mMomentWrappers, story.moments, mModel, assetUtil, async (moment) => {
-            let newMomentWrapper = new MomentWrapper(mStoryGroup);
-            return newMomentWrapper;
-        });
-
         await SceneUtil.updateWrapperArray(mAnnotationWrappers, story.annotations, mModel, assetUtil, async (annotation) => {
             let newAnnotationWrapper = new AnnotationWrapper(mStoryGroup);
             return newAnnotationWrapper;
-        });
-
-        await SceneUtil.updateWrapperArray(mPointerWrappers, story.pointers, mModel, assetUtil, async (pointer) => {
-            let newPointerWrapper = new PointerWrapper(mStoryGroup);
-            return newPointerWrapper;
         });
     }
 
@@ -52,10 +38,7 @@ export function StoryWrapper(parent) {
     }
 
     function onCameraMove(globalPosition) {
-        let localPosition = globalToLocalPosition(globalPosition);
-        mMomentWrappers.forEach(moment => {
-            moment.onCameraMove(localPosition)
-        })
+        
     }
 
     function globalToLocalPosition(globalPosition) {
@@ -69,9 +52,7 @@ export function StoryWrapper(parent) {
     function getIntersections(ray) {
         return [
             ...mModel3DWrappers.map(w => w.getIntersections(ray)).flat(),
-            ...mMomentWrappers.map(w => w.getIntersections(ray)).flat(),
             ...mAnnotationWrappers.map(w => w.getIntersections(ray)).flat(),
-            ...mPointerWrappers.map(w => w.getIntersections(ray)).flat(),
         ]
     }
 

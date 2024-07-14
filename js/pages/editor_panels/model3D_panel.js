@@ -14,14 +14,13 @@ export function Model3DPanel(container) {
     let mModel = null;
     let mModel3DId = null;
     let mModel3D = null;
-    let mParent = null;
 
     let mPanelContainer = container.append("div"); hide();
 
     let mBackButton = new ButtonInput(mPanelContainer)
         .setId('model3D-back-button')
         .setOnClick(async () => {
-            mNavigationCallback(mParent.id);
+            mNavigationCallback(mModel.getStory().id);
         })
 
     let mNameInput = new TextInput(mPanelContainer)
@@ -48,7 +47,8 @@ export function Model3DPanel(container) {
 
 
     mPanelContainer.append('div').html("Component Values")
-    let mAssetComponentContainer = mPanelContainer.append('div').attr('id', 'story-moments');
+    let mAssetComponentContainer = mPanelContainer.append('div')
+        .attr('id', 'component-list');
     let mAssetComponentList = [];
 
     let mDeleteButton = new ButtonInput(mPanelContainer)
@@ -56,16 +56,15 @@ export function Model3DPanel(container) {
         .setLabel('Delete')
         .setOnClick(async () => {
             await mDeleteCallback(mModel3DId);
-            await mNavigationCallback(mParent.id);
+            await mNavigationCallback(mModel.getStory().id);
         })
 
     function show(model, model3DId) {
         mModel = model;
         mModel3DId = model3DId;
         mModel3D = mModel.getModel3D(mModel3DId);
-        mParent = mModel.getModel3DParent(mModel3DId);
 
-        mBackButton.setLabel("<- " + IdUtil.getClass(mParent.id).name);
+        mBackButton.setLabel("<- Story");
 
         mNameInput.setText(mModel3D.name);
 

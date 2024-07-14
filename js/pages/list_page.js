@@ -47,10 +47,6 @@ export function ListPage(parentContainer) {
             let li = mList.append('li')
                 .attr('id', story.id);
             li.append('span').html(story.name);
-            li.append('button').html('👁️')
-                .classed('view-story-button', true)
-                .style('margin-left', '10px')
-                .on('click', async () => await mViewCallback(story.id));
             li.append('button').html('✏️')
                 .classed('edit-story-button', true)
                 .style('margin-left', '10px')

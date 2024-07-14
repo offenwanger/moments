@@ -1,7 +1,6 @@
 import { EventManager } from './event_manager.js';
 import { EditorPage } from './pages/editor_page.js';
 import { ListPage } from './pages/list_page.js';
-import { ViewerPage } from './pages/viewer_page.js';
 import { WelcomePage } from './pages/welcome_page.js';
 import { HandleStorage } from './utils/handle_storage.js';
 import { WorkspaceManager } from './workspace_manager.js';
@@ -20,12 +19,7 @@ export async function main() {
                 let workspaceManager = new WorkspaceManager(folder);
                 let story = new URLSearchParams(window.location.search).get("story")
                 if (story) {
-                    let isEditor = new URLSearchParams(window.location.search).get("editor");
-                    if (isEditor == 'true') {
-                        await showEditorPage(workspaceManager)
-                    } else {
-                        await showViewerPage(workspaceManager)
-                    }
+                    await showEditorPage(workspaceManager)
                 } else if (new URLSearchParams(window.location.search).get("list") == 'true') {
                     await showListPage(workspaceManager);
                 } else {
@@ -64,7 +58,6 @@ export async function main() {
         page.setViewCallback(async (storyId) => {
             let params = new URLSearchParams(window.location.search)
             params.set("story", storyId)
-            params.set("editor", false)
             window.location.search = params.toString();
             await updatePage();
         });
@@ -72,7 +65,6 @@ export async function main() {
         page.setEditCallback(async (storyId) => {
             let params = new URLSearchParams(window.location.search)
             params.set("story", storyId)
-            params.set("editor", true)
             window.location.search = params.toString();
             await updatePage();
         });
@@ -82,13 +74,6 @@ export async function main() {
 
     async function showEditorPage(workspaceManger) {
         let page = new EditorPage(d3.select('#content'));
-        await mEventManager.setListener(page);
-        // handel all the needed async stuff
-        await page.show(workspaceManger);
-    }
-
-    async function showViewerPage(workspaceManger) {
-        let page = new ViewerPage(d3.select('#content'));
         await mEventManager.setListener(page);
         // handel all the needed async stuff
         await page.show(workspaceManger);

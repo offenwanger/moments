@@ -2,11 +2,9 @@ import { Data } from '../../data_structs.js';
 import { IdUtil } from '../../utils/id_util.js';
 
 import { StoryPanel } from '../editor_panels/story_panel.js';
-import { MomentPanel } from '../editor_panels/moment_panel.js';
 import { Model3DPanel } from '../editor_panels/model3D_panel.js';
 import { AnnotationPanel } from '../editor_panels/annotation_panel.js';
 import { AnnotationItemPanel } from '../editor_panels/annotation_item_panel.js';
-import { PointerPanel } from '../editor_panels/pointer_panel.js';
 import { AssetPanel } from '../editor_panels/asset_panel.js';
 
 export function SidebarController(container) {
@@ -14,11 +12,9 @@ export function SidebarController(container) {
     let mModel = null;
 
     const mStoryPanel = new StoryPanel(container);
-    const mMomentPanel = new MomentPanel(container);
     const mModel3DPanel = new Model3DPanel(container);
     const mAnnotationPanel = new AnnotationPanel(container);
     const mAnnotationItemPanel = new AnnotationItemPanel(container);
-    const mPointerPanel = new PointerPanel(container);
     const mAssetPanel = new AssetPanel(container);
 
     setNavigationCallbacks();
@@ -39,17 +35,13 @@ export function SidebarController(container) {
 
         if (itemClass == Data.Story) {
             mStoryPanel.show(mModel, id);
-        } else if (itemClass == Data.Moment) {
-            mMomentPanel.show(mModel, id);
         } else if (itemClass == Data.Model3D) {
             mModel3DPanel.show(mModel, id);
         } else if (itemClass == Data.Annotation) {
             mAnnotationPanel.show(mModel, id);
         } else if (itemClass == Data.AnnotationItem) {
             mAnnotationItemPanel.show(mModel, id);
-        } else if (itemClass == Data.Pointer) {
-            mPointerPanel.show(mModel, id);
-        } else if (itemClass == Data.Asset) {
+        }  else if (itemClass == Data.Asset) {
             mAssetPanel.show(mModel, id);
         } else {
             console.error('Invalid navigation!', itemClass, id);
@@ -63,49 +55,39 @@ export function SidebarController(container) {
 
     function hideAll() {
         mStoryPanel.hide();
-        mMomentPanel.hide();
         mModel3DPanel.hide();
         mAnnotationPanel.hide();
         mAnnotationItemPanel.hide();
-        mPointerPanel.hide();
         mAssetPanel.hide();
     }
 
     function setNavigationCallbacks() {
         mStoryPanel.setNavigationCallback(navigate);
-        mMomentPanel.setNavigationCallback(navigate);
         mModel3DPanel.setNavigationCallback(navigate);
         mAnnotationPanel.setNavigationCallback(navigate);
         mAnnotationItemPanel.setNavigationCallback(navigate);
-        mPointerPanel.setNavigationCallback(navigate);
         mAssetPanel.setNavigationCallback(navigate);
     }
 
     function setAddCallback(func) {
         mStoryPanel.setAddCallback(func);
-        mMomentPanel.setAddCallback(func);
         mAnnotationPanel.setAddCallback(func);
         mAnnotationItemPanel.setAddCallback(func);
-        mPointerPanel.setAddCallback(func);
         mAssetPanel.setAddCallback(func);
     }
 
     function setUpdateAttributeCallback(func) {
         mStoryPanel.setUpdateAttributeCallback(func);
-        mMomentPanel.setUpdateAttributeCallback(func);
         mModel3DPanel.setUpdateAttributeCallback(func);
         mAnnotationPanel.setUpdateAttributeCallback(func);
         mAnnotationItemPanel.setUpdateAttributeCallback(func);
-        mPointerPanel.setUpdateAttributeCallback(func);
         mAssetPanel.setUpdateAttributeCallback(func);
     }
 
     function setDeleteCallback(func) {
-        mMomentPanel.setDeleteCallback(func);
         mModel3DPanel.setDeleteCallback(func);
         mAnnotationPanel.setDeleteCallback(func);
         mAnnotationItemPanel.setDeleteCallback(func);
-        mPointerPanel.setDeleteCallback(func);
         mAssetPanel.setDeleteCallback(func);
     }
 

@@ -12,7 +12,7 @@ export function TimelineController(container) {
     let mWidth = 10;
     let mHeight = 10;
 
-    let mCreateMomentCallback = async () => { };
+    let mAddCallback = async () => { };
 
     const mTimelineSvg = container.append('svg')
         .attr('id', 'timeline-view')
@@ -44,20 +44,20 @@ export function TimelineController(container) {
         .attr('id', 'button-rect')
         .attr('fill', 'white')
         .attr('width', BUTTONS_AREA_WIDTH)
-    const mAddMomentButton = mTimelineSvg.append('image')
-        .attr('id', 'add-moment-button')
-        .attr('xlink:href', 'assets/images/buttons/add_moment_button.png')
+    const mAddButton = mTimelineSvg.append('image')
+        .attr('id', 'add-button')
+        .attr('xlink:href', 'assets/images/buttons/add_button.png')
         .attr('width', BUTTON_SIZE)
         .attr('height', BUTTON_SIZE)
         .attr('x', BUTTONS_AREA_WIDTH / 2 - BUTTON_SIZE / 2)
         .on("mouseover", function (d) {
-            mAddMomentButton.attr("filter", "url(#dropshadow)");
+            mAddButton.attr("filter", "url(#dropshadow)");
         }).on("mouseout", function (d) {
-            mAddMomentButton.attr("filter", "");
+            mAddButton.attr("filter", "");
         }).on('pointerdown', () => {
-            mAddMomentButton.attr("filter", "");
+            mAddButton.attr("filter", "");
         }).on('click', async () => {
-            await mCreateMomentCallback();
+            await mAddCallback();
         });
 
 
@@ -101,10 +101,10 @@ export function TimelineController(container) {
             .attr("height", height)
 
         mButtonRect.attr('height', height);
-        mAddMomentButton.attr('y', height / 2 - BUTTON_SIZE / 2);
+        mAddButton.attr('y', height / 2 - BUTTON_SIZE / 2);
     }
 
     this.updateModel = updateModel;
     this.resize = resize;
-    this.setCreateMomentCallback = (func) => { mCreateMomentCallback = func }
+    this.onAdd = (func) => { mAddCallback = func }
 }

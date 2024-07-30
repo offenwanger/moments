@@ -4,6 +4,7 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { USER_HEIGHT } from '../../constants.js';
 import { GLTKUtil } from '../../utils/gltk_util.js';
+import { XRToolsController } from './xr_tools_controller.js';
 
 const LEFT_DRAG = 'leftHandedDragMove'
 const RIGHT_DRAG = 'rightHandedDragMove'
@@ -29,6 +30,7 @@ export function XRSessionController() {
     }
 
     let mSceneController;
+    let mToolsController = new XRToolsController();
     let mSession;
 
     let mIKSolver
@@ -73,48 +75,63 @@ export function XRSessionController() {
         depthWrite: false,
     });
 
-    const mControllerR = mXRRenderer.xr.getController(1);
-    const mControllerGripR = mXRRenderer.xr.getControllerGrip(1);
-
     const mControllerRTip = new THREE.Mesh(
         new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2), mControllerOuterMaterial);
     mControllerRTip.position.set(-0.005, 0, -0.03);
     const mControllerRInnerTip = new THREE.Mesh(
         new THREE.ConeGeometry(0.007, 0.015, 3).rotateX(-Math.PI / 2), mControllerInnerMaterial);
     mControllerRInnerTip.position.set(-0.005, 0, -0.03);
-    mControllerR.addEventListener('connected', function (event) {
-        this.add(mControllerRTip);
-        this.add(mControllerRInnerTip);
-        mControllerGripR.add(new XRControllerModelFactory().createControllerModel(mControllerGripR));
-    });
-    mControllerR.addEventListener('disconnected', function () {
-        this.remove(mControllerRTip);
-        this.remove(mControllerRInnerTip);
-    });
 
-    controllerGroup.add(mControllerR);
-    controllerGroup.add(mControllerGripR);
-
-    const mControllerL = mXRRenderer.xr.getController(0);
-    const mControllerGripL = mXRRenderer.xr.getControllerGrip(0);
     const mControllerLTip = new THREE.Mesh(
         new THREE.ConeGeometry(0.01, 0.02, 3).rotateX(-Math.PI / 2), mControllerOuterMaterial);
     mControllerLTip.position.set(0.005, 0, -0.03);
     const mControllerLInnerTip = new THREE.Mesh(
         new THREE.ConeGeometry(0.007, 0.015, 3).rotateX(-Math.PI / 2), mControllerInnerMaterial);
     mControllerLInnerTip.position.set(0.005, 0, -0.03);
-    mControllerL.addEventListener('connected', function (event) {
-        this.add(mControllerLTip);
-        this.add(mControllerLInnerTip);
-        mControllerGripL.add(new XRControllerModelFactory().createControllerModel(mControllerGripL));
+
+    const mController0 = mXRRenderer.xr.getController(0);
+    controllerGroup.add(mController0);
+    const mControllerGrip0 = mXRRenderer.xr.getControllerGrip(0);
+    controllerGroup.add(mControllerGrip0);
+    const mController1 = mXRRenderer.xr.getController(1);
+    controllerGroup.add(mController1);
+    const mControllerGrip1 = mXRRenderer.xr.getControllerGrip(1);
+    controllerGroup.add(mControllerGrip1);
+
+    function addTip(left, controller) {
+        if (left) {
+            controller.add(mControllerLTip);
+            controller.add(mControllerLInnerTip);
+        } else {
+            controller.add(mControllerRTip);
+            controller.add(mControllerRInnerTip);
+        }
+    }
+    function removeTip(left, controller) {
+        if (left) {
+            controller.remove(mControllerLTip);
+            controller.remove(mControllerLInnerTip);
+        } else {
+            controller.remove(mControllerRTip);
+            controller.remove(mControllerRInnerTip);
+        }
+    }
+    mController0.addEventListener('connected', function (event) {
+        addTip(event.data.handedness == "left", mController0);
+        mControllerGrip0.add(new XRControllerModelFactory().createControllerModel(mControllerGrip0));
     });
-    mControllerL.addEventListener('disconnected', function () {
-        this.remove(mControllerLTip);
-        this.remove(mControllerLInnerTip);
+    mController0.addEventListener('disconnected', function (event) {
+        removeTip(event.data.handedness == "left", mController0);
     });
 
-    controllerGroup.add(mControllerL);
-    controllerGroup.add(mControllerGripL);
+    mController1.addEventListener('connected', function (event) {
+        addTip(event.data.handedness == "left", mController1);
+        mControllerGrip1.add(new XRControllerModelFactory().createControllerModel(mControllerGrip1));
+    });
+    mController1.addEventListener('disconnected', function (event) {
+        removeTip(event.data.handedness == "left", mController1);
+    });
+
 
     function setupListeners() {
         if (!mSession) return;
@@ -132,11 +149,26 @@ export function XRSessionController() {
         mSceneController = scene;
         // Maybe do this on session start?
         mSceneController.getScene().add(controllerGroup);
+        mSceneController.getScene().add(mToolsController.getGroup())
     }
 
     function xrRender(time) {
         if (time < 0) return;
         if (!mSceneController) return;
+
+        let leftPos = getLeftControllerPosition()
+        let leftOri = getLeftControllerOrientation()
+        let rightPos = getRightControllerPosition()
+        let rightOri = getRightControllerOrientation()
+        mToolsController.animate(time, leftPos, leftOri, rightPos, rightOri);
+
+        if (lookingAtLeftInterface()) {
+            mToolsController.showInterface();
+            mToolsController.renderInterface();
+        } else {
+            mToolsController.hideInterface();
+        }
+
         mXRRenderer.render(mSceneController.getScene(), mXRCamera);
 
         if (mSystemState.interaction) {
@@ -462,6 +494,48 @@ export function XRSessionController() {
         let pos = new THREE.Vector3();
         mControllerRTip.getWorldPosition(pos);
         return pos;
+    }
+
+    function getHeadPosition() {
+        let pos = new THREE.Vector3();
+        mXRCamera.getWorldPosition(pos);
+        return pos;
+    }
+
+    function getLeftControllerOrientation() {
+        let rot = new THREE.Quaternion();
+        mControllerLTip.getWorldQuaternion(rot);
+        return rot;
+    }
+
+    function getRightControllerOrientation() {
+        let rot = new THREE.Quaternion();
+        mControllerRTip.getWorldQuaternion(rot);
+        return rot;
+    }
+
+    function getHeadOrientation() {
+        let rot = new THREE.Quaternion();
+        mXRCamera.getWorldQuaternion(rot);
+        return rot;
+    }
+
+    function lookingAtLeftInterface() {
+        // first check if head is looking in the right direction. 
+        const headToInterfaceVector = new THREE.Vector3().subVectors(mToolsController.getLeftInterfacePosition(), getHeadPosition())
+            .normalize();
+        const interfaceDirectionVector = mToolsController.getLeftInterfaceNormal();
+        const headDirectionVector = new THREE.Vector3(0, 0, -1);
+        headDirectionVector.applyQuaternion(getHeadOrientation());
+
+        let angleToInterface = headDirectionVector.angleTo(headToInterfaceVector);
+        let angleToInterfaceFace = headDirectionVector.angleTo(interfaceDirectionVector);
+
+        if (angleToInterface < Math.PI / 4 && angleToInterfaceFace < Math.PI / 4) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     this.onSessionStart = (func) => mOnSessionStartCallback = func;

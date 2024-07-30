@@ -193,6 +193,17 @@ export function CanvasViewController(parentContainer) {
         }
     }
 
+    function startRendering() {
+        mPageRenderer.setAnimationLoop(pageRender);
+        mRendering = true;
+    }
+
+    function stopRendering() {
+        mPageRenderer.setAnimationLoop(null);
+        mRendering = false;
+    }
+
+
     function getClosestTarget(targets, screenCoords) {
         if (targets.length == 0) return null;
         if (targets.length == 1) return targets[0];
@@ -231,11 +242,11 @@ export function CanvasViewController(parentContainer) {
 
     this.resize = resize;
 
-    this.startRendering = () => { mPageRenderer.setAnimationLoop(pageRender); mRendering = true; }
-    this.stopRendering = () => { mPageRenderer.setAnimationLoop(null); mRendering = false; }
     this.setScene = (scene) => { mSceneController = scene }
     this.pointerMove = pointerMove;
     this.pointerUp = pointerUp;
+    this.startRendering = startRendering;
+    this.stopRendering = stopRendering;
 
     this.onMove = (func) => { mMoveCallback = func }
     this.onMoveChain = (func) => { mMoveChainCallback = func }

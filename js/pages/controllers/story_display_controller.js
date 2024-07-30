@@ -117,5 +117,8 @@ export function StoryDisplayController(parentContainer) {
     this.onExitAssetView = (func) => mExitAssetViewCallback = func;
     this.onMove = (func) => mMoveCallback = func;
     this.onMoveChain = (func) => mMoveChainCallback = func;
+    this.onMouseDown = mXRSessionController.onMouseDown;
+    this.onMouseMove = mXRSessionController.onMouseMove;
+    this.onMouseUp = mXRSessionController.onMouseUp;
 }
 

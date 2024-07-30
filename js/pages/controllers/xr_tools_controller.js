@@ -12,17 +12,18 @@ export function XRToolsController() {
     //  Edit scene mode
     //  Edit timeline mode
     let mShowing = false;
+    const INTERFACE_RESOLUTION = 1024
 
     let mLeftGroup = new THREE.Group();
     let mInterfaceMaterial = new THREE.MeshBasicMaterial({ transparent: true });
-    let mInterfaceWindow = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), mInterfaceMaterial);
+    let mInterfaceWindow = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.3), mInterfaceMaterial);
     mInterfaceWindow.translateZ(0.1)
     mInterfaceWindow.translateX(-0.1)
     mInterfaceWindow.rotateY(-Math.PI / 2)
     mInterfaceWindow.rotateZ(Math.PI)
     const mInterfaceCanvas = document.createElement('canvas');
-    mInterfaceCanvas.width = 1024;
-    mInterfaceCanvas.height = 1024;
+    mInterfaceCanvas.width = INTERFACE_RESOLUTION;
+    mInterfaceCanvas.height = INTERFACE_RESOLUTION;
     const mInterfaceContext = mInterfaceCanvas.getContext('2d');
     mInterfaceMaterial.map = new THREE.CanvasTexture(mInterfaceCanvas);
     mLeftGroup.add(mInterfaceWindow);
@@ -34,6 +35,9 @@ export function XRToolsController() {
     mGroup.add(mRightGroup);
 
     let mLastTime = Infinity
+    let mScale = 1;
+    let mWindowWidth = 1;
+    let mWindowHeight = 1;
     function animate(time, leftPos, leftOrient, rightPos, rightOrient) {
         let delta = time - mLastTime;
         mLastTime = time;
@@ -68,8 +72,19 @@ export function XRToolsController() {
         return vector;
     }
 
-    function getIntersection() {
+    function getLeftInterfaceIntersection(rightControllerPosition, rightControllerOrientation) {
         // intersect with up or down button
+        let directionRay = new THREE.Vector3(0, 0, -1).applyQuaternion(rightControllerOrientation);
+        let ray = new THREE.Raycaster(rightControllerPosition, directionRay, 0, 0.3);
+        let intersections = ray.intersectObjects([mInterfaceWindow]);
+        if (intersections[0]) {
+            let coords = {
+                x: Math.round(intersections[0].uv.x * Math.max(mWindowWidth, mWindowHeight)),
+                y: Math.round((1 - intersections[0].uv.y) * Math.max(mWindowWidth, mWindowHeight))
+            };
+            if (coords.x < 0 || coords.x > mWindowWidth || coords.y < 0 || coords.y > mWindowHeight) return null;
+            else return coords;
+        }
     }
 
     let mRendering = false;
@@ -78,10 +93,10 @@ export function XRToolsController() {
         mRendering = true;
         try {
             let canvas = await html2canvas(document.querySelector("#content"), { logging: false })
-            let width = canvas.width;
-            let height = canvas.height;
-            let scale = 512 / Math.max(width, height)
-            mInterfaceContext.drawImage(canvas, 0, 0, width * scale, height * scale);
+            mWindowWidth = canvas.width;
+            mWindowHeight = canvas.height;
+            mScale = INTERFACE_RESOLUTION / Math.max(mWindowWidth, mWindowHeight)
+            mInterfaceContext.drawImage(canvas, 0, 0, mWindowWidth * mScale, mWindowHeight * mScale);
             mInterfaceMaterial.map.needsUpdate = true;
         } catch (e) {
             console.error(e);
@@ -96,6 +111,7 @@ export function XRToolsController() {
     this.renderInterface = renderInterface;
     this.getLeftInterfacePosition = getLeftInterfacePosition;
     this.getLeftInterfaceNormal = getLeftInterfaceNormal;
+    this.getLeftInterfaceIntersection = getLeftInterfaceIntersection;
     this.getToolState = () => mToolState;
     this.startRenderingInterface = () => !mInterfaceTimeout ? renderInterface() : null;
     this.stopRenderingInterface = () => clearTimeout(mInterfaceTimeout);

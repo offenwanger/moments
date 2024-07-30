@@ -18,6 +18,10 @@ export function XRSessionController() {
     let mMoveCallback = async () => { }
     let mMoveChainCallback = async () => { }
 
+    let mMouseDownCallback = async () => { };
+    let mMouseMoveCallback = async () => { };
+    let mMouseUpCallback = async () => { };
+
     let mSystemState = {
         primaryLPressed: false,
         primaryRPressed: false,
@@ -27,6 +31,8 @@ export function XRSessionController() {
         lHovered: [],
         rHovered: [],
         teleporting: false,
+        mousePosition: null,
+        mouseDown: false,
     }
 
     let mSceneController;
@@ -165,8 +171,16 @@ export function XRSessionController() {
         if (lookingAtLeftInterface()) {
             mToolsController.showInterface();
             mToolsController.renderInterface();
+            let mouseOverPoint = mToolsController.getLeftInterfaceIntersection(rightPos, rightOri);
+            if (mouseOverPoint) {
+                mSystemState.mousePosition = mouseOverPoint;
+                mMouseMoveCallback(mSystemState.mousePosition);
+            } else mSystemState.mousePosition = null;
         } else {
             mToolsController.hideInterface();
+            if (mSystemState.mouseDown) mMouseUpCallback(mSystemState.mousePosition);
+            mSystemState.mousePosition = null;
+            mSystemState.mouseDown = false;
         }
 
         mXRRenderer.render(mSceneController.getScene(), mXRCamera);
@@ -194,7 +208,7 @@ export function XRSessionController() {
         updateInputState();
     }
 
-    function updateInteractionState() {
+    async function updateInteractionState() {
         let leftController = getLeftContoller();
         let rightController = getRightController();
 
@@ -221,7 +235,15 @@ export function XRSessionController() {
                 && rightController.gamepad.buttons[1].pressed;
         }
 
-        if (endInteractionState()) {
+        if (mSystemState.mousePosition) {
+            if (mSystemState.primaryRPressed && !mSystemState.mouseDown) {
+                mSystemState.mouseDown = true;
+                await mMouseDownCallback(mSystemState.mousePosition);
+            } else if (!mSystemState.primaryRPressed && mSystemState.mouseDown) {
+                mSystemState.mouseDown = false;
+                await mMouseUpCallback(mSystemState.mousePosition);
+            }
+        } else if (endInteractionState()) {
             endInteraction();
         } else if (leftHandDragState()) {
             if (!mSystemState.interaction || mSystemState.interaction.type != LEFT_DRAG) {
@@ -542,6 +564,10 @@ export function XRSessionController() {
     this.onSessionEnd = (func) => mOnSessionEndCallback = func;
     this.onMove = (func) => { mMoveCallback = func }
     this.onMoveChain = (func) => { mMoveChainCallback = func }
+
+    this.onMouseDown = (func) => { mMouseDownCallback = func }
+    this.onMouseMove = (func) => { mMouseMoveCallback = func }
+    this.onMouseUp = (func) => { mMouseUpCallback = func }
 
     this.startRendering = function () { mXRRenderer.setAnimationLoop(xrRender); }
     this.stopRendering = function () { mXRRenderer.setAnimationLoop(null); }

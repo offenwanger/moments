@@ -46,6 +46,9 @@ export function XRSessionController() {
     const mXRCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     mXRCamera.position.set(0, USER_HEIGHT, 0);
 
+    const mUserGroup = new THREE.Group()
+    mUserGroup.add(mXRCamera)
+
     let mXRCanvas = document.createElement('canvas');
     mXRCanvas.height = 100;
     mXRCanvas.width = 100;
@@ -71,8 +74,6 @@ export function XRSessionController() {
 
     let vrButton = VRButton.createButton(mXRRenderer);
 
-    let controllerGroup = new THREE.Group();
-
     const mControllerOuterMaterial = new THREE.MeshBasicMaterial({ opacity: 0.5, transparent: true });
     const mControllerInnerMaterial = new THREE.MeshBasicMaterial({
         opacity: 0.5,
@@ -96,13 +97,13 @@ export function XRSessionController() {
     mControllerLInnerTip.position.set(0.005, 0, -0.03);
 
     const mController0 = mXRRenderer.xr.getController(0);
-    controllerGroup.add(mController0);
+    mUserGroup.add(mController0);
     const mControllerGrip0 = mXRRenderer.xr.getControllerGrip(0);
-    controllerGroup.add(mControllerGrip0);
+    mUserGroup.add(mControllerGrip0);
     const mController1 = mXRRenderer.xr.getController(1);
-    controllerGroup.add(mController1);
+    mUserGroup.add(mController1);
     const mControllerGrip1 = mXRRenderer.xr.getControllerGrip(1);
-    controllerGroup.add(mControllerGrip1);
+    mUserGroup.add(mControllerGrip1);
 
     function addTip(left, controller) {
         if (left) {
@@ -150,12 +151,11 @@ export function XRSessionController() {
 
     function setScene(scene) {
         if (mSceneController) {
-            mSceneController.getScene().remove(controllerGroup);
+            mSceneController.getScene().remove(mUserGroup);
         }
         mSceneController = scene;
-        // Maybe do this on session start?
-        mSceneController.getScene().add(controllerGroup);
         mSceneController.getScene().add(mToolsController.getGroup())
+        mSceneController.getScene().add(mUserGroup);
     }
 
     function xrRender(time) {
@@ -404,15 +404,45 @@ export function XRSessionController() {
 
     }
 
+    let mMoved = false;
     function updateInputState() {
-        // check Axis for forward push
-        // if so, teleporting
+        let rightController = getRightController();
+        let axes = rightController && rightController.gamepad && Array.isArray(rightController.gamepad.axes) ?
+            rightController.gamepad.axes : [0, 0, 0, 0];
+        if (!mMoved && Math.abs(axes[3]) > 0.5) {
+            let add = new THREE.Vector3();
+            mXRCamera.getWorldDirection(add);
+            let sign = -axes[3] / Math.abs(axes[3])
+            mUserGroup.position.addScaledVector(add, 0.5 * sign);
+            mMoved = true;
+        } else if (!mMoved && Math.abs(axes[2]) > 0.5) {
+            let cameraPos = new THREE.Vector3();
+            mXRCamera.getWorldPosition(cameraPos);
+            let sign = -axes[2] / Math.abs(axes[2])
+            rotateAboutPoint(mUserGroup, cameraPos, new THREE.Vector3(0, 1, 0), Math.PI / 4 * sign);
 
-        if (mSystemState.teleporting) {
-
-        } else {
-            updateHoverArray();
+            mMoved = true;
+        } else if (mMoved && axes.every(v => v == 0)) {
+            mMoved = false;
         }
+
+        updateHoverArray();
+    }
+
+    function rotateAboutPoint(obj, point, axis, theta, pointIsWorld = true) {
+        if (pointIsWorld) {
+            obj.parent.localToWorld(obj.position); // compensate for world coordinate
+        }
+
+        obj.position.sub(point); // remove the offset
+        obj.position.applyAxisAngle(axis, theta); // rotate the POSITION
+        obj.position.add(point); // re-add the offset
+
+        if (pointIsWorld) {
+            obj.parent.worldToLocal(obj.position); // undo world coordinates compensation
+        }
+
+        obj.rotateOnAxis(axis, theta); // rotate the OBJECT
     }
 
     function updateHoverArray() {

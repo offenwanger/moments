@@ -34,6 +34,7 @@ export function CanvasViewController(parentContainer) {
         .attr('id', 'main-canvas')
         .style('display', 'block')
         .on('pointerdown', (e) => onPointerDown({ x: e.clientX, y: e.clientY }))
+        .on('wheel', (e) => onWheel({ x: e.clientX, y: e.clientY, amount: e.wheelDelta }))
 
     let mPageRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mMainCanvas.node() });
 
@@ -42,8 +43,9 @@ export function CanvasViewController(parentContainer) {
     mPageCamera.position.set(0, USER_HEIGHT, 0);
 
     const mOrbitControls = new OrbitControls(mPageCamera, mPageRenderer.domElement);
-    mOrbitControls.minDistance = 2;
-    mOrbitControls.maxDistance = 2;
+    mOrbitControls.minDistance = 1;
+    mOrbitControls.maxDistance = 1;
+    mOrbitControls.enableZoom = false;
     mOrbitControls.target.set(0, 2, -2);
     mOrbitControls.update();
     mOrbitControls.addEventListener('change', () => {
@@ -66,6 +68,13 @@ export function CanvasViewController(parentContainer) {
 
         mPageCamera.aspect = width / height;
         mPageCamera.updateProjectionMatrix();
+    }
+
+    function onWheel(coords) {
+        let dir = new THREE.Vector3()
+        mPageCamera.getWorldDirection(dir);
+        mOrbitControls.target.addScaledVector(dir, coords.amount / 1000);
+        mOrbitControls.update();
     }
 
     function onPointerDown(screenCoords) {

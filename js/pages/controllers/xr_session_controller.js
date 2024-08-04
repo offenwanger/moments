@@ -4,7 +4,7 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { USER_HEIGHT } from '../../constants.js';
 import { GLTKUtil } from '../../utils/gltk_util.js';
-import { XRToolsController } from './xr_tools_controller.js';
+import { XRPageInterfaceController } from './xr_page_interface_controller.js';
 
 const LEFT_DRAG = 'leftHandedDragMove'
 const RIGHT_DRAG = 'rightHandedDragMove'
@@ -17,10 +17,6 @@ export function XRSessionController() {
 
     let mMoveCallback = async () => { }
     let mMoveChainCallback = async () => { }
-
-    let mMouseDownCallback = async () => { };
-    let mMouseMoveCallback = async () => { };
-    let mMouseUpCallback = async () => { };
 
     let mSystemState = {
         primaryLPressed: false,
@@ -36,7 +32,7 @@ export function XRSessionController() {
     }
 
     let mSceneController;
-    let mToolsController = new XRToolsController();
+    let mXRPageInterfaceController = new XRPageInterfaceController();
     let mSession;
 
     let mIKSolver
@@ -59,6 +55,8 @@ export function XRSessionController() {
         mSession = mXRRenderer.xr.getSession();
 
         setupListeners();
+
+        mXRPageInterfaceController.renderWebpage();
 
         mOnSessionStartCallback();
     })
@@ -154,7 +152,7 @@ export function XRSessionController() {
             mSceneController.getScene().remove(mUserGroup);
         }
         mSceneController = scene;
-        mSceneController.getScene().add(mToolsController.getGroup())
+        mSceneController.getScene().add(mXRPageInterfaceController.getGroup())
         mSceneController.getScene().add(mUserGroup);
     }
 
@@ -162,27 +160,13 @@ export function XRSessionController() {
         if (time < 0) return;
         if (!mSceneController) return;
 
-        let leftPos = getLeftControllerPosition()
-        let leftOri = getLeftControllerOrientation()
-        let rightPos = getRightControllerPosition()
-        let rightOri = getRightControllerOrientation()
-        mToolsController.animate(time, leftPos, leftOri, rightPos, rightOri);
-
-        if (lookingAtLeftInterface()) {
-            mToolsController.showInterface();
-            mToolsController.renderInterface();
-            let mouseOverPoint = mToolsController.getLeftInterfaceIntersection(rightPos, rightOri);
-            if (mouseOverPoint) {
-                mSystemState.mousePosition = mouseOverPoint;
-                mMouseMoveCallback(mSystemState.mousePosition);
-            } else mSystemState.mousePosition = null;
-        } else {
-            mToolsController.hideInterface();
-            if (mSystemState.mouseDown) mMouseUpCallback(mSystemState.mousePosition);
-            mSystemState.mousePosition = null;
-            mSystemState.mouseDown = false;
-        }
-
+        mXRPageInterfaceController.userMoved(
+            getHeadPosition(),
+            getHeadDirection(),
+            getLeftControllerPosition(),
+            getLeftControllerOrientation(),
+            getRightControllerPosition(),
+            getRightControllerOrientation())
         mXRRenderer.render(mSceneController.getScene(), mXRCamera);
 
         if (mSystemState.interaction) {
@@ -235,16 +219,11 @@ export function XRSessionController() {
                 && rightController.gamepad.buttons[1].pressed;
         }
 
-        if (mSystemState.mousePosition) {
-            if (mSystemState.primaryRPressed && !mSystemState.mouseDown) {
-                mSystemState.mouseDown = true;
-                await mMouseDownCallback(mSystemState.mousePosition);
-            } else if (!mSystemState.primaryRPressed && mSystemState.mouseDown) {
-                mSystemState.mouseDown = false;
-                await mMouseUpCallback(mSystemState.mousePosition);
-            }
-        } else if (endInteractionState()) {
+        if (endInteractionState()) {
             endInteraction();
+        } else if (mXRPageInterfaceController.isInteracting()) {
+            // triggers clicks and the like
+            mXRPageInterfaceController.updateSystemState(mSystemState);
         } else if (leftHandDragState()) {
             if (!mSystemState.interaction || mSystemState.interaction.type != LEFT_DRAG) {
                 endInteraction();
@@ -536,21 +515,27 @@ export function XRSessionController() {
         return getClosestTarget(mSystemState.rHovered, getRightControllerPosition());
     }
 
-    function getLeftControllerPosition() {
-        let pos = new THREE.Vector3();
-        mControllerLTip.getWorldPosition(pos);
-        return pos;
-    }
-
-    function getRightControllerPosition() {
-        let pos = new THREE.Vector3();
-        mControllerRTip.getWorldPosition(pos);
-        return pos;
-    }
-
     function getHeadPosition() {
         let pos = new THREE.Vector3();
         mXRCamera.getWorldPosition(pos);
+        return pos;
+    }
+
+    function getHeadDirection() {
+        let pos = new THREE.Vector3();
+        mXRCamera.getWorldDirection(pos);
+        return pos;
+    }
+
+    function getHeadOrientation() {
+        let rot = new THREE.Quaternion();
+        mXRCamera.getWorldQuaternion(rot);
+        return rot;
+    }
+
+    function getLeftControllerPosition() {
+        let pos = new THREE.Vector3();
+        mControllerLTip.getWorldPosition(pos);
         return pos;
     }
 
@@ -560,44 +545,22 @@ export function XRSessionController() {
         return rot;
     }
 
+    function getRightControllerPosition() {
+        let pos = new THREE.Vector3();
+        mControllerRTip.getWorldPosition(pos);
+        return pos;
+    }
+
     function getRightControllerOrientation() {
         let rot = new THREE.Quaternion();
         mControllerRTip.getWorldQuaternion(rot);
         return rot;
     }
 
-    function getHeadOrientation() {
-        let rot = new THREE.Quaternion();
-        mXRCamera.getWorldQuaternion(rot);
-        return rot;
-    }
-
-    function lookingAtLeftInterface() {
-        // first check if head is looking in the right direction. 
-        const headToInterfaceVector = new THREE.Vector3().subVectors(mToolsController.getLeftInterfacePosition(), getHeadPosition())
-            .normalize();
-        const interfaceDirectionVector = mToolsController.getLeftInterfaceNormal();
-        const headDirectionVector = new THREE.Vector3(0, 0, -1);
-        headDirectionVector.applyQuaternion(getHeadOrientation());
-
-        let angleToInterface = headDirectionVector.angleTo(headToInterfaceVector);
-        let angleToInterfaceFace = headDirectionVector.angleTo(interfaceDirectionVector);
-
-        if (angleToInterface < Math.PI / 4 && angleToInterfaceFace < Math.PI / 4) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     this.onSessionStart = (func) => mOnSessionStartCallback = func;
     this.onSessionEnd = (func) => mOnSessionEndCallback = func;
     this.onMove = (func) => { mMoveCallback = func }
     this.onMoveChain = (func) => { mMoveChainCallback = func }
-
-    this.onMouseDown = (func) => { mMouseDownCallback = func }
-    this.onMouseMove = (func) => { mMouseMoveCallback = func }
-    this.onMouseUp = (func) => { mMouseUpCallback = func }
 
     this.startRendering = function () { mXRRenderer.setAnimationLoop(xrRender); }
     this.stopRendering = function () { mXRRenderer.setAnimationLoop(null); }

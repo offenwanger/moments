@@ -40,8 +40,6 @@ export function EditorPage(parentContainer) {
             lighting pathways
             direction the light is coming from
             arrows
-        
-        
 
         Can now manipulate the browser from VR, can now make a unified tools interface. 
 
@@ -51,6 +49,20 @@ export function EditorPage(parentContainer) {
             - 3 views, Edit world Models, edit timeline models, edit timeline. 
             - Have 3 scales - timeline = biggest, world models = middle, timeline models = reg size
             - Navigation....
+          
+        TODOs 2024-08-01
+        - Edit the wrist browser to be more performant
+
+        Brush notes: 
+            - using textures will get very complex because of UV unwrap. Some models are overlapping on their UV maps, so that would be a pain to deal with. 
+            - Better though is to draw ribbons over the surface of the model, and apply textures to those. 
+
+        Navigation thoughts: 
+            - Simple move tool: Go forward one meter in the direction you are looking, if you intersect with something, stop .5 meters in front of it. 
+          
+        TODO: 
+        - Grab move and grab zoom as a precursor to line drawing... 
+        - Actually better do line edit mode first, better to do the zoom in the broweser, it will mean shrinking the scene which will bring out everywhere that I haven't converted my vector properly. 
             `)
 
     const RESIZE_TARGET_SIZE = 20;
@@ -64,16 +76,6 @@ export function EditorPage(parentContainer) {
     let mHeight = 100;
 
     let mResizingWindows = false;
-
-    let mMousedOverElement = null;
-    let mPointerDownElement = null;
-
-    let mCursor = parentContainer.append('img')
-        .attr('id', 'cursor')
-        .attr('src', 'assets/images/cursor.png')
-        .style('position', 'absolute')
-        .style('width', 20 + "px")
-        .style('height', 30 + "px")
 
     let mMainContainer = parentContainer.append('div')
         .style('width', '100%')
@@ -121,38 +123,6 @@ export function EditorPage(parentContainer) {
     mStoryDisplayController.onMoveChain(async (items) => {
         await mModelController.updatePositionsAndOrientations(items);
         await updateModel();
-    });
-
-    mStoryDisplayController.onMouseDown(async (coords) => {
-        let elements = document.elementsFromPoint(coords.x, coords.y);
-        let element = elements[0] != mCursor.node() ? elements[0] : elements[1];
-        if (element) {
-            element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-            mPointerDownElement = element;
-        }
-    });
-
-    mStoryDisplayController.onMouseMove(async (coords) => {
-        let elements = document.elementsFromPoint(coords.x, coords.y);
-        let element = elements[0] != mCursor.node() ? elements[0] : elements[1];
-        if (element) element.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
-        if (mMousedOverElement != element) {
-            if (mMousedOverElement) mMousedOverElement.dispatchEvent(new PointerEvent('pointerout', { bubbles: true }));
-            if (element) element.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
-            mMousedOverElement = element;
-        }
-        mCursor.style('left', (coords.x + 2) + "px")
-        mCursor.style('top', (coords.y + 2) + "px")
-    });
-
-    mStoryDisplayController.onMouseUp(async (coords) => {
-        let elements = document.elementsFromPoint(coords.x, coords.y);
-        let element = elements[0] != mCursor.node() ? elements[0] : elements[1];
-        if (element) {
-            element.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
-            if (element == mPointerDownElement) element.dispatchEvent(new PointerEvent('click', { bubbles: true }));
-        }
-        mPointerDownElement = null;
     });
 
     let mAssetPicker = new AssetPicker(parentContainer);

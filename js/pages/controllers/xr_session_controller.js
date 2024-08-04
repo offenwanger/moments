@@ -221,9 +221,10 @@ export function XRSessionController() {
 
         if (endInteractionState()) {
             endInteraction();
-        } else if (mXRPageInterfaceController.isInteracting()) {
-            // triggers clicks and the like
-            mXRPageInterfaceController.updateSystemState(mSystemState);
+        }
+
+        if (mXRPageInterfaceController.isInteracting()) {
+            await mXRPageInterfaceController.updateSystemState(mSystemState);
         } else if (leftHandDragState()) {
             if (!mSystemState.interaction || mSystemState.interaction.type != LEFT_DRAG) {
                 endInteraction();

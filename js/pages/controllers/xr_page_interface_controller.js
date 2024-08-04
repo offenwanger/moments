@@ -47,13 +47,13 @@ export function XRPageInterfaceController() {
 
     async function updateSystemState(systemState) {
         if (systemState.primaryRPressed && !mMouseDown) {
-            mouseDown();
+            await mouseDown(mMousePosition);
         } else if (!systemState.primaryRPressed && mMouseDown) {
-            mouseUp();
+            await mouseUp(mMousePosition);
         }
     }
 
-    function userMoved(headPos, headDir, leftPos, leftOrient, rightPos, rightOrient) {
+    async function userMoved(headPos, headDir, leftPos, leftOrient, rightPos, rightOrient) {
         mHeadPos = headPos;
         mHeadDir = headDir;
         mRightGroup.position.copy(rightPos)
@@ -74,38 +74,38 @@ export function XRPageInterfaceController() {
                 if (element) {
                     mHighlightBoxes.push(element.getBoundingClientRect());
                 }
-            } else {
+            } else if (!mouseOverPoint) {
                 mMousePosition = null;
             }
             drawInterface();
         } else {
-            if (mMouseDown) mouseUp();
+            let pos = mMousePosition;
             mMousePosition = null;
-            mMouseDown = false;
+            if (mMouseDown) await mouseUp(pos);
         }
     }
 
-    function mouseDown() {
+    async function mouseDown(pos) {
         mMouseDown = true;
-        if (!mMousePosition) return;
-        let element = document.elementsFromPoint(mMousePosition.x, mMousePosition.y)[0];
+        if (!pos) return;
+        let element = document.elementsFromPoint(pos.x, pos.y)[0];
         if (element) {
             element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
             mPointerDownElement = element;
         }
-        renderWebpage();
+        await renderWebpage();
     }
 
-    function mouseUp() {
+    async function mouseUp(pos) {
         mMouseDown = false;
-        if (!mMousePosition) return;
-        let element = document.elementsFromPoint(mMousePosition.x, mMousePosition.y)[0];
+        if (!pos) return;
+        let element = document.elementsFromPoint(pos.x, pos.y)[0];
         if (element) {
             element.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
             if (element == mPointerDownElement) element.dispatchEvent(new PointerEvent('click', { bubbles: true }));
         }
         mPointerDownElement = null;
-        renderWebpage();
+        await renderWebpage();
     }
 
     function setInterfaceScale() {
@@ -151,10 +151,7 @@ export function XRPageInterfaceController() {
         }
     }
 
-    let mRendering = false;
     async function renderWebpage() {
-        if (mRendering) return;
-        mRendering = true;
         try {
             mPageCanvas = await html2canvas(document.querySelector("#content"), { logging: false })
             mWindowWidth = mPageCanvas.width;
@@ -164,8 +161,6 @@ export function XRPageInterfaceController() {
             drawInterface();
         } catch (e) {
             console.error(e);
-        } finally {
-            mRendering = false;
         }
     }
 

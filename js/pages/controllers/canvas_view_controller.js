@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { DOUBLE_CLICK_SPEED, USER_HEIGHT } from '../../constants.js';
+import { DOUBLE_CLICK_SPEED, EditMode, USER_HEIGHT } from '../../constants.js';
 import { GLTKUtil } from '../../utils/gltk_util.js';
 
 export function CanvasViewController(parentContainer) {
@@ -11,6 +11,8 @@ export function CanvasViewController(parentContainer) {
 
     let mMoveCallback = async () => { }
     let mMoveChainCallback = async () => { }
+
+    let mMode = EditMode.MODEL;
 
     let mWidth = 10;
     let mHeight = 10;
@@ -96,7 +98,7 @@ export function CanvasViewController(parentContainer) {
                 let { mesh, iks, affectedTargets, controlBone } = GLTKUtil.createIK(freezeTarget, target);
                 mIKSolver = new CCDIKSolver(mesh, iks);
                 mCCDIKHelper = new CCDIKHelper(mesh, iks, 0.01);
-                mSceneController.getScene().add(mCCDIKHelper);
+                mSceneController.getContent().add(mCCDIKHelper);
 
                 let intersection = target.getIntersection();
                 let rootBone = rootTarget.getObject3D();
@@ -178,7 +180,7 @@ export function CanvasViewController(parentContainer) {
 
     async function pointerUp(screenCoords) {
         mIKSolver = null
-        mSceneController.getScene().remove(mCCDIKHelper);
+        mSceneController.getContent().remove(mCCDIKHelper);
         let interaction = mInteraction;
         mInteraction = false;
         if (interaction) {
@@ -249,14 +251,26 @@ export function CanvasViewController(parentContainer) {
         return { x, y }
     }
 
+    function setMode(mode) {
+        if (mode == EditMode.MODEL) {
+            mSceneController.setScale(1);
+        } else if (mode == EditMode.WORLD) {
+            mSceneController.setScale(0.5);
+        } else if (mode == EditMode.TIMELINE) {
+            mSceneController.setScale(0.1);
+        }
+        mMode = mode;
+    }
+
     this.resize = resize;
 
-    this.setScene = (scene) => { mSceneController = scene }
     this.pointerMove = pointerMove;
     this.pointerUp = pointerUp;
     this.startRendering = startRendering;
     this.stopRendering = stopRendering;
+    this.setMode = setMode;
 
+    this.setScene = (scene) => { mSceneController = scene }
     this.onMove = (func) => { mMoveCallback = func }
     this.onMoveChain = (func) => { mMoveChainCallback = func }
 }

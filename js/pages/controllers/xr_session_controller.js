@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
-import { USER_HEIGHT } from '../../constants.js';
+import { EditMode, USER_HEIGHT } from '../../constants.js';
 import { GLTKUtil } from '../../utils/gltk_util.js';
 import { XRPageInterfaceController } from './xr_page_interface_controller.js';
 
@@ -34,6 +34,8 @@ export function XRSessionController() {
     let mSceneController;
     let mXRPageInterfaceController = new XRPageInterfaceController();
     let mSession;
+
+    let mMode = EditMode.MODEL;
 
     let mIKSolver
     let mCCDIKHelper
@@ -155,6 +157,18 @@ export function XRSessionController() {
         mSceneController.getScene().add(mXRPageInterfaceController.getGroup())
         mSceneController.getScene().add(mUserGroup);
     }
+
+    function setMode(mode) {
+        if (mode == EditMode.MODEL) {
+            mSceneController.setScale(1);
+        } else if (mode == EditMode.WORLD) {
+            mSceneController.setScale(0.5);
+        } else if (mode == EditMode.TIMELINE) {
+            mSceneController.setScale(0.1);
+        }
+        mMode = mode;
+    }
+
 
     function xrRender(time) {
         if (time < 0) return;
@@ -327,7 +341,7 @@ export function XRSessionController() {
 
         mIKSolver = new CCDIKSolver(mesh, iks);
         mCCDIKHelper = new CCDIKHelper(mesh, iks, 0.01);
-        mSceneController.getScene().add(mCCDIKHelper);
+        mSceneController.getContent().add(mCCDIKHelper);
 
         let positionDiff = new THREE.Vector3().subVectors(
             rootTarget.getTargetWorldPosition(),
@@ -378,7 +392,7 @@ export function XRSessionController() {
         }
 
         if (mCCDIKHelper) {
-            mSceneController.getScene().remove(mCCDIKHelper);
+            mSceneController.getContent().remove(mCCDIKHelper);
             mCCDIKHelper = null;
         }
 
@@ -566,5 +580,6 @@ export function XRSessionController() {
     this.startRendering = function () { mXRRenderer.setAnimationLoop(xrRender); }
     this.stopRendering = function () { mXRRenderer.setAnimationLoop(null); }
     this.setScene = setScene;
+    this.setMode = setMode;
     this.getVRButton = () => vrButton;
 }

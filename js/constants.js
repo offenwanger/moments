@@ -16,6 +16,12 @@ export const AssetTypes = {
     BOX: 'box',
 }
 
+export const EditMode = {
+    TIMELINE: 'timeline',
+    WORLD: 'world',
+    MODEL: 'model',
+}
+
 export const AssetExtensions = {};
 AssetExtensions[AssetTypes.MODEL] = '.glb'
 AssetExtensions[AssetTypes.IMAGE] = '.png'

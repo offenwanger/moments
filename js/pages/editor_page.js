@@ -11,11 +11,14 @@ import { TimelineController } from './controllers/timeline_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 
 export function EditorPage(parentContainer) {
-    console.log('cache loaded models?')
-    console.log('enable the click thing in the canvas viewer to bring it up in the sidebar')
-    console.log("Next order of buisness will be painting, both for timelines and regular type.")
-    console.log("Got tube painter as a starting example.")
-    console.log(`TODO: Create a menu belt 
+
+    console.log(`
+        cache loaded models?
+        enable the click thing in the canvas viewer to bring it up in the sidebar
+        Next order of buisness will be painting, both for timelines and regular type.
+        Got tube painter as a starting example.
+        
+        TODO: Create a menu belt 
         Things to add: 
         - Edit timeline button 
             - This will need to open a timeline editor. Nah, it can be the normal storyview, just shrunk 
@@ -62,8 +65,8 @@ export function EditorPage(parentContainer) {
           
         TODO: 
         - Grab move and grab zoom as a precursor to line drawing... 
-        - Actually better do line edit mode first, better to do the zoom in the broweser, it will mean shrinking the scene which will bring out everywhere that I haven't converted my vector properly. 
-            `)
+        - Actually better do timeline edit mode first, better to do the zoom in the broweser, it will mean shrinking the scene which will bring out everywhere that I haven't converted my vector properly. 
+    `)
 
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;

@@ -4,7 +4,9 @@ import { DataModel } from '../../data_model.js';
 
 export function StoryWrapperController() {
     let mScene = new THREE.Scene();
-    let mStoryWrapper = new StoryWrapper(mScene);
+    let mContent = new THREE.Group();
+    mScene.add(mContent);
+    let mStoryWrapper = new StoryWrapper(mContent);
     let mModel = new DataModel();
 
     let mEnvironmentBox;
@@ -40,4 +42,6 @@ export function StoryWrapperController() {
     this.getIntersections = getIntersections;
     this.onCameraMove = onCameraMove;
     this.getScene = () => mScene;
+    this.getContent = () => mContent;
+    this.setScale = (scale) => mContent.scale.set(scale, scale, scale);
 }

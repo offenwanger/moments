@@ -5,11 +5,13 @@ import { Data } from '../../data_structs.js';
 
 export function AssetSceneController() {
     let mScene = new THREE.Scene();
+    let mContent = new THREE.Group();
+    mScene.add(mContent);
     let mModel = new DataModel();
 
     let mAssetId = null;
     let mModel3D = new Data.Model3D();
-    let mModel3DWrapper = new Model3DWrapper(mScene);
+    let mModel3DWrapper = new Model3DWrapper(mContent);
 
     let mEnvironmentBox;
 
@@ -56,4 +58,6 @@ export function AssetSceneController() {
     this.getIntersections = getIntersections;
     this.onCameraMove = onCameraMove;
     this.getScene = () => mScene;
+    this.getContent = () => mContent;
+    this.setScale = (scale) => mContent.scale.set(scale, scale, scale);
 }

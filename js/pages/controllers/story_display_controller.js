@@ -1,3 +1,4 @@
+import { EditMode } from "../../constants.js";
 import { DataModel } from "../../data_model.js";
 import { AssetSceneController } from './asset_scene_controller.js';
 import { CanvasViewController } from './canvas_view_controller.js';
@@ -14,41 +15,69 @@ export function StoryDisplayController(parentContainer) {
     let mMoveCallback = async () => { }
     let mMoveChainCallback = async () => { }
 
-    let mModel = new DataModel();
-
-    let mWidth = 100;
-    let mHeight = 100;
-
     let isVR = false;
+    let mMode = EditMode.MODEL;
 
     let mAssetSceneController = new AssetSceneController();
     let mStoryWrapperController = new StoryWrapperController();
 
-    let mExitAssetViewButton = parentContainer.append("button")
-        .style('position', 'absolute')
-        .style('top', '80px')
-        .style('left', '20px')
-        .html('x')
-        .style("display", 'none')
-        .on('click', async () => {
-            mCanvasViewController.setScene(mStoryWrapperController);
-            mXRSessionController.setScene(mStoryWrapperController);
-            mExitAssetViewButton.style("display", 'none')
-            await mExitAssetViewCallback();
-        });
-
-    let mCanvasViewController = new CanvasViewController(parentContainer);
-    mCanvasViewController.setScene(mStoryWrapperController);
-    mCanvasViewController.startRendering();
+    let mActiveScene = mStoryWrapperController;
 
     let mXRSessionController = new XRSessionController(parentContainer);
-    mXRSessionController.setScene(mStoryWrapperController);
+    mXRSessionController.setScene(mActiveScene);
+    let mCanvasViewController = new CanvasViewController(parentContainer);
+    mCanvasViewController.setScene(mActiveScene);
+    mCanvasViewController.setMode(mMode)
+    mCanvasViewController.startRendering();
+
+    let mActiveController = mCanvasViewController;
+
     let vrButtonDiv = parentContainer.append("div")
         .style('position', 'absolute')
         .style('top', '40px')
         .style('left', '20px')
     vrButtonDiv.node().appendChild(mXRSessionController.getVRButton());
     d3.select(mXRSessionController.getVRButton()).style("position", "relative")
+
+    let mEditModelsButton = parentContainer.append("button")
+        .style('position', 'absolute')
+        .style('top', '80px')
+        .style('left', '20px')
+        .html('Edit Models')
+        .on('click', async () => {
+            await setScene(mStoryWrapperController);
+            mActiveController.setMode(EditMode.MODEL);
+        });
+
+    let mEditTimelineButton = parentContainer.append("button")
+        .style('position', 'absolute')
+        .style('top', '120px')
+        .style('left', '20px')
+        .html('Edit Timeline')
+        .on('click', async () => {
+            await setScene(mStoryWrapperController);
+            mActiveController.setMode(EditMode.TIMELINE);
+        });
+
+    let mEditWorldButton = parentContainer.append("button")
+        .style('position', 'absolute')
+        .style('top', '160px')
+        .style('left', '20px')
+        .html('Edit World')
+        .on('click', async () => {
+            await setScene(mStoryWrapperController);
+            mActiveController.setMode(EditMode.WORLD);
+        });
+
+    let mExitAssetViewButton = parentContainer.append("button")
+        .style('position', 'absolute')
+        .style('top', '200px')
+        .style('left', '20px')
+        .html('x')
+        .style("display", 'none')
+        .on('click', async () => {
+            await setScene(mStoryWrapperController);
+        });
 
     mCanvasViewController.onMove(async (id, newPosition) => {
         await mMoveCallback(id, newPosition);
@@ -63,6 +92,9 @@ export function StoryDisplayController(parentContainer) {
             isVR = true;
             mCanvasViewController.stopRendering();
             mXRSessionController.startRendering();
+            mActiveController = mXRSessionController;
+            mActiveController.setScene(mActiveScene);
+            mActiveController.setMode(mMode);
         }
     })
 
@@ -71,6 +103,9 @@ export function StoryDisplayController(parentContainer) {
             isVR = false;
             mCanvasViewController.startRendering();
             mXRSessionController.stopRendering();
+            mActiveController = mCanvasViewController;
+            mActiveController.setScene(mActiveScene);
+            mActiveController.setMode(mMode);
         }
     })
 
@@ -82,6 +117,19 @@ export function StoryDisplayController(parentContainer) {
         await mMoveChainCallback(id, newPosition);
     })
 
+    async function setScene(scene) {
+        if (mActiveScene != scene) {
+            mActiveController.setScene(scene);
+            if (mActiveScene == mAssetSceneController) { await mExitAssetViewCallback(); }
+            mActiveScene = scene;
+
+            if (scene == mAssetSceneController) {
+                mExitAssetViewButton.style('display', '')
+            } else {
+                mExitAssetViewButton.style("display", 'none')
+            }
+        }
+    }
 
     async function updateModel(model, assetUtil) {
         await mAssetSceneController.updateModel(model, assetUtil);
@@ -90,14 +138,10 @@ export function StoryDisplayController(parentContainer) {
 
     async function showAsset(assetId, assetUtil) {
         await mAssetSceneController.showAsset(assetId, assetUtil);
-        mCanvasViewController.setScene(mAssetSceneController);
-        mXRSessionController.setScene(mAssetSceneController);
-        mExitAssetViewButton.style('display', '')
+        await setScene(mAssetSceneController);
     }
 
     function resize(width, height) {
-        mWidth = width;
-        mHeight = height;
         mCanvasViewController.resize(width, height);
     }
 

@@ -1,8 +1,9 @@
+import * as THREE from "three";
 import { EditMode } from "../../constants.js";
 import { DataModel } from "../../data_model.js";
 import { AssetSceneController } from './asset_scene_controller.js';
 import { CanvasViewController } from './canvas_view_controller.js';
-import { StoryWrapperController } from './story_scene_controller.js';
+import { StorySceneController } from './story_scene_controller.js';
 import { XRSessionController } from './xr_session_controller.js';
 
 /**
@@ -14,14 +15,15 @@ export function StoryDisplayController(parentContainer) {
     let mExitAssetViewCallback = async () => { }
     let mMoveCallback = async () => { }
     let mMoveChainCallback = async () => { }
+    let mUpdateTimelineCallback = async () => { }
 
     let isVR = false;
     let mMode = EditMode.MODEL;
 
     let mAssetSceneController = new AssetSceneController();
-    let mStoryWrapperController = new StoryWrapperController();
+    let mStorySceneController = new StorySceneController();
 
-    let mActiveScene = mStoryWrapperController;
+    let mActiveScene = mStorySceneController;
 
     let mXRSessionController = new XRSessionController(parentContainer);
     mXRSessionController.setScene(mActiveScene);
@@ -29,6 +31,8 @@ export function StoryDisplayController(parentContainer) {
     mCanvasViewController.setScene(mActiveScene);
     mCanvasViewController.setMode(mMode)
     mCanvasViewController.startRendering();
+
+    let mModel = new DataModel();
 
     let mActiveController = mCanvasViewController;
 
@@ -45,8 +49,9 @@ export function StoryDisplayController(parentContainer) {
         .style('left', '20px')
         .html('Edit Models')
         .on('click', async () => {
-            await setScene(mStoryWrapperController);
-            mActiveController.setMode(EditMode.MODEL);
+            await setScene(mStorySceneController);
+            mMode = EditMode.MODEL;
+            mActiveController.setMode(mMode);
         });
 
     let mEditTimelineButton = parentContainer.append("button")
@@ -55,8 +60,9 @@ export function StoryDisplayController(parentContainer) {
         .style('left', '20px')
         .html('Edit Timeline')
         .on('click', async () => {
-            await setScene(mStoryWrapperController);
-            mActiveController.setMode(EditMode.TIMELINE);
+            await setScene(mStorySceneController);
+            mMode = EditMode.TIMELINE;
+            mActiveController.setMode(mMode);
         });
 
     let mEditWorldButton = parentContainer.append("button")
@@ -65,8 +71,9 @@ export function StoryDisplayController(parentContainer) {
         .style('left', '20px')
         .html('Edit World')
         .on('click', async () => {
-            await setScene(mStoryWrapperController);
-            mActiveController.setMode(EditMode.WORLD);
+            await setScene(mStorySceneController);
+            mMode = EditMode.WORLD;
+            mActiveController.setMode(mMode);
         });
 
     let mExitAssetViewButton = parentContainer.append("button")
@@ -76,7 +83,7 @@ export function StoryDisplayController(parentContainer) {
         .html('x')
         .style("display", 'none')
         .on('click', async () => {
-            await setScene(mStoryWrapperController);
+            await setScene(mStorySceneController);
         });
 
     mCanvasViewController.onMove(async (id, newPosition) => {
@@ -87,14 +94,21 @@ export function StoryDisplayController(parentContainer) {
         await mMoveChainCallback(id, newPosition);
     })
 
+    mCanvasViewController.onUpdateTimeline(async (line) => {
+        await mUpdateTimelineCallback(line);
+    })
+
     mXRSessionController.onSessionStart(() => {
         if (!isVR) {
             isVR = true;
             mCanvasViewController.stopRendering();
             mXRSessionController.startRendering();
+            let { pos, dir } = mActiveController.getUserPositionAndDirection();
             mActiveController = mXRSessionController;
             mActiveController.setScene(mActiveScene);
             mActiveController.setMode(mMode);
+            mActiveController.setUserPositionAndDirection(pos, dir);
+
         }
     })
 
@@ -103,9 +117,11 @@ export function StoryDisplayController(parentContainer) {
             isVR = false;
             mCanvasViewController.startRendering();
             mXRSessionController.stopRendering();
+            let { pos, dir } = mActiveController.getUserPositionAndDirection();
             mActiveController = mCanvasViewController;
             mActiveController.setScene(mActiveScene);
             mActiveController.setMode(mMode);
+            mActiveController.setUserPositionAndDirection(pos, dir);
         }
     })
 
@@ -115,6 +131,10 @@ export function StoryDisplayController(parentContainer) {
 
     mXRSessionController.onMoveChain(async (id, newPosition) => {
         await mMoveChainCallback(id, newPosition);
+    })
+
+    mXRSessionController.onUpdateTimeline(async (line) => {
+        await mUpdateTimelineCallback(line);
     })
 
     async function setScene(scene) {
@@ -132,13 +152,25 @@ export function StoryDisplayController(parentContainer) {
     }
 
     async function updateModel(model, assetUtil) {
+        if (mModel.getStory().id != model.getStory().id) {
+            let timeline = mModel.getStory().timeline;
+            if (timeline.length < 2) { console.error('Invalid timeline'); return; }
+
+            let pos = new THREE.Vector3(timeline[0].x, timeline[0].y, timeline[0].z);
+            let pos2 = new THREE.Vector3(timeline[1].x, timeline[1].y, timeline[1].z);
+            let dir = new THREE.Vector3().subVectors(pos2, pos).normalize();
+            mActiveController.setUserPositionAndDirection(pos, dir)
+        }
+
+        mModel = model;
         await mAssetSceneController.updateModel(model, assetUtil);
-        await mStoryWrapperController.updateModel(model, assetUtil);
+        await mStorySceneController.updateModel(model, assetUtil);
     }
 
     async function showAsset(assetId, assetUtil) {
         await mAssetSceneController.showAsset(assetId, assetUtil);
         await setScene(mAssetSceneController);
+        mActiveController.setUserPositionAndDirection(new Vector3(0, 0, 0), new Vector3(0, 0, -1));
     }
 
     function resize(width, height) {
@@ -161,5 +193,6 @@ export function StoryDisplayController(parentContainer) {
     this.onExitAssetView = (func) => mExitAssetViewCallback = func;
     this.onMove = (func) => mMoveCallback = func;
     this.onMoveChain = (func) => mMoveChainCallback = func;
+    this.onUpdateTimeline = (func) => mUpdateTimelineCallback = func;
 }
 

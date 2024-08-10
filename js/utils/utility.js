@@ -79,6 +79,45 @@ function v(x = 0, y = 0, z = 0) {
     return new THREE.Vector3(x, y, z);
 }
 
+function simplify3DLine(points, epsilon = 0.1) {
+    const p1 = points[0];
+    const p2 = points[points.length - 1];
+    const { index, dist } = furthestPoint(p1, p2, points);
+
+    if (dist > epsilon) {
+        return [
+            ...simplify3DLine(points.slice(0, index + 1), epsilon),
+            ...simplify3DLine(points.slice(index).slice(1), epsilon)
+        ];
+    } else {
+        return p1.equals(p2) ? [p1] : [p1, p2];
+    }
+}
+
+function furthestPoint(p1, p2, points) {
+    let dmax = 0;
+    let maxI = -1;
+    for (let i = 0; i < points.length; i++) {
+        const dtemp = perpendicularDist(points[i], p1, p2);
+
+        if (dtemp > dmax) {
+            dmax = dtemp;
+            maxI = i;
+        }
+    }
+
+    return { index: maxI, dist: dmax };
+}
+
+function perpendicularDist(p, p1, p2) {
+    if (p.equals(p1) || p.equals(p2)) return 0;
+    const line = new THREE.Line3(p1, p2);
+    let closestPoint = new THREE.Vector3();
+    line.closestPointToPoint(p, true, closestPoint)
+    return closestPoint.distanceTo(p);
+}
+
+
 export const Util = {
     getSphereIntersection,
     hasSphereIntersection,
@@ -89,6 +128,7 @@ export const Util = {
     unique,
     limit,
     setComponentListLength,
+    simplify3DLine,
 
     //// Debug Utils ////
     console: {

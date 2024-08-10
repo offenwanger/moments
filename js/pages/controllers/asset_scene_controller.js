@@ -45,19 +45,21 @@ export function AssetSceneController() {
         mModel3DWrapper.update(mModel3D, null, assetUtil)
     }
 
-    function onCameraMove() {
+    function onUserMove(globalPosition) {
         // do something with regards to rearranging things. 
     }
 
-    function getIntersections(ray) {
-        return [...mModel3DWrapper.getIntersections(ray)];
+    function getTargets(ray) {
+        return [...mModel3DWrapper.getTargets(ray)];
     }
 
     this.updateModel = updateModel;
     this.showAsset = showAsset;
-    this.getIntersections = getIntersections;
-    this.onCameraMove = onCameraMove;
+    this.getTargets = getTargets;
+    this.onUserMove = onUserMove;
     this.getScene = () => mScene;
     this.getContent = () => mContent;
+    this.setMode = () => { };
+    this.toSceneCoordinates = (v) => v;
     this.setScale = (scale) => mContent.scale.set(scale, scale, scale);
 }

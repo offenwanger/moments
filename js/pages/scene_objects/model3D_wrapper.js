@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import { Data } from "../../data_structs.js";
 import { GLTKUtil } from '../../utils/gltk_util.js';
 import { InteractionTargetWrapper } from './interaction_target_wrapper.js';
+import { EditMode } from '../../constants.js';
 
 export function Model3DWrapper(parent) {
     let mParent = parent;
     let mModel3D = new Data.Model3D();
     let mGLTF = null;
+    let mMode = EditMode.MODEL;
     let mTargets = [];
     let mInteractionTargets = [];
     let mModelGroup = new THREE.Group();
@@ -78,7 +80,10 @@ export function Model3DWrapper(parent) {
         mParent.remove(mModelGroup)
     }
 
-    function getIntersections(ray) {
+    function getTargets(ray) {
+        if (mModel3D.isWorld && mMode != EditMode.WORLD) return [];
+        if (!mModel3D.isWorld && mMode != EditMode.MODEL) return [];
+
         if (!mGLTF) return []
         const intersects = ray.intersectObjects(mTargets);
         let targets = intersects.map(i => {
@@ -222,9 +227,13 @@ export function Model3DWrapper(parent) {
         return group;
     }
 
+    function setMode(mode) {
+        mMode = mode;
+    }
 
     this.update = update;
     this.getId = getId;
     this.remove = remove;
-    this.getIntersections = getIntersections;
+    this.getTargets = getTargets;
+    this.setMode = setMode;
 }

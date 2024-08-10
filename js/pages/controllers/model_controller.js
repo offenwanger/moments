@@ -120,6 +120,11 @@ export function ModelController(storyId, workspace) {
         await mWorkspace.updateStory(mModel);
     }
 
+    async function updateTimeline(line) {
+        mModel.getStory().timeline = line;
+        await mWorkspace.updateStory(mModel);
+    }
+
     return {
         init,
         createModel3D,
@@ -129,6 +134,7 @@ export function ModelController(storyId, workspace) {
         updatePosition,
         updatePositionsAndOrientations,
         deleteItem,
+        updateTimeline,
         getModel: () => mModel.clone(),
     }
 }

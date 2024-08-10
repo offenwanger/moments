@@ -18,12 +18,17 @@ export function AnnotationWrapper(parent) {
         console.error("Remove Self from Scene")
     }
 
-    function getIntersections(ray) {
+    function getTargets(ray) {
         // probably check where in your plane we're pointed (or pointed through)
         return [];
     }
 
-    this.getIntersections = getIntersections;
+    function setMode(mode) {
+
+    }
+
+    this.getTargets = getTargets;
+    this.setMode = setMode;
     this.update = update;
     this.getId = getId;
     this.remove = remove;

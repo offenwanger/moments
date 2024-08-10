@@ -17,6 +17,7 @@ export function XRSessionController() {
 
     let mMoveCallback = async () => { }
     let mMoveChainCallback = async () => { }
+    let mUpdateTimelineCallback = async () => { }
 
     let mSystemState = {
         primaryLPressed: false,
@@ -159,13 +160,7 @@ export function XRSessionController() {
     }
 
     function setMode(mode) {
-        if (mode == EditMode.MODEL) {
-            mSceneController.setScale(1);
-        } else if (mode == EditMode.WORLD) {
-            mSceneController.setScale(0.5);
-        } else if (mode == EditMode.TIMELINE) {
-            mSceneController.setScale(0.1);
-        }
+        mSceneController.setMode(mode);
         mMode = mode;
     }
 
@@ -423,6 +418,19 @@ export function XRSessionController() {
         updateHoverArray();
     }
 
+    function setUserPositionAndDirection(worldPosition, unitDirection) {
+        mUserGroup.position.copy(worldPosition);
+        let dir = new THREE.Vector3();
+        mXRCamera.getWorldDirection(dir);
+
+        dir.y = 0;
+        unitDirection.y = 0;
+
+        let rotation = new THREE.Quaternion()
+        rotation.setFromUnitVectors(dir, unitDirection)
+        mUserGroup.applyQuaternion(rotation);
+    }
+
     function rotateAboutPoint(obj, point, axis, theta, pointIsWorld = true) {
         if (pointIsWorld) {
             obj.parent.localToWorld(obj.position); // compensate for world coordinate
@@ -463,7 +471,7 @@ export function XRSessionController() {
             mSystemState.lHovered = [];
             let controllerLPos = getLeftControllerPosition();
             if (frustum.containsPoint(controllerLPos)) {
-                let targets = mSceneController.getIntersections(getRay(cameraPosition, controllerLPos));
+                let targets = mSceneController.getTargets(getRay(cameraPosition, controllerLPos));
                 mSystemState.lHovered.push(getClosestTarget(targets, controllerLPos));
             };
             mSystemState.lHovered = mSystemState.lHovered.filter(t => t);
@@ -473,7 +481,7 @@ export function XRSessionController() {
             mSystemState.rHovered = [];
             let controllerRPos = getRightControllerPosition();
             if (frustum.containsPoint(controllerRPos)) {
-                let targets = mSceneController.getIntersections(getRay(cameraPosition, controllerRPos))
+                let targets = mSceneController.getTargets(getRay(cameraPosition, controllerRPos))
                 mSystemState.rHovered.push(getClosestTarget(targets, controllerRPos));
             };
             mSystemState.rHovered = mSystemState.rHovered.filter(t => t);
@@ -576,6 +584,9 @@ export function XRSessionController() {
     this.onSessionEnd = (func) => mOnSessionEndCallback = func;
     this.onMove = (func) => { mMoveCallback = func }
     this.onMoveChain = (func) => { mMoveChainCallback = func }
+    this.onUpdateTimeline = (func) => { mUpdateTimelineCallback = func }
+    this.setUserPositionAndDirection = setUserPositionAndDirection;
+    this.getUserPositionAndDirection = () => { return { pos: getHeadPosition(), dir: getHeadDirection() } };
 
     this.startRendering = function () { mXRRenderer.setAnimationLoop(xrRender); }
     this.stopRendering = function () { mXRRenderer.setAnimationLoop(null); }

@@ -66,7 +66,18 @@ export function EditorPage(parentContainer) {
         TODO: 
         - Grab move and grab zoom as a precursor to line drawing... 
         - Actually better do timeline edit mode first, better to do the zoom in the broweser, it will mean shrinking the scene which will bring out everywhere that I haven't converted my vector properly. 
-    `)
+    
+        TODO 2024-08-04: 
+        - Really need grab to move. 
+        - Draw timeline
+            - VR = direct
+            - canvas -> draw a line on the canvas, use the existing timeline to set the distance. 
+        - On redraw, map old timeline to new timeline
+            - cluster the timeline models by bb overlap
+            - get average point of models, get closest point to timeline, get dist vector, map to new timeline. 
+        - Use the timeline to set the lighting, bright light in the forward direction on the timeline at the point cloest to the user, red light going backwards, dim light farther away. 
+
+        `)
 
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;
@@ -127,6 +138,18 @@ export function EditorPage(parentContainer) {
         await mModelController.updatePositionsAndOrientations(items);
         await updateModel();
     });
+
+    mStoryDisplayController.onUpdateTimeline(async (line) => {
+        line = line.filter(p => {
+            if (typeof p.x != 'number' || typeof p.y != 'number' || typeof p.z != 'number') {
+                console.error("invalid point", p);
+                return false;
+            }
+            return true;
+        }).map(p => { return { x: p.x, y: p.y, z: p.z } })
+        await mModelController.updateTimeline(line);
+        await updateModel();
+    })
 
     let mAssetPicker = new AssetPicker(parentContainer);
     mAssetPicker.setNewAssetCallback(async (fileHandle, type) => {

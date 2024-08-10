@@ -4,7 +4,7 @@ function Story() {
     this.id = IdUtil.getUniqueId(Story);
     this.name = "A Story in Moments"
 
-    this.path = [];
+    this.timeline = [{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: -2 }];
     this.model3Ds = [];
     this.annotations = [];
     this.assets = []
@@ -17,6 +17,7 @@ function Model3D() {
     // takes it's name from it's asset
     this.assetId = null;
     this.assetComponentPoses = [];
+    this.isWorld = false;
 }
 
 function AssetComponentPose() {

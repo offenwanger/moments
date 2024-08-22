@@ -27,7 +27,7 @@ export function mockFile(fileName) {
         throw new Error('A requested file or directory could not be found at the time an operation was processed');
     }
     this.text = () => global.fileSystem[fileName];
-    this.write = (text) => global.fileSystem[fileName] = text;
+    this.write = (text) => { global.fileSystem[fileName] = text; }
     this.close = () => { };
     this.arrayBuffer = this.text;
 }

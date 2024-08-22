@@ -141,22 +141,7 @@ export function MockElement(type) {
     }
     this.getBoundingClientRect = function () {
         let x = 0, y = 0;
-        let canvasContainer = d3.select("#canvas-view-container").select('.canvas-container');
-        let fdlContainer = d3.select("#fdl-view-container").select('.canvas-container');
-        let tabsContainer = d3.select("#tabs-container").select('.canvas-container');
-        if (canvasContainer.select('.interaction-canvas') == this || canvasContainer.select('.interface-canvas') == this) {
-            // x and y are 0, that's fine
-        } else if (fdlContainer.select('.interaction-canvas') == this || fdlContainer.select('.interface-canvas') == this) {
-            x = fdlContainer.select('.interface-canvas').attr('width')
-            y = tabsContainer.select('.interaction-canvas').attr('height')
-        } else if (tabsContainer.select('.interaction-canvas') == this || tabsContainer.select('.view-canvas') == this) {
-            x = tabsContainer.select('.interaction-canvas').attr('width')
-            // y is 0
-        } else {
-            console.error("Unexpected!", this)
-        }
-
-        return { x, y, width: mAttrs['width'], height: mAttrs['height'] };
+        return { x, y, width: mAttrs['width'] ? mAttrs['width'] : window.innerWidth, height: mAttrs['height'] ? mAttrs['height'] : window.innerHeight };
     }
     this.getBBox = function () { return { x: mAttrs['x'], y: mAttrs['y'], height: 50, width: 100 } }
     this.getCallbacks = () => mCallBacks;

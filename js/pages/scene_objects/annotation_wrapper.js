@@ -4,7 +4,7 @@ export function AnnotationWrapper(parent) {
     let mParent = parent;
     let mAnnotation = new Data.Annotation();
 
-    console.error("Add Self to Scene")
+    console.log("TODO: Add self to scene")
 
     async function update(annotation, model, assetUtil) {
         mAnnotation = annotation;
@@ -15,7 +15,7 @@ export function AnnotationWrapper(parent) {
     }
 
     function remove() {
-        console.error("Remove Self from Scene")
+        console.log("TODO: remove self to scene")
     }
 
     function getTargets(ray) {

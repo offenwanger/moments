@@ -29,7 +29,7 @@ export function Model3DWrapper(parent) {
     async function update(model3D, model, assetUtil) {
         mModel = model;
 
-        let mPoses = mModel.assetPoses.filter(p => model3D.poseIds.includes(p.id));
+        mPoses = mModel.assetPoses.filter(p => model3D.poseIds.includes(p.id));
 
         let oldModel = mModel3D;
         mModel3D = model3D;
@@ -91,13 +91,14 @@ export function Model3DWrapper(parent) {
         if (!mModel3D.isWorld && mMode != EditMode.MODEL) return [];
 
         if (!mGLTF) return []
+
         const intersects = ray.intersectObjects(mTargets);
         let targets = intersects.map(i => {
             if (!i.object) { console.error("Invalid Intersect!"); return null; }
             let poseId = i.object.userData.poseId;
 
             let target = mInteractionTargets.find(t => t.getId() == poseId);
-            if (!target) { console.error("Invalid intersect mesh, no target!", i.object); return null; }
+            if (!target) { console.error("Invalid intersect mesh, no target!", poseId); return null; }
             target.getIntersection = () => { return i }
 
             return target;
@@ -129,6 +130,7 @@ export function Model3DWrapper(parent) {
 
             interactionTarget.setTargetWorldPosition = (worldPos) => {
                 if (mGLTF) {
+                    console.log("Something is wrong here...")
                     let obj = mGLTF.scene.getObjectByName(pose.name);
                     let localPosition = obj.parent.worldToLocal(worldPos);
                     obj.position.copy(localPosition)

@@ -62,30 +62,31 @@ export function Model3DPanel(container) {
     function show(model, model3DId) {
         mModel = model;
         mModel3DId = model3DId;
-        mModel3D = mModel.getModel3D(mModel3DId);
+        mModel3D = mModel.find(mModel3DId);
 
         mBackButton.setLabel("<- Story");
 
         mNameInput.setText(mModel3D.name);
 
-        let asset = model.getAsset(mModel3D.assetId);
+        let asset = model.find(mModel3D.assetId);
         mAssetButton.setLabel(1, asset ? asset.name : "<i>Not Set<i/>")
 
-        Util.setComponentListLength(mAssetComponentList, mModel3D.assetComponentPoses.length, () => {
+        Util.setComponentListLength(mAssetComponentList, mModel3D.poseIds.length, () => {
             let component = new ComponentInput(mAssetComponentContainer)
             component.onUpdateAttribute(async (id, attribute, value) => {
                 await mUpdateAttributeCallback(id, attribute, value);
             });
             return component;
         })
-        for (let i = 0; i < mModel3D.assetComponentPoses.length; i++) {
-            mAssetComponentList[i].setId("component-" + mModel3D.assetComponentPoses[i].id)
-                .setPosition(mModel3D.assetComponentPoses[i].type == "Mesh" ?
-                    mModel3D.assetComponentPoses[i] : false)
-                .setOrientation(mModel3D.assetComponentPoses[i].orientation)
-                .setSize(mModel3D.assetComponentPoses[i].size)
-                .setName(mModel3D.assetComponentPoses[i].name)
-                .setComponentId(mModel3D.assetComponentPoses[i].id);
+        let poses = mModel.assetPoses.filter(p => mModel3D.poseIds.includes(p.id))
+        for (let i = 0; i < poses.length; i++) {
+            let pose = poses[i];
+            mAssetComponentList[i].setId("component-" + pose.id)
+                .setPosition(pose.type == "Mesh" ? pose : false)
+                .setOrientation(pose.orientation)
+                .setSize(pose.size)
+                .setName(pose.name)
+                .setComponentId(pose.id);
         }
 
         mPanelContainer.style('display', '');

@@ -173,7 +173,7 @@ export function EditorPage(parentContainer) {
             await mModelController.createAnnotation(parentId);
         } else if (itemClass == Data.Model3D) {
             let assetId = await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
-            if (assetId) { await mModelController.createModel3D(parentId, assetId); }
+            if (assetId) { await mModelController.createModel3D(assetId); }
         } else {
             console.error("Parent + item class not supported", parentId, itemClass);
             return;
@@ -251,20 +251,19 @@ export function EditorPage(parentContainer) {
         mStoryDisplayController.resize(viewCanvasWidth, viewCanvasHeight);
     }
 
-    function pointerMove(screenCoords) {
+    async function pointerMove(screenCoords) {
         if (mResizingWindows) {
             mSidebarDivider = Util.limit(screenCoords.x / mWidth, 0.01, 0.99);
             mTimelineDivider = Util.limit(screenCoords.y / mHeight, 0.01, 0.99);
             resize(mWidth, mHeight);
         }
 
-        mStoryDisplayController.pointerMove(screenCoords);
+        await mStoryDisplayController.pointerMove(screenCoords);
     }
 
-    function pointerUp(screenCoords) {
+    async function pointerUp(screenCoords) {
         mResizingWindows = false;
-
-        mStoryDisplayController.pointerUp(screenCoords);
+        await mStoryDisplayController.pointerUp(screenCoords);
     }
 
     this.show = show;

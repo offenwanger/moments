@@ -381,7 +381,7 @@ export function XRSessionController() {
                     orientation: root.getTargetLocalOrientation(),
                 })
             }
-            mMoveChainCallback(affectedTargets);
+            await mMoveChainCallback(affectedTargets);
 
             mIKSolver = null
         }

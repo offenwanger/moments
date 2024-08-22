@@ -8,10 +8,12 @@
         "three-mesh-ui": "6.5.4"
     },
     "scripts": {
-        "test": "node --loader=testdouble ./node_modules/jasmine/bin/jasmine.js"
+        "test": "node --loader=testdouble ./node_modules/jasmine/bin/jasmine.js",
+        "coverage": "c8 --reporter=lcov --reporter=text-summary node --loader=testdouble ./node_modules/jasmine/bin/jasmine.js"
     },
     "devDependencies": {
         "jasmine": "^5.2.0",
-        "node-canvas-webgl": "^0.3.0"
+        "node-canvas-webgl": "^0.3.0",
+        "c8": "^10.1.2"
     }
 }

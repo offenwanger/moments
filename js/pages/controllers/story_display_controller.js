@@ -177,12 +177,12 @@ export function StoryDisplayController(parentContainer) {
         mCanvasViewController.resize(width, height);
     }
 
-    function pointerMove(screenCoords) {
-        mCanvasViewController.pointerMove(screenCoords);
+    async function pointerMove(screenCoords) {
+        await mCanvasViewController.pointerMove(screenCoords);
     }
 
-    function pointerUp(screenCoords) {
-        mCanvasViewController.pointerUp(screenCoords);
+    async function pointerUp(screenCoords) {
+        await mCanvasViewController.pointerUp(screenCoords);
     }
 
     this.updateModel = updateModel;

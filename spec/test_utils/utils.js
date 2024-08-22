@@ -15,8 +15,8 @@ async function createAndOpenModel3D() {
     let promise = TestUtils.clickButtonInput('#story-model3D-add-button');
     await TestUtils.clickButtonInput('#asset-add-button');
     await promise;
-    expect(TestUtils.model().moments[0].model3Ds.length).toBe(1);
-    await TestUtils.clickButtonInput('#model3D-button-' + TestUtils.model().moments[0].model3Ds[0].id);
+    expect(TestUtils.model().model3Ds.length).toBe(1);
+    await TestUtils.clickButtonInput('#model3D-button-' + TestUtils.model().model3Ds[0].id);
 }
 
 function getInputValue(id) {
@@ -79,7 +79,7 @@ async function clickButtonInput2(id) {
 }
 
 function model() {
-    let storyFile = Object.keys(global.fileSystem).find(k => k.startsWith('test/Story_'))
+    let storyFile = Object.keys(global.fileSystem).find(k => k.startsWith('test/StoryModel_'))
     return Data.StoryModel.fromObject(JSON.parse(global.fileSystem[storyFile]))
 }
 

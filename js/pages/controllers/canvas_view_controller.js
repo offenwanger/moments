@@ -184,7 +184,7 @@ export function CanvasViewController(parentContainer) {
         }
     }
 
-    function pointerMove(screenCoords) {
+    async function pointerMove(screenCoords) {
         mLastPointerPosition = screenCoords;
 
         mIKSolver?.update();
@@ -212,6 +212,8 @@ export function CanvasViewController(parentContainer) {
             let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
             position.add(mInteraction.targetToPos)
             mInteraction.target.setTargetWorldPosition(position);
+
+            console.log(mInteraction.target.getTargetLocalPosition())
         } else if (mInteraction.type == DRAGGING_KINEMATIC) {
             let pointer = screenToNomralizedCoords(screenCoords);
             mRaycaster.setFromCamera(pointer, mPageCamera);
@@ -232,15 +234,10 @@ export function CanvasViewController(parentContainer) {
         mInteraction = false;
         if (interaction) {
             if (interaction.type == DRAGGING) {
-                let pointer = screenToNomralizedCoords(screenCoords);
-                mRaycaster.setFromCamera(pointer, mPageCamera);
-                let position = mRaycaster.ray.at(interaction.distance, new THREE.Vector3());
-                position.add(interaction.targetToPos)
                 let localPos = interaction.target.getTargetLocalPosition();
-
                 await mMoveCallback(interaction.target.getId(), localPos);
             } else if (interaction.type == DRAGGING_KINEMATIC) {
-                mMoveChainCallback(interaction.affectedTargets.map(t => {
+                await mMoveChainCallback(interaction.affectedTargets.map(t => {
                     return {
                         id: t.getId(),
                         position: t.getTargetLocalPosition(),
@@ -277,7 +274,7 @@ export function CanvasViewController(parentContainer) {
                     });
                     line = Util.simplify3DLine(line, 0.05);
 
-                    mUpdateTimelineCallback(line);
+                    await mUpdateTimelineCallback(line);
                 }
             }
         }

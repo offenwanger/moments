@@ -1,5 +1,5 @@
-import { DataModel } from '../../js/data_model';
-import { mockFileSystemDirectoryHandle, mockFileSystemFileHandle } from './mock_filesystem';
+import { Data } from '../../js/data.js';
+import { mockFileSystemDirectoryHandle, mockFileSystemFileHandle } from './mock_filesystem.js';
 
 async function createAndEditStory() {
     window.directories.push(new mockFileSystemDirectoryHandle('test'));
@@ -8,22 +8,15 @@ async function createAndEditStory() {
     await d3.select('.edit-story-button').getCallbacks().click();
 }
 
-async function createAndOpenMoment() {
-    await createAndEditStory();
-    await TestUtils.clickButtonInput('#story-moments-add-button');
-    expect(TestUtils.model().getStory().moments.length).toBe(1);
-    await TestUtils.clickButtonInput('#moment-button-' + TestUtils.model().getStory().moments[0].id);
-}
-
-async function createAndOpenMomentModel3D() {
-    await createAndOpenMoment();
+async function createAndOpenModel3D() {
     global.fileSystem['test.glb'] = "glbstuff";
     window.files.push(new mockFileSystemFileHandle('test.glb'));
-    let promise = TestUtils.clickButtonInput('#moment-model3D-add-button');
+    await createAndEditStory();
+    let promise = TestUtils.clickButtonInput('#story-model3D-add-button');
     await TestUtils.clickButtonInput('#asset-add-button');
     await promise;
-    expect(TestUtils.model().getStory().moments[0].model3Ds.length).toBe(1);
-    await TestUtils.clickButtonInput('#model3D-button-' + TestUtils.model().getStory().moments[0].model3Ds[0].id);
+    expect(TestUtils.model().moments[0].model3Ds.length).toBe(1);
+    await TestUtils.clickButtonInput('#model3D-button-' + TestUtils.model().moments[0].model3Ds[0].id);
 }
 
 function getInputValue(id) {
@@ -87,17 +80,74 @@ async function clickButtonInput2(id) {
 
 function model() {
     let storyFile = Object.keys(global.fileSystem).find(k => k.startsWith('test/Story_'))
-    return DataModel.fromObject(JSON.parse(global.fileSystem[storyFile]))
+    return Data.StoryModel.fromObject(JSON.parse(global.fileSystem[storyFile]))
+}
+
+function createStoryModel() {
+    let model = new Data.StoryModel();
+    model.name = "TestStory"
+    model.timeline = [{ x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 1 }, { x: 1, y: -1, z: -2 }];
+
+    let modelAsset1 = new Data.Asset()
+    let pose1 = new Data.AssetComponentPose()
+    let pose2 = new Data.AssetComponentPose()
+    let pose3 = new Data.AssetComponentPose()
+    modelAsset1.poseIds = [pose1.id, pose2.id, pose3.id];
+    let modelAsset2 = new Data.Asset()
+    let pose4 = new Data.AssetComponentPose()
+    let pose5 = new Data.AssetComponentPose()
+    modelAsset2.poseIds = [pose4.id, pose5.id];
+
+    let imageAsset = new Data.Asset()
+    let boxAsset = new Data.Asset()
+
+    let model3D1 = new Data.Model3D()
+    model3D1.assetId = modelAsset1.id;
+    let model3D2 = new Data.Model3D()
+    model3D2.assetId = modelAsset1.id;
+    let model3D3 = new Data.Model3D()
+    model3D3.assetId = modelAsset1.id;
+
+    let textAnnotationItem = new Data.AnnotationText();
+    textAnnotationItem.text = "Some text"
+    let imageAnnotationItem = new Data.AnnotationImage();
+    imageAnnotationItem.assetId = imageAsset.id;
+
+    let annotation = new Data.Annotation();
+    annotation.itemIds = [textAnnotationItem.id, imageAnnotationItem.id];
+
+    model.backgroundId = boxAsset.id;
+
+    model.assets.push(modelAsset1)
+    model.assets.push(modelAsset2)
+    model.assetPoses.push(pose1)
+    model.assetPoses.push(pose2)
+    model.assetPoses.push(pose3)
+    model.assetPoses.push(pose4)
+    model.assetPoses.push(pose5)
+    model.assets.push(imageAsset)
+    model.assets.push(boxAsset)
+
+    model.model3Ds.push(model3D1)
+    model.model3Ds.push(model3D2)
+    model.model3Ds.push(model3D3)
+
+    model.annotationItems.push(textAnnotationItem)
+    model.annotationItems.push(imageAnnotationItem)
+    model.annotations.push(annotation)
+
+    return model;
+
 }
 
 export const TestUtils = {
     createAndEditStory,
-    createAndOpenMoment,
-    createAndOpenMomentModel3D,
+    createAndOpenModel3D,
     getInputValue,
     enterInputValue,
     clickButtonInput,
     clickButtonInput1,
     clickButtonInput2,
     model,
+    createStoryModel,
 }

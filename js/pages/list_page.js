@@ -1,6 +1,4 @@
-import { DataModel } from "../data_model.js";
-
-
+import { Data } from "../data.js";
 
 export function ListPage(parentContainer) {
     let mViewCallback = async () => { };
@@ -18,8 +16,8 @@ export function ListPage(parentContainer) {
         .style('margin-left', "40px")
         .html("New Story")
         .on('click', async () => {
-            let newStory = new DataModel();
-            await mWorkspace.newStory(newStory.getStory().id)
+            let newStory = new Data.StoryModel();
+            await mWorkspace.newStory(newStory.id)
             await mWorkspace.updateStory(newStory);
             await show(mWorkspace);
         });

@@ -1,12 +1,14 @@
 import * as THREE from 'three';
-import { Data } from "../../data_structs.js";
+import { EditMode } from '../../constants.js';
+import { Data } from "../../data.js";
 import { GLTKUtil } from '../../utils/gltk_util.js';
 import { InteractionTargetWrapper } from './interaction_target_wrapper.js';
-import { EditMode } from '../../constants.js';
 
 export function Model3DWrapper(parent) {
+    let mModel = new Data.StoryModel();
     let mParent = parent;
     let mModel3D = new Data.Model3D();
+    let mPoses = [];
     let mGLTF = null;
     let mMode = EditMode.MODEL;
     let mTargets = [];
@@ -25,6 +27,10 @@ export function Model3DWrapper(parent) {
     });
 
     async function update(model3D, model, assetUtil) {
+        mModel = model;
+
+        let mPoses = mModel.assetPoses.filter(p => model3D.poseIds.includes(p.id));
+
         let oldModel = mModel3D;
         mModel3D = model3D;
 
@@ -42,14 +48,14 @@ export function Model3DWrapper(parent) {
                 let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(mGLTF.scene);
                 targets.forEach(target => {
                     if (target.isMesh) {
-                        let pose = mModel3D.assetComponentPoses.find(p => p.name == target.name);
+                        let pose = mPoses.find(p => p.name == target.name);
                         if (!pose) { console.error("Mismatched Model3D and asset!"); return; }
                         target.userData.poseId = pose.id;
                         target.userData.originalMaterial = target.material;
 
                         mTargets.push(target)
                     } else if (target.type == "Bone") {
-                        let pose = mModel3D.assetComponentPoses.find(p => p.name == target.name);
+                        let pose = mPoses.find(p => p.name == target.name);
                         if (!pose) { console.error("Mismatched Model3D and asset!"); return; }
                         let targetGroup = attachBoneTarget(target, pose.id);
                         mTargets.push(targetGroup);
@@ -63,7 +69,7 @@ export function Model3DWrapper(parent) {
             }
         }
 
-        mModel3D.assetComponentPoses.forEach(pose => {
+        mPoses.forEach(pose => {
             let object = mGLTF.scene.getObjectByName(pose.name);
             if (!object) { console.error("Invalid pose!", pose); return; }
             object.setRotationFromQuaternion(new THREE.Quaternion().fromArray(pose.orientation));
@@ -100,7 +106,7 @@ export function Model3DWrapper(parent) {
     }
 
     function makeInteractionTargets() {
-        return mModel3D.assetComponentPoses.map(pose => {
+        return mPoses.map(pose => {
             let interactionTarget = new InteractionTargetWrapper();
 
             interactionTarget.getTargetLocalPosition = () => {
@@ -141,7 +147,7 @@ export function Model3DWrapper(parent) {
             interactionTarget.getParent = () => {
                 let obj = mGLTF.scene.getObjectByName(pose.name);
                 if (!obj.parent || obj.parent == mGLTF.scene) return null;
-                let parentPose = mModel3D.assetComponentPoses.find(p => p.name == obj.parent.name);
+                let parentPose = mPoses.find(p => p.name == obj.parent.name);
                 if (!parentPose) { console.error("Invalid target!", obj.parent); return null; };
                 let parentTarget = mInteractionTargets.find(t => t.getId() == parentPose.id);
                 if (!parentTarget) { console.error("Invalid target!", root); return null; };
@@ -155,7 +161,7 @@ export function Model3DWrapper(parent) {
                     root = root.parent;
                 }
 
-                let rootPose = mModel3D.assetComponentPoses.find(p => p.name == root.name);
+                let rootPose = mPoses.find(p => p.name == root.name);
                 if (!rootPose) { console.error("Invalid target!", root); return null; };
                 let target = mInteractionTargets.find(t => t.getId() == rootPose.id);
                 return target;

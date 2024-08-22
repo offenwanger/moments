@@ -1,4 +1,4 @@
-import { Data } from "../../data_structs.js";
+import { Data } from "../../data.js";
 
 export function AnnotationWrapper(parent) {
     let mParent = parent;

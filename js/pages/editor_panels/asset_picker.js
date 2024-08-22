@@ -28,7 +28,7 @@ export function AssetPicker(container) {
     })
 
     async function showOpenAssetPicker(model, type = AssetTypes.MODEL) {
-        let assets = model.getAssets();
+        let assets = model.assets;
         Util.setComponentListLength(mAssetList, assets.length, () => new ButtonInput(mAssetsContainer))
         for (let i = 0; i < assets.length; i++) {
             mAssetList[i].setId("asset-button-" + assets[i].id).setLabel(assets[i].name);

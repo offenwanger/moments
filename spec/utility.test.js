@@ -1,6 +1,6 @@
 import { setup, cleanup } from './test_utils/test_environment.js';
 
-import THREE from 'three'
+import * as THREE from 'three'
 import { Util } from '../js/utils/utility.js';
 
 describe('Test Utility', function () {

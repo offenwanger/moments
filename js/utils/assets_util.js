@@ -2,17 +2,16 @@ import * as THREE from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AssetTypes, BOX_ASSET_PREFIXES } from '../constants.js';
-
-import { DataModel } from "../data_model.js";
+import { Data } from "../data.js";
 
 export function AssetUtil(workspace) {
     let mWorkspace = workspace;
-    let mModel = new DataModel();
+    let mModel = new Data.StoryModel();
 
     let mLoadedAssets = {};
 
     function updateModel(model) {
-        let newAssetIds = model.getAssets().map(a => a.id);
+        let newAssetIds = model.assets.map(a => a.id);
         Object.keys(mLoadedAssets).forEach(id => {
             if (!newAssetIds.includes(id)) { delete mLoadedAssets[id]; }
         })
@@ -63,8 +62,8 @@ export function AssetUtil(workspace) {
     }
 
     async function loadAssetModel(assetId) {
-        let asset = mModel.getAsset(assetId);
-        if (!asset || asset.type != AssetTypes.MODEL) { console.error("Bad asset", assetId, asset); throw new Error("Invalid image asset: " + assetId); }
+        let asset = mModel.find(assetId);
+        if (!asset || asset.type != AssetTypes.MODEL) { console.error("Bad asset", assetId, asset); throw new Error("Invalid model asset: " + assetId); }
         return loadGLTFModel(asset.filename);
     }
 

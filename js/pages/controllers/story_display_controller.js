@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { EditMode } from "../../constants.js";
-import { DataModel } from "../../data_model.js";
+import { Data } from "../../data.js";
 import { AssetSceneController } from './asset_scene_controller.js';
 import { CanvasViewController } from './canvas_view_controller.js';
 import { StorySceneController } from './story_scene_controller.js';
@@ -32,7 +32,7 @@ export function StoryDisplayController(parentContainer) {
     mCanvasViewController.setMode(mMode)
     mCanvasViewController.startRendering();
 
-    let mModel = new DataModel();
+    let mModel = new Data.StoryModel();
 
     let mActiveController = mCanvasViewController;
 
@@ -152,8 +152,8 @@ export function StoryDisplayController(parentContainer) {
     }
 
     async function updateModel(model, assetUtil) {
-        if (mModel.getStory().id != model.getStory().id) {
-            let timeline = mModel.getStory().timeline;
+        if (mModel.id != model.id) {
+            let timeline = mModel.timeline;
             if (timeline.length < 2) { console.error('Invalid timeline'); return; }
 
             let pos = new THREE.Vector3(timeline[0].x, timeline[0].y, timeline[0].z);

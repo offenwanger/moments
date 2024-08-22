@@ -1,11 +1,10 @@
-import { Data } from '../../data_structs.js';
+import { Data } from '../../data.js';
 import { IdUtil } from '../../utils/id_util.js';
-
-import { StoryPanel } from '../editor_panels/story_panel.js';
-import { Model3DPanel } from '../editor_panels/model3D_panel.js';
-import { AnnotationPanel } from '../editor_panels/annotation_panel.js';
 import { AnnotationItemPanel } from '../editor_panels/annotation_item_panel.js';
+import { AnnotationPanel } from '../editor_panels/annotation_panel.js';
 import { AssetPanel } from '../editor_panels/asset_panel.js';
+import { Model3DPanel } from '../editor_panels/model3D_panel.js';
+import { StoryPanel } from '../editor_panels/story_panel.js';
 
 export function SidebarController(container) {
     let mShownItem = null;
@@ -21,27 +20,27 @@ export function SidebarController(container) {
 
     async function updateModel(model) {
         mModel = model;
-        let item = mShownItem ? mModel.getById(mShownItem) : null;
-        if (!item) mShownItem = model.getStory().id;
+        let item = mShownItem ? mModel.find(mShownItem) : null;
+        if (!item) mShownItem = model.id;
         await navigate(mShownItem);
     }
 
     async function navigate(id) {
-        if (!mModel.getById(id)) { console.error('Invalid id', id); return; }
+        let item = mModel.find(id)
+        if (!item) { console.error('Invalid id', id); return; }
 
         hideAll();
         mShownItem = id;
-        let itemClass = IdUtil.getClass(id);
 
-        if (itemClass == Data.Story) {
+        if (item instanceof Data.StoryModel) {
             mStoryPanel.show(mModel, id);
-        } else if (itemClass == Data.Model3D) {
+        } else if (item instanceof Data.Model3D) {
             mModel3DPanel.show(mModel, id);
-        } else if (itemClass == Data.Annotation) {
+        } else if (item instanceof Data.Annotation) {
             mAnnotationPanel.show(mModel, id);
-        } else if (itemClass == Data.AnnotationItem) {
+        } else if (item instanceof Data.AnnotationItem) {
             mAnnotationItemPanel.show(mModel, id);
-        }  else if (itemClass == Data.Asset) {
+        } else if (item instanceof Data.Asset) {
             mAssetPanel.show(mModel, id);
         } else {
             console.error('Invalid navigation!', itemClass, id);

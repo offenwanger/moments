@@ -1,5 +1,5 @@
-import { DataModel } from "../../data_model.js";
-import { SvgUtil } from "../../utils/svg_util.js"
+import { Data } from "../../data.js";
+import { SvgUtil } from "../../utils/svg_util.js";
 
 
 export function TimelineController(container) {
@@ -7,7 +7,7 @@ export function TimelineController(container) {
     const BUTTONS_AREA_WIDTH = 100;
     const BUTTON_SIZE = 40;
 
-    let mModel = new DataModel();
+    let mModel = new Data.StoryModel();
 
     let mWidth = 10;
     let mHeight = 10;

@@ -12,7 +12,6 @@ export const CAST_ONLY_LAYER = 4;
 export const AssetTypes = {
     MODEL: 'model',
     IMAGE: 'image',
-    TEXT: 'text',
     BOX: 'box',
 }
 

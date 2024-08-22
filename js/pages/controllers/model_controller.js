@@ -1,6 +1,5 @@
 import { AssetTypes } from "../../constants.js";
-import { DataModel } from "../../data_model.js";
-import { Data } from "../../data_structs.js";
+import { Data } from "../../data.js";
 import { GLTKUtil } from "../../utils/gltk_util.js";
 import { IdUtil } from "../../utils/id_util.js";
 
@@ -17,32 +16,24 @@ export function ModelController(storyId, workspace) {
     }
 
     async function createModel3D(parentId, assetId = null) {
-        let parent;
-        if (IdUtil.getClass(parentId) == Data.Story) {
-            parent = mModel.getStory();
-        } else { console.error("Parent id is not supported", parentId) }
         let newModel3D = new Data.Model3D();
         if (assetId) {
-            let asset = mModel.getAsset(assetId);
+            let asset = mModel.find(assetId);
             if (!asset) { console.error('invalid asset id', assetId); return; }
             newModel3D.assetId = assetId;
             newModel3D.name = asset.name;
-            newModel3D.assetComponentPoses = asset.baseAssetComponentPoses.map((p) => {
-                return DataModel.cloneItem(p, true);
-            });
+            newModel3D.assetComponentPoses = mModel.assetPoses
+                .filter(p => asset.poseIds.includes(p.id))
+                .map(p => p.clone(true));
         }
-        parent.model3Ds.push(newModel3D);
+        mModel.model3Ds.push(newModel3D);
         await mWorkspace.updateStory(mModel);
         return newModel3D.id;
     }
 
-    async function createAnnotation(parentId) {
-        let parent;
-        if (IdUtil.getClass(parentId) == Data.Story) {
-            parent = mModel.getStory();
-        } else { console.error("Parent id is not supported", parentId) }
+    async function createAnnotation() {
         let newAnnotation = new Data.Annotation();
-        parent.annotations.push(newAnnotation);
+        mModel.annotations.push(newAnnotation);
         await mWorkspace.updateStory(mModel);
         return newAnnotation.id;
     }
@@ -68,10 +59,10 @@ export function ModelController(storyId, workspace) {
                 pose.y = child.position.y;
                 pose.z = child.position.z;
                 pose.orientation = child.quaternion.toArray();
-                newAsset.baseAssetComponentPoses.push(pose);
+                newAsset.components.push(pose);
             })
         }
-        mModel.getAssets().push(newAsset);
+        mModel.assets.push(newAsset);
         await mWorkspace.updateStory(mModel);
         return newAsset.id;
     }
@@ -110,7 +101,7 @@ export function ModelController(storyId, workspace) {
     async function deleteItem(id) {
         let type = IdUtil.getClass(id);
         if (type == Data.Asset) {
-            let story = mModel.getStory();
+            let story = mModel;
             story.assets = story.assets.filter(o => o.id != id);
             let usingItems = mModel.getItemsForAsset(id);
             usingItems.forEach(item => deleteItem(item.id))
@@ -121,7 +112,7 @@ export function ModelController(storyId, workspace) {
     }
 
     async function updateTimeline(line) {
-        mModel.getStory().timeline = line;
+        mModel.timeline = line;
         await mWorkspace.updateStory(mModel);
     }
 

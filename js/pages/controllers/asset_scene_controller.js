@@ -1,13 +1,12 @@
 import * as THREE from 'three';
-import { DataModel } from '../../data_model.js';
+import { Data } from '../../data.js';
 import { Model3DWrapper } from '../scene_objects/model3D_wrapper.js';
-import { Data } from '../../data_structs.js';
 
 export function AssetSceneController() {
     let mScene = new THREE.Scene();
     let mContent = new THREE.Group();
     mScene.add(mContent);
-    let mModel = new DataModel();
+    let mModel = new Data.StoryModel();
 
     let mAssetId = null;
     let mModel3D = new Data.Model3D();
@@ -23,8 +22,8 @@ export function AssetSceneController() {
         let oldModel = mModel;
         mModel = model;
 
-        let story = mModel.getStory();
-        let oldStory = oldModel.getStory();
+        let story = mModel;
+        let oldStory = oldModel;
 
         if (story.background != oldStory.background || !mScene.background) {
             if (story.background) {

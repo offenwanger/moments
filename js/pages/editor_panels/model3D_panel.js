@@ -20,7 +20,7 @@ export function Model3DPanel(container) {
     let mBackButton = new ButtonInput(mPanelContainer)
         .setId('model3D-back-button')
         .setOnClick(async () => {
-            mNavigationCallback(mModel.getStory().id);
+            mNavigationCallback(mModel.id);
         })
 
     let mNameInput = new TextInput(mPanelContainer)
@@ -56,7 +56,7 @@ export function Model3DPanel(container) {
         .setLabel('Delete')
         .setOnClick(async () => {
             await mDeleteCallback(mModel3DId);
-            await mNavigationCallback(mModel.getStory().id);
+            await mNavigationCallback(mModel.id);
         })
 
     function show(model, model3DId) {

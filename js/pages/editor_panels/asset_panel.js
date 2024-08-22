@@ -23,7 +23,7 @@ export function AssetPanel(container) {
         .setId('back-button')
         .setLabel('<- Story')
         .setOnClick(async () => {
-            mNavigationCallback(mModel.getStory().id);
+            mNavigationCallback(mModel.id);
         })
 
     let mNameInput = new TextInput(mPanelContainer)
@@ -64,7 +64,7 @@ export function AssetPanel(container) {
         .setLabel('Delete')
         .setOnClick(async () => {
             await mDeleteCallback(mAssetId);
-            await mNavigationCallback(mModel.getStory().id);
+            await mNavigationCallback(mModel.id);
         })
 
     function show(model, assetId) {

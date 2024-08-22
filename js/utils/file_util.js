@@ -1,5 +1,5 @@
 import { AssetTypes, BOX_ASSET_PREFIXES, STORY_JSON_FILE } from '../constants.js';
-import { DataModel } from '../data_model.js';
+import { Data } from '../data.js';
 
 async function getJSONFromFile(dir, filename) {
     let handle = await dir.getFileHandle(filename)
@@ -41,7 +41,7 @@ async function pacakgeToZip(model, assetFolder) {
     const zipFileBlobPromise = new Response(zipFileStream.readable).blob();
     const zipWriter = new zip.ZipWriter(zipFileStream.writable);
 
-    let modelBlobStream = new Blob([JSON.stringify(model.toObject())]).stream();
+    let modelBlobStream = new Blob([JSON.stringify(model)]).stream();
     await zipWriter.add(STORY_JSON_FILE, modelBlobStream);
 
     let assets = model.getAssets();
@@ -60,7 +60,7 @@ async function pacakgeToZip(model, assetFolder) {
     await zipWriter.close();
     // Retrieves the Blob object containing the zip content into `zipFileBlob`.
     const zipFileBlob = await zipFileBlobPromise;
-    let outputFile = model.getStory().name + '.zip';
+    let outputFile = model.name + '.zip';
     await downloadBlob(outputFile, zipFileBlob);
 }
 
@@ -96,7 +96,7 @@ async function getModelFromZip(zipBlob) {
 
     const fileText = await streamPromise;
     let modelJSON = JSON.parse(fileText);
-    let model = DataModel.fromObject(modelJSON);
+    let model = Data.StoryModel.fromObject(modelJSON);
     return model;
 }
 

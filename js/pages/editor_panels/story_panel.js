@@ -1,4 +1,4 @@
-import { Data } from "../../data_structs.js";
+import { Data } from "../../data.js";
 import { Util } from "../../utils/utility.js";
 import { ButtonInput } from "../components/button_input.js";
 import { TextInput } from "../components/text_input.js";
@@ -56,8 +56,8 @@ export function StoryPanel(container) {
     let mAnnotationsList = [];
 
 
-    function show(model, storyId) {
-        mStory = model.getStory();
+    function show(model) {
+        mStory = model;
         mNameInput.setText(mStory.name)
         mBackgroundInput.setLabel(mStory.background ? mStory.background.name : "Default");
         Util.setComponentListLength(mModel3DsList, mStory.model3Ds.length, () => new ButtonInput(mModel3DsContainer))

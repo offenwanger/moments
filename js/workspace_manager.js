@@ -1,5 +1,5 @@
 import { ASSET_FOLDER, STORY_JSON_FILE, WORKSPACE_DATA_FILE } from "./constants.js";
-import { DataModel } from "./data_model.js";
+import { Data } from "./data.js";
 import { FileUtil } from "./utils/file_util.js";
 
 export function WorkspaceManager(folderHandle) {
@@ -36,8 +36,8 @@ export function WorkspaceManager(folderHandle) {
         for (const storyId of mWorkspaceData.storyIds) {
             try {
                 let storyObj = await FileUtil.getJSONFromFile(await mFolderHandle.getDirectoryHandle(storyId), STORY_JSON_FILE)
-                if (storyObj.story && storyObj.story.id && storyObj.story.name) {
-                    stories.push({ id: storyObj.story.id, name: storyObj.story.name });
+                if (storyObj && storyObj.id && storyObj.name) {
+                    stories.push({ id: storyObj.id, name: storyObj.name });
                 } else { console.error("Couldn't get name for story", storyId); }
             } catch (error) {
                 console.error(error);
@@ -57,13 +57,13 @@ export function WorkspaceManager(folderHandle) {
 
     async function updateStory(model) {
         await initialized;
-        await FileUtil.writeFile(await mFolderHandle.getDirectoryHandle(model.getStory().id), STORY_JSON_FILE, JSON.stringify(model.toObject()))
+        await FileUtil.writeFile(await mFolderHandle.getDirectoryHandle(model.id), STORY_JSON_FILE, JSON.stringify(model))
     }
 
     async function getStory(storyId) {
         let storyObj = await FileUtil.getJSONFromFile(await mFolderHandle.getDirectoryHandle(storyId), STORY_JSON_FILE);
         if (!storyObj) { console.error("Failed to load story object for id " + storyId); return null; }
-        let model = DataModel.fromObject(storyObj);
+        let model = Data.StoryModel.fromObject(storyObj);
         return model;
     }
 
@@ -96,7 +96,7 @@ export function WorkspaceManager(folderHandle) {
     async function packageStory(storyId) {
         try {
             let storyObj = await FileUtil.getJSONFromFile(await mFolderHandle.getDirectoryHandle(storyId), STORY_JSON_FILE)
-            let model = DataModel.fromObject(storyObj);
+            let model = Data.StoryModel.fromObject(storyObj);
             let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER, { create: true })
             FileUtil.pacakgeToZip(model, assetFolder);
         } catch (error) {
@@ -110,7 +110,7 @@ export function WorkspaceManager(folderHandle) {
             model = model.clone();
             let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER, { create: true })
             await FileUtil.unpackageAssetsFromZip(file, assetFolder);
-            await newStory(model.getStory().id);
+            await newStory(model.id);
             await updateStory(model);
         } catch (error) {
             console.error(error)

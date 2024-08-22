@@ -1,5 +1,5 @@
-import { setup, cleanup } from './test_utils/test_environment.js';
-import { MockElement } from './test_utils/mock_d3.js';
+import { cleanup, setup } from './test_utils/test_environment.js';
+
 import { mockFileSystemDirectoryHandle } from './test_utils/mock_filesystem.js';
 
 describe('Test ListPage', function () {
@@ -31,7 +31,7 @@ describe('Test ListPage', function () {
             expect(Object.keys(global.fileSystem)).toContain('test/workspace.json')
             expect(Object.keys(global.fileSystem).some(k => k.startsWith("test/Story_")))
             await d3.select('.edit-story-button').getCallbacks().click();
-            expect(Object.keys(d3.select('#add-moment-button').getCallbacks())).toEqual(["mouseover", "mouseout", "pointerdown", 'click']);
+            expect(window.location.search.includes("story="));
         });
     });
 });

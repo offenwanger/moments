@@ -1,14 +1,14 @@
 import * as THREE from 'three';
-import { StoryWrapper } from '../scene_objects/story_wrapper.js';
-import { DataModel } from '../../data_model.js';
 import { EditMode } from '../../constants.js';
+import { Data } from '../../data.js';
+import { StoryWrapper } from '../scene_objects/story_wrapper.js';
 
 export function StorySceneController() {
     let mScene = new THREE.Scene();
     let mContent = new THREE.Group();
     mScene.add(mContent);
     let mStoryWrapper = new StoryWrapper(mContent);
-    let mModel = new DataModel();
+    let mModel = new Data.StoryModel();
 
     let mEnvironmentBox;
 
@@ -20,8 +20,8 @@ export function StorySceneController() {
         let oldModel = mModel;
         mModel = model;
 
-        let story = mModel.getStory();
-        let oldStory = oldModel.getStory();
+        let story = mModel;
+        let oldStory = oldModel;
 
         if (story.background != oldStory.background || !mScene.background) {
             if (story.background) {

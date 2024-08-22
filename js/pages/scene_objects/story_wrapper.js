@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { EditMode } from '../../constants.js';
-import { DataModel } from "../../data_model.js";
+import { Data } from "../../data.js";
 import { SceneUtil } from '../../utils/scene_util.js';
 import { AnnotationWrapper } from "./annotation_wrapper.js";
 import { Model3DWrapper } from "./model3D_wrapper.js";
 
 export function StoryWrapper(parent) {
-    let mModel = new DataModel();
+    let mModel = new Data.StoryModel();
     let mMode = EditMode.MODEL;
     let mLinePoints = []
     let mLine = new THREE.Line();
@@ -40,7 +40,7 @@ export function StoryWrapper(parent) {
 
     async function updateModel(model, assetUtil) {
         mModel = model;
-        let story = mModel.getStory();
+        let story = mModel;
         mLinePoints = story.timeline.map(p => new THREE.Vector3(p.x, p.y, p.z));
         mStoryGroup.remove(mLine);
 

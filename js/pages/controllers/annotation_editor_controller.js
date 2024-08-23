@@ -14,9 +14,8 @@ export function AnnotationEditorController(parentContainer) {
 
     async function show(id, json) {
         mAnnotationId = id;
-        let event = new CustomEvent('set-annotation', { json })
         mIFrame.style('display', '')
-        await mIFrame.node().contentDocument.dispatchEvent(event);
+        mIFrame.node().contentWindow.setAnnotationEditorJson(json);
     }
 
     async function hide() {
@@ -30,9 +29,9 @@ export function AnnotationEditorController(parentContainer) {
         mIFrame.attr('height', height);
     }
 
-    window.addEventListener('save-annotation', async (e) => {
-        await mSaveCallback(mAnnotationId, e.json);
-    })
+    window.saveAnnotation = async (json) => {
+        await mSaveCallback(mAnnotationId, json);
+    };
 
     this.show = show;
     this.hide = hide;

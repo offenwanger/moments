@@ -153,6 +153,11 @@ export function EditorPage(parentContainer) {
         await updateModel();
     })
 
+    mStoryDisplayController.onUpdateAnnotationJson(async (annotationId, json) => {
+        await mModelController.setAttribute(annotationId, 'json', json);
+        await updateModel();
+    })
+
     let mAssetPicker = new AssetPicker(parentContainer);
     mAssetPicker.setNewAssetCallback(async (fileHandle, type) => {
         let filename = await mWorkspace.storeAsset(fileHandle);

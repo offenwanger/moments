@@ -109,15 +109,11 @@ export function ModelController(storyId, workspace) {
     }
 
     async function deleteItem(id) {
-        let type = IdUtil.getClass(id);
-        if (type == Data.Asset) {
-            let story = mModel;
-            story.assets = story.assets.filter(o => o.id != id);
-            let usingItems = mModel.getItemsForAsset(id);
-            usingItems.forEach(item => deleteItem(item.id))
-        } else {
-            console.error("Delete not implimented!")
+        if (IdUtil.getClass(id) == Data.Asset) {
+            let usingItems = mModel.model3Ds.filter(m => m.assetId == id);
+            usingItems.forEach(item => mModel.delete(item.id));
         }
+        mModel.delete(id);
         await mWorkspace.updateStory(mModel);
     }
 

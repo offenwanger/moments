@@ -212,8 +212,6 @@ export function CanvasViewController(parentContainer) {
             let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
             position.add(mInteraction.targetToPos)
             mInteraction.target.setTargetWorldPosition(position);
-
-            console.log(mInteraction.target.getTargetLocalPosition())
         } else if (mInteraction.type == DRAGGING_KINEMATIC) {
             let pointer = screenToNomralizedCoords(screenCoords);
             mRaycaster.setFromCamera(pointer, mPageCamera);

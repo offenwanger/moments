@@ -5,6 +5,7 @@ import { AssetSceneController } from './asset_scene_controller.js';
 import { CanvasViewController } from './canvas_view_controller.js';
 import { StorySceneController } from './story_scene_controller.js';
 import { XRSessionController } from './xr_session_controller.js';
+import { AnnotationEditorController } from "./annotation_editor_controller.js";
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -86,6 +87,9 @@ export function StoryDisplayController(parentContainer) {
             await setScene(mStorySceneController);
         });
 
+    // this needs to go over the buttons
+    let mAnnotationEditorController = new AnnotationEditorController(parentContainer);
+
     mCanvasViewController.onMove(async (id, newPosition) => {
         await mMoveCallback(id, newPosition);
     })
@@ -137,6 +141,10 @@ export function StoryDisplayController(parentContainer) {
         await mUpdateTimelineCallback(line);
     })
 
+    mAnnotationEditorController.onSave(async (id, json) => {
+        console.error(id, json);
+    })
+
     async function setScene(scene) {
         if (mActiveScene != scene) {
             mActiveController.setScene(scene);
@@ -175,6 +183,7 @@ export function StoryDisplayController(parentContainer) {
 
     function resize(width, height) {
         mCanvasViewController.resize(width, height);
+        mAnnotationEditorController.resize(width, height);
     }
 
     async function pointerMove(screenCoords) {
@@ -190,6 +199,8 @@ export function StoryDisplayController(parentContainer) {
     this.resize = resize;
     this.pointerMove = pointerMove;
     this.pointerUp = pointerUp;
+    this.editAnnotation = async (id, json) => await mAnnotationEditorController.show(id, json);
+    this.closeEditAnnotation = async () => await mAnnotationEditorController.hide();
     this.onExitAssetView = (func) => mExitAssetViewCallback = func;
     this.onMove = (func) => mMoveCallback = func;
     this.onMoveChain = (func) => mMoveChainCallback = func;

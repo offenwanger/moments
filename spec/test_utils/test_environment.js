@@ -37,6 +37,7 @@ export async function setup() {
         directories: [],
         files: [],
         on: (event, callback) => { window.callbacks[event] = callback; },
+        addEventListener: (event, callback) => { window.callbacks[event] = callback; },
         showDirectoryPicker: () => global.window.directories.pop(),
         showOpenFilePicker: () => [global.window.files.pop()],
         location: { search: "" },

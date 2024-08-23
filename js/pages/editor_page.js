@@ -191,6 +191,15 @@ export function EditorPage(parentContainer) {
     mSidebarController.setSelectAsset(async () => {
         return await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
     })
+    mSidebarController.setEditAnnotationCallback(async (id) => {
+        let annotation = mModelController.getModel().find(id);
+        if (!annotation) { console.error("Invalid id:" + id); return; }
+        await mStoryDisplayController.editAnnotation(id, annotation.json);
+    })
+    mSidebarController.setCloseEditAnnotationCallback(async () => {
+        await mStoryDisplayController.closeEditAnnotation();
+    })
+
     mSidebarController.setViewAssetCallback(async (assetId) => {
         const url = new URL(window.location)
         url.searchParams.set("assetViewId", assetId)

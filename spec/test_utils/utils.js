@@ -108,13 +108,7 @@ function createStoryModel() {
     let model3D3 = new Data.Model3D()
     model3D3.assetId = modelAsset1.id;
 
-    let textAnnotationItem = new Data.AnnotationText();
-    textAnnotationItem.text = "Some text"
-    let imageAnnotationItem = new Data.AnnotationImage();
-    imageAnnotationItem.assetId = imageAsset.id;
-
     let annotation = new Data.Annotation();
-    annotation.itemIds = [textAnnotationItem.id, imageAnnotationItem.id];
 
     model.backgroundId = boxAsset.id;
 
@@ -132,8 +126,6 @@ function createStoryModel() {
     model.model3Ds.push(model3D2)
     model.model3Ds.push(model3D3)
 
-    model.annotationItems.push(textAnnotationItem)
-    model.annotationItems.push(imageAnnotationItem)
     model.annotations.push(annotation)
 
     return model;

@@ -60,13 +60,6 @@ describe('Test Data', function () {
             expect(annotation).toBe(model.annotations[0]);
         })
 
-        it('should find annotationItem', function () {
-            let model = TestUtils.createStoryModel();
-            let annotationItemId = model.annotationItems[0].id;
-            let annotationItem = model.find(annotationItemId);
-            expect(annotationItem).toBe(model.annotationItems[0]);
-        })
-
         it('should not find invalid id', function () {
             let model = TestUtils.createStoryModel();
             let result = model.find("Not an Id");

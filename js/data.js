@@ -141,7 +141,6 @@ class StoryModel extends DataItem {
     assetPoses = []
     model3Ds = []
     annotations = []
-    annotationItems = []
 }
 
 class Asset extends DataItem {
@@ -175,24 +174,9 @@ class Annotation extends DataItem {
     y = 0;
     x = 0;
     z = 0;
-    itemIds = [];
-}
-
-class AnnotationItem extends DataItem {
-    x = 0;
-    y = 0;
-    width = 1;
-    height = 1;
-}
-
-class AnnotationImage extends AnnotationItem {
-    assetId = null;
-}
-
-class AnnotationText extends AnnotationItem {
-    text = ""
-    fontSize = 1;
-    font = 'Default Font'
+    json = {};
+    // TODO: Add orientation and always face user toggle. 
+    // Right now we default to always face the user. 
 }
 
 export const Data = {
@@ -201,7 +185,4 @@ export const Data = {
     AssetComponentPose,
     Model3D,
     Annotation,
-    AnnotationItem,
-    AnnotationImage,
-    AnnotationText,
 }

@@ -17,7 +17,7 @@ export function StoryDisplayController(parentContainer) {
     let mMoveCallback = async () => { }
     let mMoveChainCallback = async () => { }
     let mUpdateTimelineCallback = async () => { }
-    let mUpdateAnnotationJsonCallback = async () => { }
+    let mUpdateAnnotationImageCallback = async () => { }
 
     let isVR = false;
     let mMode = EditMode.MODEL;
@@ -142,8 +142,8 @@ export function StoryDisplayController(parentContainer) {
         await mUpdateTimelineCallback(line);
     })
 
-    mAnnotationEditorController.onSave(async (id, json) => {
-        await mUpdateAnnotationJsonCallback(id, json);
+    mAnnotationEditorController.onSave(async (id, json, dataUrl) => {
+        await mUpdateAnnotationImageCallback(id, json, dataUrl);
     })
 
     async function setScene(scene) {
@@ -206,6 +206,6 @@ export function StoryDisplayController(parentContainer) {
     this.onMove = (func) => mMoveCallback = func;
     this.onMoveChain = (func) => mMoveChainCallback = func;
     this.onUpdateTimeline = (func) => mUpdateTimelineCallback = func;
-    this.onUpdateAnnotationJson = (func) => mUpdateAnnotationJsonCallback = func;
+    this.onUpdateAnnotationImage = (func) => mUpdateAnnotationImageCallback = func;
 }
 

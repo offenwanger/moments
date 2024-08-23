@@ -29,8 +29,8 @@ export function AnnotationEditorController(parentContainer) {
         mIFrame.attr('height', height);
     }
 
-    window.saveAnnotation = async (json) => {
-        await mSaveCallback(mAnnotationId, json);
+    window.saveAnnotation = async (json, dataUrl) => {
+        await mSaveCallback(mAnnotationId, json, dataUrl);
     };
 
     this.show = show;

@@ -153,8 +153,9 @@ export function EditorPage(parentContainer) {
         await updateModel();
     })
 
-    mStoryDisplayController.onUpdateAnnotationJson(async (annotationId, json) => {
+    mStoryDisplayController.onUpdateAnnotationImage(async (annotationId, json, dataUrl) => {
         await mModelController.setAttribute(annotationId, 'json', json);
+        await mModelController.setAttribute(annotationId, 'image', dataUrl);
         await updateModel();
     })
 

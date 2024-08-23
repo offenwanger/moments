@@ -176,6 +176,7 @@ class Annotation extends DataItem {
     z = 0;
     // default empty fabric canvas
     json = { version: '3.6.3', objects: [] };
+    image = "";
     // TODO: Add orientation and always face user toggle. 
     // Right now we default to always face the user. 
 }

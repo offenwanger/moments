@@ -18,6 +18,7 @@ export function StoryDisplayController(parentContainer) {
     let mMoveChainCallback = async () => { }
     let mUpdateTimelineCallback = async () => { }
     let mUpdateAnnotationImageCallback = async () => { }
+    let mStartShareCallback = async () => { }
 
     let isVR = false;
     let mMode = EditMode.MODEL;
@@ -76,6 +77,15 @@ export function StoryDisplayController(parentContainer) {
             await setScene(mStorySceneController);
             mMode = EditMode.WORLD;
             mActiveController.setMode(mMode);
+        });
+
+    let mShareButton = parentContainer.append("button")
+        .style('position', 'absolute')
+        .style('top', '20px')
+        .style('left', '190px')
+        .html('Share')
+        .on('click', async () => {
+            await mStartShareCallback();
         });
 
     let mExitAssetViewButton = parentContainer.append("button")
@@ -207,5 +217,6 @@ export function StoryDisplayController(parentContainer) {
     this.onMoveChain = (func) => mMoveChainCallback = func;
     this.onUpdateTimeline = (func) => mUpdateTimelineCallback = func;
     this.onUpdateAnnotationImage = (func) => mUpdateAnnotationImageCallback = func;
+    this.onStartShare = (func) => mStartShareCallback = func;
 }
 

@@ -8,79 +8,10 @@ import { ModelController } from './controllers/model_controller.js';
 import { SidebarController } from './controllers/sidebar_controller.js';
 import { StoryDisplayController } from './controllers/story_display_controller.js';
 import { TimelineController } from './controllers/timeline_controller.js';
+import { WebsocketController } from './controllers/weksocket_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 
 export function EditorPage(parentContainer) {
-    /*
-        console.log(`
-            cache loaded models?
-            enable the click thing in the canvas viewer to bring it up in the sidebar
-            Next order of buisness will be painting, both for timelines and regular type.
-            Got tube painter as a starting example.
-            
-            TODO: Create a menu belt 
-            Things to add: 
-            - Edit timeline button 
-                - This will need to open a timeline editor. Nah, it can be the normal storyview, just shrunk 
-            - Add model button
-            - add annotation button
-            - Model brush
-            - undo
-            - Copy model eyedropper. 
-    
-            Momenents themselves: 
-                I dont want to fuss with deciding where things go. 
-                Forget the timeline representation, just give everything an xyz. Then add a timeline transformation tool
-                
-    
-            Notes:
-                Bubbles clip and have a background image. 
-                This is an advanced feature. 
-                Sadly I think I will have to remove the current bubbles. 
-                
-                speed blue
-                rainbow bridge
-                lighting pathways
-                direction the light is coming from
-                arrows
-    
-            Can now manipulate the browser from VR, can now make a unified tools interface. 
-    
-            TODO: 
-                - enable scrolling via togglestick
-                - check into screen resize bug
-                - 3 views, Edit world Models, edit timeline models, edit timeline. 
-                - Have 3 scales - timeline = biggest, world models = middle, timeline models = reg size
-                - Navigation....
-              
-            TODOs 2024-08-01
-            - Edit the wrist browser to be more performant
-    
-            Brush notes: 
-                - using textures will get very complex because of UV unwrap. Some models are overlapping on their UV maps, so that would be a pain to deal with. 
-                - Better though is to draw ribbons over the surface of the model, and apply textures to those. 
-    
-            Navigation thoughts: 
-                - Simple move tool: Go forward one meter in the direction you are looking, if you intersect with something, stop .5 meters in front of it. 
-              
-            TODO: 
-            - Grab move and grab zoom as a precursor to line drawing... 
-            - Actually better do timeline edit mode first, better to do the zoom in the broweser, it will mean shrinking the scene which will bring out everywhere that I haven't converted my vector properly. 
-        
-            TODO 2024-08-04: 
-            - Really need grab to move. 
-            - Draw timeline
-                - VR = direct
-                - canvas -> draw a line on the canvas, use the existing timeline to set the distance. 
-            - On redraw, map old timeline to new timeline
-                - cluster the timeline models by bb overlap
-                - get average point of models, get closest point to timeline, get dist vector, map to new timeline. 
-            - Use the timeline to set the lighting, bright light in the forward direction on the timeline at the point cloest to the user, red light going backwards, dim light farther away. 
-    
-            - TODO: Frustrum culling bug: Trigger Recalc bounding boxes on skinned meshes after moving them via bones. This should prevent the frustrum culling issue. 
-            - TODO: Figure out the loss of pose bug, something to do with importing an asset multiple times. 
-            `)
-    */
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;
     let mWorkspace;
@@ -92,6 +23,8 @@ export function EditorPage(parentContainer) {
     let mHeight = 100;
 
     let mResizingWindows = false;
+
+    let mWebsocketController = new WebsocketController();
 
     let mMainContainer = parentContainer.append('div')
         .style('width', '100%')
@@ -157,6 +90,10 @@ export function EditorPage(parentContainer) {
         await mModelController.setAttribute(annotationId, 'json', json);
         await mModelController.setAttribute(annotationId, 'image', dataUrl);
         await updateModel();
+    })
+
+    mStoryDisplayController.onStartShare(async () => {
+        mWebsocketController.message('Connect!');
     })
 
     let mAssetPicker = new AssetPicker(parentContainer);

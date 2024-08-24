@@ -1,7 +1,9 @@
 import express from 'express';
+import * as fs from 'fs';
+import ngrok from 'ngrok';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import * as fs from 'fs'
+import { WebSocketServer } from 'ws';
 
 const LOCAL_IMPORT = ` 
 <script type="importmap">
@@ -36,4 +38,27 @@ app.use('/', express.static(__dirname + '/'));
 
 (console).log("************* Starting the server *************");
 // Start the application
-app.listen(port);
+app.listen(8000, '0.0.0.0');
+try {
+    const url = await ngrok.connect({ port: 8000, domain: "careful-loosely-moose.ngrok-free.app" });
+    (console).log('External URL: ', url)
+} catch (e) {
+    console.error(e);
+}
+
+const sockserver = new WebSocketServer({ port: 443 })
+console.log("Socket Server ready.")
+sockserver.on('connection', ws => {
+    (console).log('New client connected!')
+    ws.send('connection established')
+    ws.on('close', () => console.log('Client has disconnected!'))
+    ws.on('message', data => {
+        sockserver.clients.forEach(client => {
+            console.log(`distributing message: ${data}`)
+            client.send(`${data}`)
+        })
+    })
+    ws.onerror = function (e) {
+        (console).log('websocket error', e)
+    }
+})

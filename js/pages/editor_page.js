@@ -65,12 +65,22 @@ export function EditorPage(parentContainer) {
 
     let mStoryDisplayController = new StoryDisplayController(mViewContainer);
     mStoryDisplayController.onMove(async (id, newPosition) => {
-        await mModelController.updatePosition(id, newPosition);
+        await mModelController.updateMany([
+            { id, attr: "x", value: newPosition.x },
+            { id, attr: "y", value: newPosition.y },
+            { id, attr: "z", value: newPosition.z }
+        ]);
         await updateModel();
     });
 
     mStoryDisplayController.onMoveChain(async (items) => {
         await mModelController.updatePositionsAndOrientations(items);
+        await mModelController.updateMany(items.map(({ id, position, orientation }) => [
+            { id, attr: "x", value: position.x },
+            { id, attr: "y", value: position.y },
+            { id, attr: "z", value: position.z },
+            { id, attr: "orientation", value: orientation.toArray() },
+        ]).flat());
         await updateModel();
     });
 
@@ -82,13 +92,13 @@ export function EditorPage(parentContainer) {
             }
             return true;
         }).map(p => { return { x: p.x, y: p.y, z: p.z } })
-        await mModelController.updateTimeline(line);
+        await mModelController.update(mModel.getModel().storyId, "timeline", line);
         await updateModel();
     })
 
     mStoryDisplayController.onUpdateAnnotationImage(async (annotationId, json, dataUrl) => {
-        await mModelController.setAttribute(annotationId, 'json', json);
-        await mModelController.setAttribute(annotationId, 'image', dataUrl);
+        await mModelController.update(annotationId, 'json', json);
+        await mModelController.update(annotationId, 'image', dataUrl);
         await updateModel();
     })
 
@@ -113,7 +123,7 @@ export function EditorPage(parentContainer) {
         // should be undo/redo stuff here.
 
         if (IdUtil.getClass(parentId) == Data.StoryModel && itemClass == Data.Annotation) {
-            await mModelController.createAnnotation(parentId);
+            await mModelController.create(Data.Annotation);
         } else if (itemClass == Data.Model3D) {
             let assetId = await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
             if (assetId) { await mModelController.createModel3D(assetId); }
@@ -124,11 +134,11 @@ export function EditorPage(parentContainer) {
         await updateModel();
     })
     mSidebarController.setUpdateAttributeCallback(async (id, attr, value) => {
-        await mModelController.setAttribute(id, attr, value);
+        await mModelController.update(id, attr, value);
         await updateModel();
     })
     mSidebarController.setDeleteCallback(async (id) => {
-        await mModelController.deleteItem(id);
+        await mModelController.delete(id);
         await updateModel();
     })
     mSidebarController.setSelectAsset(async () => {

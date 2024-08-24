@@ -16,43 +16,90 @@ export function ModelController(storyId, workspace) {
         }
     }
 
+    async function create(dataClass, attrs = {}) {
+        let id = _create(dataClass, attrs)
+        await mWorkspace.updateStory(mModel);
+        return id;
+    }
+
+    async function createMany(items) {
+        let ids = items.map(({ dataClass, attrs = {} }) => _create(dataClass, attrs))
+        await mWorkspace.updateStory(mModel);
+        return ids;
+    }
+
+    function _create(dataClass, attrs) {
+        let item = new dataClass();
+        for (let key of Object.keys(attrs)) {
+            if (!Object.hasOwn(item, key)) { console.error("Invalid attr: " + key); continue; }
+            item[key] = attrs[key];
+        }
+        getTableForClass(dataClass).push(item);
+        return item.id;
+    }
+
+    async function update(id, attr, value) {
+        _update(id, attr, value);
+        await mWorkspace.updateStory(mModel);
+    }
+
+    async function updateMany(items) {
+        for (let { id, attr, value } of items) { _update(id, attr, value); }
+        await mWorkspace.updateStory(mModel);
+    }
+
+    function _update(id, attr, value) {
+        let item = mModel.find(id);
+        if (!item) { console.error("Invalid id: " + id); return; };
+        if (!Object.hasOwn(item, attr)) { console.error("Invalid attr: " + id + " - " + attr); return; }
+        item[attr] = value;
+    }
+
+    async function deleteOne(id) {
+        mModel.delete(id)
+        await mWorkspace.updateStory(mModel);
+    }
+
+    async function deleteMany(ids) {
+        for (let id of ids) mModel.delete(id);
+        await mWorkspace.updateStory(mModel);
+    }
+
+    function getTableForClass(cls) {
+        if (cls == Data.Asset) {
+            return mModel.assets;
+        } else if (cls == Data.AssetComponentPose) {
+            return mModel.assetPoses;
+        } else if (cls == Data.Model3D) {
+            return mModel.model3Ds;
+        } else if (cls == Data.Annotation) {
+            return mModel.annotations;
+        } else {
+            console.error('No array for class: ' + cls);
+        }
+    }
+
     async function createModel3D(assetId = null) {
-        let newModel3D = new Data.Model3D();
+        let attrs = {};
+
         if (assetId) {
             let asset = mModel.find(assetId);
             if (!asset) { console.error('invalid asset id', assetId); return; }
-            newModel3D.assetId = assetId;
-            newModel3D.name = asset.name;
-            let newPoses = mModel.assetPoses
-                .filter(p => asset.poseIds.includes(p.id))
-                .map(p => p.clone(true));
-            mModel.assetPoses.push(...newPoses);
-            newModel3D.poseIds = newPoses.map(p => p.id);
+            let poses = mModel.assetPoses.filter(p => asset.poseIds.includes(p.id));
+            let poseIds = poses.map(p => _create(Data.AssetComponentPose, p.clone(true)));
+
+            attrs.assetId = assetId;
+            attrs.name = asset.name;
+            attrs.poseIds = poseIds;
         }
-        mModel.model3Ds.push(newModel3D);
-        await mWorkspace.updateStory(mModel);
-        return newModel3D.id;
-    }
 
-    async function createAnnotation() {
-        let newAnnotation = new Data.Annotation();
-        mModel.annotations.push(newAnnotation);
+        let modelId = _create(Data.Model3D, attrs);
         await mWorkspace.updateStory(mModel);
-        return newAnnotation.id;
-    }
-
-    async function setAttribute(id, attr, value) {
-        let item = mModel.find(id);
-        if (!item) { console.error('Invalid id', id); return; }
-        item[attr] = value;
-        await mWorkspace.updateStory(mModel);
+        return modelId;
     }
 
     async function createAsset(name, filename, type, asset = null) {
-        let newAsset = new Data.Asset(type);
-        newAsset.filename = filename;
-        newAsset.name = name;
-        newAsset.type = type;
+        let attrs = { name, filename, type }
         if (type == AssetTypes.MODEL) {
             let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(asset.scene);
 
@@ -61,73 +108,31 @@ export function ModelController(storyId, workspace) {
                 return null;
             }
 
-            targets.forEach(child => {
-                let pose = new Data.AssetComponentPose();
-                pose.type = child.type;
-                pose.name = child.name;
-                pose.x = child.position.x;
-                pose.y = child.position.y;
-                pose.z = child.position.z;
-                pose.orientation = child.quaternion.toArray();
-                mModel.assetPoses.push(pose);
-                newAsset.poseIds.push(pose.id);
-            })
+            attrs.poseIds = targets.map(child => _create(Data.AssetComponentPose, {
+                type: child.type,
+                name: child.name,
+                x: child.position.x,
+                y: child.position.y,
+                z: child.position.z,
+                orientation: child.quaternion.toArray()
+            }));
         }
-        mModel.assets.push(newAsset);
-        await mWorkspace.updateStory(mModel);
-        return newAsset.id;
-    }
 
-    async function updatePosition(id, position) {
-        let item = mModel.find(id);
-        if (Object.hasOwn(item, 'x')) item.x = position.x;
-        if (Object.hasOwn(item, 'y')) item.y = position.y;
-        if (Object.hasOwn(item, 'z')) item.z = position.z;
+        let assetId = _create(Data.Asset, attrs);
         await mWorkspace.updateStory(mModel);
-    }
-
-    async function updatePositionsAndOrientations(items) {
-        try {
-            items.forEach(({ id, position, orientation }) => {
-                if (IdUtil.getClass(id) == Data.AssetComponentPose) {
-                    let pose = mModel.find(id);
-                    if (!pose) { console.error('Invalid id!', id); return; }
-                    pose.x = position.x;
-                    pose.y = position.y;
-                    pose.z = position.z;
-                    pose.orientation = orientation.toArray();
-                } else {
-                    console.error("Not handled", id);
-                }
-            });
-        } catch (e) { console.error(e); }
-        await mWorkspace.updateStory(mModel);
-    }
-
-    async function deleteItem(id) {
-        if (IdUtil.getClass(id) == Data.Asset) {
-            let usingItems = mModel.model3Ds.filter(m => m.assetId == id);
-            usingItems.forEach(item => mModel.delete(item.id));
-        }
-        mModel.delete(id);
-        await mWorkspace.updateStory(mModel);
-    }
-
-    async function updateTimeline(line) {
-        mModel.timeline = line;
-        await mWorkspace.updateStory(mModel);
+        return assetId;
     }
 
     return {
         init,
+        create,
+        createMany,
+        update,
+        updateMany,
+        delete: deleteOne,
+        deleteMany,
         createModel3D,
-        createAnnotation,
-        setAttribute,
         createAsset,
-        updatePosition,
-        updatePositionsAndOrientations,
-        deleteItem,
-        updateTimeline,
         getModel: () => mModel.clone(),
     }
 }

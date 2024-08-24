@@ -70,7 +70,7 @@ export function XRPageInterfaceController() {
                 mMousePosition.y != mouseOverPoint.y)) {
                 mMousePosition = mouseOverPoint;
                 mHighlightBoxes = [];
-                let element = document.elementsFromPoint(mMousePosition.x, mMousePosition.y)[0];
+                let element = getElementTarget(mMousePosition.x, mMousePosition.y);
                 if (element) {
                     mHighlightBoxes.push(element.getBoundingClientRect());
                 }
@@ -88,24 +88,32 @@ export function XRPageInterfaceController() {
     async function mouseDown(pos) {
         mMouseDown = true;
         if (!pos) return;
-        let element = document.elementsFromPoint(pos.x, pos.y)[0];
+        let element = getElementTarget(pos.x, pos.y);
         if (element) {
             element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
             mPointerDownElement = element;
         }
-        await renderWebpage();
+        await renderWebpage(element instanceof HTMLIFrameElement ? element : null);
     }
 
     async function mouseUp(pos) {
         mMouseDown = false;
         if (!pos) return;
-        let element = document.elementsFromPoint(pos.x, pos.y)[0];
+        let element = getElementTarget(pos.x, pos.y);
         if (element) {
             element.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
             if (element == mPointerDownElement) element.dispatchEvent(new PointerEvent('click', { bubbles: true }));
         }
         mPointerDownElement = null;
         await renderWebpage();
+    }
+
+    function getElementTarget(x, y) {
+        let element = document.elementsFromPoint(x, y)[0];
+        if (element instanceof HTMLIFrameElement) {
+            element = element.contentWindow.document.elementsFromPoint(x, y)[0];
+        }
+        return element;
     }
 
     function setInterfaceScale() {
@@ -153,7 +161,36 @@ export function XRPageInterfaceController() {
 
     async function renderWebpage() {
         try {
-            mPageCanvas = await html2canvas(document.querySelector("#content"), { logging: false })
+            let base64 = await domtoimage.toPng(document.querySelector("#content"))
+            mPageCanvas = document.createElement('canvas');
+            let ctx = mPageCanvas.getContext('2d');
+            await new Promise((resove, reject) => {
+                let img = new Image();
+                img.onload = () => {
+                    mPageCanvas.height = img.height
+                    mPageCanvas.width = img.width
+                    ctx.fillStyle = "white"
+                    ctx.fillRect(0, 0, mPageCanvas.width, mPageCanvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    resove();
+                }
+                img.onerror = reject;
+                img.src = base64;
+            })
+            let iframe = document.querySelector('iframe');
+            if (iframe.checkVisibility()) {
+                let iframeBase64 = await domtoimage.toPng(iframe.contentWindow.document.body)
+                await new Promise((resove, reject) => {
+                    let img = new Image();
+                    img.onload = () => {
+                        ctx.drawImage(img, 0, 0, iframe.width, iframe.height)
+                        resove();
+                    }
+                    img.onerror = reject;
+                    img.src = iframeBase64;
+                })
+            }
+
             mWindowWidth = mPageCanvas.width;
             mWindowHeight = mPageCanvas.height;
 

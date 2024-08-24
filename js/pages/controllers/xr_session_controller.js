@@ -500,6 +500,7 @@ export function XRSessionController() {
         dir.normalize();
 
         let rayCaster = new THREE.Raycaster(p1, dir, 0, dist * 1.1);
+        rayCaster.camera = mXRCamera;
         return rayCaster;
     }
 

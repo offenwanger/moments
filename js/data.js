@@ -171,9 +171,11 @@ class Model3D extends DataItem {
 
 class Annotation extends DataItem {
     name = "Annotation"
+    isWorld = false;
     y = 0;
     x = 0;
     z = 0;
+    size = 0.3;
     // default empty fabric canvas
     json = { version: '3.6.3', objects: [] };
     image = "";

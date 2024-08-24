@@ -80,13 +80,9 @@ export function ModelController(storyId, workspace) {
 
     async function updatePosition(id, position) {
         let item = mModel.find(id);
-        if (item instanceof Data.AssetComponentPose) {
-            item.x = position.x;
-            item.y = position.y;
-            item.z = position.z;
-        } else {
-            console.error("Not handled", id);
-        }
+        if (Object.hasOwn(item, 'x')) item.x = position.x;
+        if (Object.hasOwn(item, 'y')) item.y = position.y;
+        if (Object.hasOwn(item, 'z')) item.z = position.z;
         await mWorkspace.updateStory(mModel);
     }
 

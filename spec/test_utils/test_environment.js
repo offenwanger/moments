@@ -46,6 +46,7 @@ export async function setup() {
     };
     global.Image = function Image() { };
     global.FileReader = function () { this.readAsDataURL = function (filename) { this.onload(mockFileSystem[filename]) } }
+    global.WebSocket = function () { this.addEventListener = () => { } };
 
     await mockThreeSetup();
 

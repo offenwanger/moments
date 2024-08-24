@@ -1,9 +1,10 @@
 import express from 'express';
 import * as fs from 'fs';
-import ngrok from 'ngrok';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
+import { TOKEN } from './token.js';
+import { spawn, spawnSync } from 'child_process';
 
 const LOCAL_IMPORT = ` 
 <script type="importmap">
@@ -39,12 +40,15 @@ app.use('/', express.static(__dirname + '/'));
 (console).log("************* Starting the server *************");
 // Start the application
 app.listen(8000, '0.0.0.0');
+
 try {
-    const url = await ngrok.connect({ port: 8000, domain: "careful-loosely-moose.ngrok-free.app" });
-    (console).log('External URL: ', url)
-} catch (e) {
-    console.error(e);
-}
+    (console).log('Spawning ngrok. Public URL: https://careful-loosely-moose.ngrok-free.app')
+    spawnSync(`ngrok config add-authtoken ${TOKEN}`);
+    const ngrok = spawn("ngrok", ["http", "--domain", "careful-loosely-moose.ngrok-free.app", "8000"]);
+    ngrok.stdout.on('data', function (data) { console.log(data.toString()); });
+    ngrok.stderr.on('data', function (data) { console.error(data.toString()) })
+    ngrok.on("error", function (error) { console.error(error) })
+} catch (e) { console.error(e); }
 
 const sockserver = new WebSocketServer({ port: 443 })
 console.log("Socket Server ready.")

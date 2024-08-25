@@ -5,7 +5,7 @@ import { DOUBLE_CLICK_SPEED, EditMode, USER_HEIGHT } from '../../constants.js';
 import { GLTKUtil } from '../../utils/gltk_util.js';
 import { Util } from '../../utils/utility.js';
 
-export function CanvasViewController(parentContainer) {
+export function CanvasViewController(parentContainer, mWebsocketController) {
     const DRAGGING = 'dragging'
     const DRAGGING_KINEMATIC = 'draggingKinematic'
     const NAVIGATING = 'navigating'
@@ -67,7 +67,13 @@ export function CanvasViewController(parentContainer) {
     mOrbitControls.update();
     mOrbitControls.addEventListener('change', () => {
         if (!mSceneController) return;
-        mSceneController.onUserMove(mPageCamera.position);
+        mSceneController.userMove(mPageCamera.position);
+        mWebsocketController.updateParticipant({
+            x: mPageCamera.position.x,
+            y: mPageCamera.position.y,
+            z: mPageCamera.position.z,
+            orientation: mPageCamera.quaternion.toArray()
+        })
     })
 
     function pageRender(time) {

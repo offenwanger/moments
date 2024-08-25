@@ -44,7 +44,7 @@ export function AssetSceneController() {
         mModel3DWrapper.update(mModel3D, null, assetUtil)
     }
 
-    function onUserMove(globalPosition) {
+    function userMove(globalPosition) {
         // do something with regards to rearranging things. 
     }
 
@@ -55,7 +55,10 @@ export function AssetSceneController() {
     this.updateModel = updateModel;
     this.showAsset = showAsset;
     this.getTargets = getTargets;
-    this.onUserMove = onUserMove;
+    this.userMove = userMove;
+    this.updateOtherUser = () => { }
+    this.removeOtherUser = () => { }
+    this.addOtherUser = () => { }
     this.getScene = () => mScene;
     this.getContent = () => mContent;
     this.setMode = () => { };

@@ -1,12 +1,15 @@
 import { EventManager } from './event_manager.js';
 import { EditorPage } from './pages/editor_page.js';
+import { ViewerPage } from './pages/viewer_page.js';
 import { ListPage } from './pages/list_page.js';
 import { WelcomePage } from './pages/welcome_page.js';
 import { HandleStorage } from './utils/handle_storage.js';
 import { WorkspaceManager } from './workspace_manager.js';
+import { WebsocketController } from './pages/controllers/websocket_controller.js';
 
 export async function main() {
     let mEventManager = new EventManager();
+    let mWebsocketController = new WebsocketController();
 
     async function updatePage() {
         d3.select('#content').selectAll("*").remove();
@@ -19,7 +22,11 @@ export async function main() {
                 let workspaceManager = new WorkspaceManager(folder);
                 let story = new URLSearchParams(window.location.search).get("story")
                 if (story) {
-                    await showEditorPage(workspaceManager)
+                    if (new URLSearchParams(window.location.search).get("view") == 'true') {
+                        await showViewPage();
+                    } else {
+                        await showEditorPage(workspaceManager)
+                    }
                 } else if (new URLSearchParams(window.location.search).get("list") == 'true') {
                     await showListPage(workspaceManager);
                 } else {
@@ -30,8 +37,8 @@ export async function main() {
     }
 
     async function showWelcomePage(withLastFolder) {
-        let page = new WelcomePage(d3.select('#content'), withLastFolder);
-        page.setFolderSelectedCallback(async (folder) => {
+        let page = new WelcomePage(d3.select('#content'), withLastFolder, mWebsocketController);
+        page.onFolderSelected(async (folder) => {
             if (await folder.requestPermission({ mode: 'readwrite' }) === 'granted') {
                 await HandleStorage.setItem('folder', folder);
             }
@@ -41,7 +48,7 @@ export async function main() {
             await updatePage();
         });
 
-        page.setLastFolderCallback(async () => {
+        page.onLastFolder(async () => {
             let folder = await HandleStorage.getItem('folder');
             if (await folder.requestPermission({ mode: 'readwrite' }) !== 'granted') {
                 await HandleStorage.removeItem('folder');
@@ -51,17 +58,18 @@ export async function main() {
             window.location.search = params.toString();
             await updatePage();
         });
+
+        page.onViewStory(async (storyId) => {
+            let params = new URLSearchParams(window.location.search)
+            params.set("story", storyId)
+            params.set("view", 'true')
+            window.location.search = params.toString();
+            await updatePage();
+        });
     }
 
     async function showListPage(workspaceManger) {
         let page = new ListPage(d3.select('#content'));
-        page.setViewCallback(async (storyId) => {
-            let params = new URLSearchParams(window.location.search)
-            params.set("story", storyId)
-            window.location.search = params.toString();
-            await updatePage();
-        });
-
         page.setEditCallback(async (storyId) => {
             let params = new URLSearchParams(window.location.search)
             params.set("story", storyId)
@@ -73,10 +81,17 @@ export async function main() {
     }
 
     async function showEditorPage(workspaceManger) {
-        let page = new EditorPage(d3.select('#content'));
+        let page = new EditorPage(d3.select('#content'), mWebsocketController);
         await mEventManager.setListener(page);
         // handel all the needed async stuff
         await page.show(workspaceManger);
+    }
+
+    async function showViewPage() {
+        let page = new ViewerPage(d3.select('#content'), mWebsocketController);
+        await mEventManager.setListener(page);
+        // handel all the needed async stuff
+        await page.show();
     }
 
     await updatePage();

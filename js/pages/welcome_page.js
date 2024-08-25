@@ -1,6 +1,7 @@
-export function WelcomePage(parentContainer, lastFolder = false) {
+export function WelcomePage(parentContainer, lastFolder = false, mWebsocketController) {
     let mFolderSelectedCallback = async () => { };
     let mLastFolderCallback = async () => { };
+    let mViewStoryCallback = async () => { };
 
     let div = parentContainer.append('div')
         .style('padding', "10px");
@@ -28,6 +29,23 @@ export function WelcomePage(parentContainer, lastFolder = false) {
             });
     }
 
-    this.setFolderSelectedCallback = (func) => mFolderSelectedCallback = func;
-    this.setLastFolderCallback = (func) => mLastFolderCallback = func;
+    div.append("h2").html("Shared Stories")
+    let sharedList = div.append("div");
+    mWebsocketController.onSharedStories((stories) => {
+        sharedList.selectAll("*").remove();
+        for (let story of stories) {
+            let li = sharedList.append('li')
+                .attr('id', story.id);
+            li.append('span').html(story.name);
+            li.append('button').html('👀')
+                .classed('view-story-button', true)
+                .style('margin-left', '10px')
+                .on('click', async () => await mViewStoryCallback(story.id));
+        }
+    });
+    mWebsocketController.requestStories();
+
+    this.onFolderSelected = (func) => mFolderSelectedCallback = func;
+    this.onLastFolder = (func) => mLastFolderCallback = func;
+    this.onViewStory = (func) => mViewStoryCallback = func;
 }

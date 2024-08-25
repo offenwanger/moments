@@ -12,7 +12,7 @@ import { AnnotationEditorController } from "./annotation_editor_controller.js";
  * transitions between VR and canvas viewing. 
  * @param {*} parentContainer 
  */
-export function StoryDisplayController(parentContainer) {
+export function StoryDisplayController(parentContainer, mWebsocketController) {
     let mExitAssetViewCallback = async () => { }
     let mMoveCallback = async () => { }
     let mMoveChainCallback = async () => { }
@@ -27,10 +27,11 @@ export function StoryDisplayController(parentContainer) {
     let mStorySceneController = new StorySceneController();
 
     let mActiveScene = mStorySceneController;
+    let mOtherUsers = {};
 
-    let mXRSessionController = new XRSessionController(parentContainer);
+    let mXRSessionController = new XRSessionController(mWebsocketController);
     mXRSessionController.setScene(mActiveScene);
-    let mCanvasViewController = new CanvasViewController(parentContainer);
+    let mCanvasViewController = new CanvasViewController(parentContainer, mWebsocketController);
     mCanvasViewController.setScene(mActiveScene);
     mCanvasViewController.setMode(mMode)
     mCanvasViewController.startRendering();
@@ -154,6 +155,25 @@ export function StoryDisplayController(parentContainer) {
 
     mAnnotationEditorController.onSave(async (id, json, dataUrl) => {
         await mUpdateAnnotationImageCallback(id, json, dataUrl);
+    })
+
+    mWebsocketController.onParticipantUpdate((id, head, handR, handL) => {
+        try {
+            if (mOtherUsers[id]) {
+                if (head) {
+                    mActiveScene.updateOtherUser(id, head, handR, handL);
+                } else {
+                    mActiveScene.removeOtherUser(id);
+                }
+            } else {
+                if (head) {
+                    mActiveScene.addOtherUser(id, head, handR, handL);
+                    mOtherUsers[id] = true;
+                }
+            }
+        } catch (error) {
+            console.error(error);
+        }
     })
 
     async function setScene(scene) {

@@ -8,10 +8,9 @@ import { ModelController } from './controllers/model_controller.js';
 import { SidebarController } from './controllers/sidebar_controller.js';
 import { StoryDisplayController } from './controllers/story_display_controller.js';
 import { TimelineController } from './controllers/timeline_controller.js';
-import { WebsocketController } from './controllers/weksocket_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 
-export function EditorPage(parentContainer) {
+export function EditorPage(parentContainer, mWebsocketController) {
     const RESIZE_TARGET_SIZE = 20;
     let mModelController;
     let mWorkspace;
@@ -23,8 +22,6 @@ export function EditorPage(parentContainer) {
     let mHeight = 100;
 
     let mResizingWindows = false;
-
-    let mWebsocketController = new WebsocketController();
 
     let mMainContainer = parentContainer.append('div')
         .style('width', '100%')
@@ -63,7 +60,7 @@ export function EditorPage(parentContainer) {
         .on('dragstart', (event) => event.preventDefault())
         .on('pointerdown', () => { mResizingWindows = true; });
 
-    let mStoryDisplayController = new StoryDisplayController(mViewContainer);
+    let mStoryDisplayController = new StoryDisplayController(mViewContainer, mWebsocketController);
     mStoryDisplayController.onMove(async (id, newPosition) => {
         await mModelController.updateMany([
             { id, attr: "x", value: newPosition.x },
@@ -103,7 +100,7 @@ export function EditorPage(parentContainer) {
     })
 
     mStoryDisplayController.onStartShare(async () => {
-        mWebsocketController.message('Connect!');
+        mWebsocketController.shareStory(mModelController.getModel(), mWorkspace);
     })
 
     let mAssetPicker = new AssetPicker(parentContainer);

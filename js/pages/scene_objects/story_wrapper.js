@@ -66,7 +66,7 @@ export function StoryWrapper(parent) {
 
     }
 
-    function onUserMove(globalPosition) {
+    function userMove(globalPosition) {
         mLastUserPosition.copy(globalPosition);
         updateLights()
     }
@@ -138,7 +138,7 @@ export function StoryWrapper(parent) {
 
     this.updateModel = updateModel;
     this.render = render;
-    this.onUserMove = onUserMove;
+    this.userMove = userMove;
     this.getTargets = getTargets;
     this.setMode = setMode;
 }

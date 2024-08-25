@@ -11,7 +11,7 @@ const RIGHT_DRAG = 'rightHandedDragMove'
 const TWO_HAND_DRAG = 'twoHandedGrabMove'
 const KINEMATIC_DRAG = 'twoHandedKinematicMove'
 
-export function XRSessionController() {
+export function XRSessionController(mWebsocketController) {
     let mOnSessionStartCallback = () => { }
     let mOnSessionEndCallback = () => { }
 
@@ -165,6 +165,7 @@ export function XRSessionController() {
     }
 
 
+    let lastSend = Date.now();
     function xrRender(time) {
         if (time < 0) return;
         if (!mSceneController) return;
@@ -177,6 +178,11 @@ export function XRSessionController() {
             getRightControllerPosition(),
             getRightControllerOrientation())
         mXRRenderer.render(mSceneController.getScene(), mXRCamera);
+
+        if (Date.now() - lastSend > 1000) {
+            let pos = getUserPosition();
+            mWebsocketController.updateParticipant(pos.head, pos.handR, pos.handL);
+        }
 
         if (mSystemState.interaction) {
             if (mSystemState.interaction.type == LEFT_DRAG || mSystemState.interaction.type == RIGHT_DRAG) {
@@ -403,6 +409,7 @@ export function XRSessionController() {
             mXRCamera.getWorldDirection(add);
             let sign = -axes[3] / Math.abs(axes[3])
             mUserGroup.position.addScaledVector(add, 0.5 * sign);
+
             mMoved = true;
         } else if (!mMoved && Math.abs(axes[2]) > 0.5) {
             let cameraPos = new THREE.Vector3();
@@ -579,6 +586,32 @@ export function XRSessionController() {
         let rot = new THREE.Quaternion();
         mControllerRTip.getWorldQuaternion(rot);
         return rot;
+    }
+
+    function getUserPosition() {
+        let headPos = getHeadPosition();
+        let handRPos = getRightControllerPosition();
+        let handLPos = getLeftControllerPosition();
+        return {
+            head: {
+                x: headPos.x,
+                y: headPos.y,
+                z: headPos.z,
+                orientation: getHeadOrientation().toArray()
+            },
+            handR: {
+                x: handRPos.x,
+                y: handRPos.y,
+                z: handRPos.z,
+                orientation: getRightControllerOrientation().toArray()
+            },
+            handL: {
+                x: handLPos.x,
+                y: handLPos.y,
+                z: handLPos.z,
+                orientation: getLeftControllerOrientation().toArray()
+            },
+        }
     }
 
     this.onSessionStart = (func) => mOnSessionStartCallback = func;

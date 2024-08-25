@@ -10,11 +10,28 @@ export function StorySceneController() {
     let mStoryWrapper = new StoryWrapper(mContent);
     let mModel = new Data.StoryModel();
 
+    let mOtherUsers = [];
+
     let mEnvironmentBox;
 
-    function onUserMove(globalPosition) {
-        mStoryWrapper.onUserMove(globalPosition)
+    function userMove(globalPosition) {
+        mStoryWrapper.userMove(globalPosition)
     }
+
+    function updateOtherUser(id, head, handR, handL) {
+        console.log("TODO: Finish me!")
+    }
+
+    function removeOtherUser(id) {
+        let otherUser = mOtherUsers.find(o => o.getId() == id);
+        mOtherUsers = mOtherUsers.filter(o => o.getId() != id);
+        otherUser.remove();
+    }
+
+    function addOtherUser(id, head, handR, handL) {
+        console.log("TODO: Finish me!")
+    }
+
 
     async function updateModel(model, assetUtil) {
         let oldModel = mModel;
@@ -63,10 +80,13 @@ export function StorySceneController() {
 
     this.updateModel = updateModel;
     this.getTargets = getTargets;
-    this.onUserMove = onUserMove;
+    this.userMove = userMove;
     this.toSceneCoordinates = toSceneCoordinates;
     this.setMode = setMode;
     this.setScale = setScale;
+    this.updateOtherUser = updateOtherUser;
+    this.removeOtherUser = removeOtherUser;
+    this.addOtherUser = addOtherUser;
     this.getScene = () => mScene;
     this.getContent = () => mContent;
 }

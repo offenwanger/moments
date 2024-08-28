@@ -14,19 +14,17 @@ export async function main() {
     async function updatePage() {
         d3.select('#content').selectAll("*").remove();
         let folder = await HandleStorage.getItem('folder');
-        if (folder) {
+        let story = new URLSearchParams(window.location.search).get("story")
+        if (story && new URLSearchParams(window.location.search).get("view") == 'true') {
+            await showViewPage();
+        } else if (folder) {
             if (await folder.queryPermission({ mode: 'readwrite' }) !== 'granted') {
                 await showWelcomePage(true);
             } else {
                 // folder all set
                 let workspaceManager = new WorkspaceManager(folder);
-                let story = new URLSearchParams(window.location.search).get("story")
                 if (story) {
-                    if (new URLSearchParams(window.location.search).get("view") == 'true') {
-                        await showViewPage();
-                    } else {
-                        await showEditorPage(workspaceManager)
-                    }
+                    await showEditorPage(workspaceManager)
                 } else if (new URLSearchParams(window.location.search).get("list") == 'true') {
                     await showListPage(workspaceManager);
                 } else {

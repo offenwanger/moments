@@ -18,6 +18,13 @@ export function ViewerPage(parentContainer, mWebsocketController) {
 
     let mStoryDisplayController = new StoryDisplayController(mViewContainer, mWebsocketController);
 
+    mWebsocketController.onStoryUpdate(async updates => {
+        mModelController.removeUpdateCallback(mWebsocketController.updateStory);
+        await mModelController.applyUpdates(updates);
+        mModelController.addUpdateCallback(mWebsocketController.updateStory);
+        updateModel();
+    })
+
     async function show() {
         const searchParams = new URLSearchParams(window.location.search)
         const storyId = searchParams.get("story");
@@ -37,13 +44,8 @@ export function ViewerPage(parentContainer, mWebsocketController) {
 
         mWebsocketController.onStoryConnect(async (story) => {
             let mModel = Data.StoryModel.fromObject(story);
-            mModelController = new ModelController(storyId, {
-                getStory: async () => {
-                    return mModel;
-                },
-                updateStory: () => { }
-            });
-            await mModelController.init();
+            mModelController = new ModelController(mModel);
+            mModelController.addUpdateCallback(mWebsocketController.updateStory);
             await updateModel();
         })
     }

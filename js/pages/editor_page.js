@@ -62,22 +62,22 @@ export function EditorPage(parentContainer, mWebsocketController) {
 
     let mStoryDisplayController = new StoryDisplayController(mViewContainer, mWebsocketController);
     mStoryDisplayController.onMove(async (id, newPosition) => {
-        await mModelController.updateMany([
-            { id, attr: "x", value: newPosition.x },
-            { id, attr: "y", value: newPosition.y },
-            { id, attr: "z", value: newPosition.z }
-        ]);
+        await mModelController.update(id, { x: newPosition.x, y: newPosition.y, z: newPosition.z });
         await updateModel();
     });
 
     mStoryDisplayController.onMoveChain(async (items) => {
         await mModelController.updatePositionsAndOrientations(items);
-        await mModelController.updateMany(items.map(({ id, position, orientation }) => [
-            { id, attr: "x", value: position.x },
-            { id, attr: "y", value: position.y },
-            { id, attr: "z", value: position.z },
-            { id, attr: "orientation", value: orientation.toArray() },
-        ]).flat());
+        await mModelController.updateMany(items.map(({ id, position, orientation }) => {
+            return {
+                id, attrs: {
+                    x: position.x,
+                    y: position.y,
+                    z: position.z,
+                    orientation: orientation.toArray()
+                }
+            }
+        }));
         await updateModel();
     });
 
@@ -89,13 +89,13 @@ export function EditorPage(parentContainer, mWebsocketController) {
             }
             return true;
         }).map(p => { return { x: p.x, y: p.y, z: p.z } })
-        await mModelController.update(mModel.getModel().storyId, "timeline", line);
+        await mModelController.update(mModel.getModel().storyId, { timeline: line });
         await updateModel();
     })
 
     mStoryDisplayController.onUpdateAnnotationImage(async (annotationId, json, dataUrl) => {
-        await mModelController.update(annotationId, 'json', json);
-        await mModelController.update(annotationId, 'image', dataUrl);
+        await mModelController.update(annotationId, { json });
+        await mModelController.update(annotationId, { image: dataUrl });
         await updateModel();
     })
 
@@ -130,8 +130,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
         }
         await updateModel();
     })
-    mSidebarController.setUpdateAttributeCallback(async (id, attr, value) => {
-        await mModelController.update(id, attr, value);
+    mSidebarController.setUpdateAttributeCallback(async (id, attrs) => {
+        await mModelController.update(id, attrs);
         await updateModel();
     })
     mSidebarController.setDeleteCallback(async (id) => {
@@ -162,6 +162,13 @@ export function EditorPage(parentContainer, mWebsocketController) {
         history.replaceState(null, '', url);
     })
 
+    mWebsocketController.onStoryUpdate(async updates => {
+        mModelController.removeUpdateCallback(mWebsocketController.updateStory);
+        await mModelController.applyUpdates(updates);
+        mModelController.addUpdateCallback(mWebsocketController.updateStory);
+        updateModel();
+    })
+
     async function show(workspace) {
         mWorkspace = workspace;
 
@@ -169,8 +176,12 @@ export function EditorPage(parentContainer, mWebsocketController) {
         const storyId = searchParams.get("story");
         if (!storyId) { console.error("Story not set!"); return; }
 
-        mModelController = new ModelController(storyId, workspace);
-        await mModelController.init();
+        let story = await mWorkspace.getStory(storyId);
+        if (!story) throw Error("Invalid workspace!");
+
+        mModelController = new ModelController(story);
+        mModelController.addUpdateCallback((updates, model) => mWorkspace.updateStory(model));
+        mModelController.addUpdateCallback(mWebsocketController.updateStory);
         mAssetUtil = new AssetUtil(mWorkspace);
 
         resize(mWidth, mHeight);

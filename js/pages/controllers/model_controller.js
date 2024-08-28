@@ -4,27 +4,42 @@ import { GLTKUtil } from "../../utils/gltk_util.js";
 import { IdUtil } from "../../utils/id_util.js";
 import { Util } from '../../utils/utility.js';
 
-export function ModelController(storyId, workspace) {
-    let mModel;
-    let mStoryId = storyId;
-    let mWorkspace = workspace;
+export function ModelController(story = new Data.StoryModel()) {
+    let mModel = story;
+    let mUpdateCallbacks = [];
 
-    async function init() {
-        if (!mModel) {
-            mModel = await mWorkspace.getStory(mStoryId);
-            if (!mModel) throw Error("Invalid workspace!");
+    async function applyUpdates(updates) {
+        for (let update of updates) {
+            if (update.action == 'delete') {
+                _delete(update.id);
+            } else if (update.action == 'update') {
+                let item = mModel.find(update.row.id);
+                if (!item) {
+                    let dataClass = IdUtil.getClass(update.row.id);
+                    if (!dataClass) console.error("Invalid id: " + update.row.id);
+                    _create(dataClass, update.row);
+                } else {
+                    _update(update.row.id, update.row);
+                }
+            } else {
+                console.error("Invalid update: " + update);
+            }
         }
+
+        for (let callback of mUpdateCallbacks) await callback(updates, mModel);
     }
 
     async function create(dataClass, attrs = {}) {
         let id = _create(dataClass, attrs)
-        await mWorkspace.updateStory(mModel);
+        for (let callback of mUpdateCallbacks) await callback([{ action: 'update', row: { ...attrs, id } }], mModel);
         return id;
     }
 
     async function createMany(items) {
         let ids = items.map(({ dataClass, attrs = {} }) => _create(dataClass, attrs))
-        await mWorkspace.updateStory(mModel);
+        for (let callback of mUpdateCallbacks) await callback(items.map((item, index) => {
+            return { action: 'update', row: { ...item.attrs, id: ids[index] } }
+        }), mModel);
         return ids;
     }
 
@@ -38,31 +53,35 @@ export function ModelController(storyId, workspace) {
         return item.id;
     }
 
-    async function update(id, attr, value) {
-        _update(id, attr, value);
-        await mWorkspace.updateStory(mModel);
+    async function update(id, attrs) {
+        _update(id, attrs);
+        for (let callback of mUpdateCallbacks) await callback([{ action: 'update', row: { ...attrs, id } }], mModel);
     }
 
     async function updateMany(items) {
-        for (let { id, attr, value } of items) { _update(id, attr, value); }
-        await mWorkspace.updateStory(mModel);
+        for (let { id, attrs } of items) { _update(id, attrs); }
+        for (let callback of mUpdateCallbacks) await callback(items.map(({ id, attrs }) => {
+            return { action: 'update', row: { ...attrs, id } }
+        }), mModel);
     }
 
-    function _update(id, attr, value) {
+    function _update(id, attrs) {
         let item = mModel.find(id);
         if (!item) { console.error("Invalid id: " + id); return; };
-        if (!Object.hasOwn(item, attr)) { console.error("Invalid attr: " + id + " - " + attr); return; }
-        item[attr] = value;
+        for (let key of Object.keys(attrs)) {
+            if (!Object.hasOwn(item, key)) { console.error("Invalid attr: " + id + " - " + key); return; }
+            item[key] = attrs[key];
+        }
     }
 
     async function deleteOne(id) {
         mModel.delete(id)
-        await mWorkspace.updateStory(mModel);
+        for (let callback of mUpdateCallbacks) await callback([{ action: "delete", id }], mModel);
     }
 
     async function deleteMany(ids) {
         for (let id of ids) mModel.delete(id);
-        await mWorkspace.updateStory(mModel);
+        for (let callback of mUpdateCallbacks) await callback(ids.map(id => { return { action: "delete", id } }), mModel);
     }
 
     function getTableForClass(cls) {
@@ -81,12 +100,18 @@ export function ModelController(storyId, workspace) {
 
     async function createModel3D(assetId = null) {
         let attrs = {};
+        let updates = [];
 
         if (assetId) {
             let asset = mModel.find(assetId);
             if (!asset) { console.error('invalid asset id', assetId); return; }
             let poses = mModel.assetPoses.filter(p => asset.poseIds.includes(p.id));
-            let poseIds = poses.map(p => _create(Data.AssetComponentPose, p.clone(true)));
+            let poseIds = poses.map(p => {
+                let poseAttrs = p.clone(true);
+                let poseId = _create(Data.AssetComponentPose, poseAttrs)
+                updates.push({ action: 'update', row: { ...poseAttrs, id: poseId } })
+                return poseId;
+            });
 
             attrs.assetId = assetId;
             attrs.name = asset.name;
@@ -94,11 +119,15 @@ export function ModelController(storyId, workspace) {
         }
 
         let modelId = _create(Data.Model3D, attrs);
-        await mWorkspace.updateStory(mModel);
+        updates.push({ action: 'update', row: { ...attrs, id: modelId } })
+
+        for (let callback of mUpdateCallbacks) await callback(updates, mModel.clone());
         return modelId;
     }
 
     async function createAsset(name, filename, type, asset = null) {
+        let updates = [];
+
         let attrs = { name, filename, type }
         if (type == AssetTypes.MODEL) {
             let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(asset.scene);
@@ -108,23 +137,31 @@ export function ModelController(storyId, workspace) {
                 return null;
             }
 
-            attrs.poseIds = targets.map(child => _create(Data.AssetComponentPose, {
-                type: child.type,
-                name: child.name,
-                x: child.position.x,
-                y: child.position.y,
-                z: child.position.z,
-                orientation: child.quaternion.toArray()
-            }));
+            attrs.poseIds = targets.map(child => {
+                let poseAttrs = {
+                    type: child.type,
+                    name: child.name,
+                    x: child.position.x,
+                    y: child.position.y,
+                    z: child.position.z,
+                    orientation: child.quaternion.toArray()
+                };
+                let poseId = _create(Data.AssetComponentPose, poseAttrs)
+                updates.push({ action: 'update', row: { ...poseAttrs, id: poseId } });
+                return poseId;
+            });
+
         }
 
         let assetId = _create(Data.Asset, attrs);
-        await mWorkspace.updateStory(mModel);
+        updates.push({ action: 'update', row: { ...attrs, id: assetId } })
+
+        for (let callback of mUpdateCallbacks) await callback(updates, mModel.clone());
         return assetId;
     }
 
     return {
-        init,
+        applyUpdates,
         create,
         createMany,
         update,
@@ -134,5 +171,7 @@ export function ModelController(storyId, workspace) {
         createModel3D,
         createAsset,
         getModel: () => mModel.clone(),
+        addUpdateCallback: (callback) => mUpdateCallbacks.push(callback),
+        removeUpdateCallback: (callback) => mUpdateCallbacks = mUpdateCallbacks.filter(c => c != callback),
     }
 }

@@ -30,14 +30,7 @@ export function AssetPanel(container) {
         .setId('asset-name-input')
         .setLabel("Name")
         .setOnChange(async (newText) => {
-            await mUpdateAttributeCallback(mAsset, 'name', newText);
-        });
-
-    let mTextInput = new TextInput(mPanelContainer)
-        .setId('asset-text-input')
-        .setLabel("Text")
-        .setOnChange(async (newText) => {
-            await mUpdateAttributeCallback(mAsset, 'name', newText);
+            await mUpdateAttributeCallback(mAsset, { name: newText });
         });
 
     let mFileButton = new TwoButtonInput(mPanelContainer)
@@ -74,15 +67,7 @@ export function AssetPanel(container) {
 
         mNameInput.setText(mAsset.name);
 
-        if (mAsset.type == AssetTypes.TEXT) {
-            mTextInput.show();
-            mFileButton.hide();
-            mTextInput.setText(mAsset.text);
-        } else {
-            mTextInput.hide();
-            mFileButton.show();
-            mFileButton.setLabel(1, mAsset.filename);
-        }
+        mFileButton.setLabel(1, mAsset.filename);
 
         let usedByItems = model.getItemsForAsset(mAssetId);
         Util.setComponentListLength(mUsedByList, usedByItems.length, () => new ButtonInput(mUsedByContainer))

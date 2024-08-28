@@ -7,6 +7,8 @@ import { dirname } from 'path';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { ServerMessage } from './js/constants.js';
+import { Data } from './js/data.js';
+import { ModelController } from './js/pages/controllers/model_controller.js';
 import { TOKEN } from './token.js';
 
 let sharedStories = [];
@@ -69,7 +71,7 @@ try {
     (console).log('Spawning ngrok. Public URL: https://careful-loosely-moose.ngrok-free.app')
     spawnSync(`ngrok config add-authtoken ${TOKEN}`);
     const ngrok = spawn("ngrok", ["http", "--domain", "careful-loosely-moose.ngrok-free.app", port]);
-    ngrok.stdout.on('data', function (data) { console.log(data.toString()); });
+    ngrok.stdout.on('data', function (data) { (console).log(data.toString()); });
     ngrok.stderr.on('data', function (data) { console.error(data.toString()) })
     ngrok.on("error", function (error) { console.error(error) })
 } catch (e) { console.error(e); }
@@ -86,21 +88,21 @@ sockserver.on('connection', client => {
     client.on('disconnect', () => disconnect(client));
 
     client.on(ServerMessage.START_SHARE, story => {
-        sharedStories.push({ participants: [client], story });
+        sharedStories.push({ participants: [client], storyController: new ModelController(Data.StoryModel.fromObject(story)) });
         sockserver.emit(ServerMessage.SHARED_STORIES, getSharedStoryData());
 
         (console).log('New Story shared: ' + story.id);
     });
 
-    client.on(ServerMessage.UPDATE_STORY, data => {
+    client.on(ServerMessage.UPDATE_STORY, updates => {
         // sending story update
         let story = sharedStories.find(s => s.participants.includes(client));
         if (!story) { console.error("No story found for story update!"); return; }
 
-        console.log("Update the stored story!")
+        story.storyController.applyUpdates(updates);
 
         for (let p of story.participants) {
-            if (p != client) p.emit(ServerMessage.UPDATE_STORY, data);
+            if (p != client) p.emit(ServerMessage.UPDATE_STORY, updates);
         }
     });
 
@@ -117,10 +119,10 @@ sockserver.on('connection', client => {
 
     client.on(ServerMessage.CONNECT_TO_STORY, storyId => {
         // requesting story connection
-        let share = sharedStories.find(s => s.story.id == storyId);
+        let share = sharedStories.find(s => s.storyController.getModel().id == storyId);
         if (!share) { client.emit(ServerMessage.ERROR, "Invalid story id" + storyId); return; }
 
-        client.emit(ServerMessage.CONNECT_TO_STORY, share.story);
+        client.emit(ServerMessage.CONNECT_TO_STORY, share.storyController.getModel());
         share.participants.push(client);
     });
 })
@@ -151,7 +153,10 @@ function disconnect(client) {
 }
 
 function getSharedStoryData() {
-    return sharedStories.map(d => { return { id: d.story.id, name: d.story.name } });
+    return sharedStories.map(d => {
+        let story = d.storyController.getModel();
+        return { id: story.id, name: story.name }
+    });
 }
 
 async function writeFile(filename, contents) {

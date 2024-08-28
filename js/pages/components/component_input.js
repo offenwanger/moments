@@ -12,17 +12,17 @@ export function ComponentInput(container) {
     let mPositionXInput = new TextInput(mContainer, 'number')
         .setLabel("x")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, 'x', newNum);
+            await mUpdateAttributeCallback(mComponentId, { x: newNum });
         });
     let mPositionYInput = new TextInput(mContainer, 'number')
         .setLabel("y")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, 'y', newNum);
+            await mUpdateAttributeCallback(mComponentId, { y: newNum });
         });
     let mPositionZInput = new TextInput(mContainer, 'number')
         .setLabel("z")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, 'z', newNum);
+            await mUpdateAttributeCallback(mComponentId, { z: newNum });
         });
 
     mContainer.append('div').html('Orientation');
@@ -33,7 +33,7 @@ export function ComponentInput(container) {
             let y = parseFloat(mOrientationYInput.getText());
             let z = parseFloat(mOrientationZInput.getText());
             let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
-            await mUpdateAttributeCallback(mComponentId, 'orientation', quat.toArray());
+            await mUpdateAttributeCallback(mComponentId, { orientation: quat.toArray() });
         });
     let mOrientationYInput = new TextInput(mContainer, 'number')
         .setLabel("y")
@@ -42,7 +42,7 @@ export function ComponentInput(container) {
             let x = parseFloat(mOrientationXInput.getText());
             let z = parseFloat(mOrientationZInput.getText());
             let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
-            await mUpdateAttributeCallback(mComponentId, 'orientation', quat.toArray());
+            await mUpdateAttributeCallback(mComponentId, { orientation: quat.toArray() });
         });
     let mOrientationZInput = new TextInput(mContainer, 'number')
         .setLabel("z")
@@ -51,13 +51,13 @@ export function ComponentInput(container) {
             let x = parseFloat(mOrientationXInput.getText());
             let y = parseFloat(mOrientationYInput.getText());
             let quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'XYZ'));
-            await mUpdateAttributeCallback(mComponentId, 'orientation', quat.toArray());
+            await mUpdateAttributeCallback(mComponentId, { orientation: quat.toArray() });
         });
 
     let mSizeInput = new TextInput(mContainer, 'number')
         .setLabel("Size")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, 'size', newNum);
+            await mUpdateAttributeCallback(mComponentId, { size: newNum });
         });
 
     function setId(id) {
@@ -113,7 +113,7 @@ export function ComponentInput(container) {
     this.hide = () => mContainer.style('display', 'none')
     this.remove = () => { mContainer.remove() }
     this.onUpdateAttribute = (func) => mUpdateAttributeCallback = func;
-    this.setComponentId = (id) => mComponentId = id;;
+    this.setComponentId = (id) => mComponentId = id;
     this.setId = setId;
     this.setPosition = setPosition;
     this.setOrientation = setOrientation;

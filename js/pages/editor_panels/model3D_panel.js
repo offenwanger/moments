@@ -26,21 +26,14 @@ export function Model3DPanel(container) {
         .setId('model3D-name-input')
         .setLabel("Name")
         .setOnChange(async (newText) => {
-            await mUpdateAttributeCallback(mModel3DId, 'name', newText);
+            await mUpdateAttributeCallback(mModel3DId, { name: newText });
         });
 
-    let mAssetButton = new TwoButtonInput(mPanelContainer)
+    let mAssetButton = new ButtonInput(mPanelContainer)
         .setId('model3D-asset-button')
-        .setLabel(2, "✏️")
-        .setOnClick(1, async () => {
+        .setOnClick(async () => {
             if (mModel3D.assetId) {
                 mNavigationCallback(mModel3D.assetId)
-            }
-        })
-        .setOnClick(2, async () => {
-            let newAssetId = await mSelectAsset();
-            if (newAssetId) {
-                await mUpdateAttributeCallback(mModel3DId, 'assetId', newAssetId);
             }
         })
 
@@ -68,12 +61,12 @@ export function Model3DPanel(container) {
         mNameInput.setText(mModel3D.name);
 
         let asset = model.find(mModel3D.assetId);
-        mAssetButton.setLabel(1, asset ? asset.name : "<i>Not Set<i/>")
+        mAssetButton.setLabel(asset ? asset.name : "<i>Not Set<i/>")
 
         Util.setComponentListLength(mAssetComponentList, mModel3D.poseIds.length, () => {
             let component = new ComponentInput(mAssetComponentContainer)
-            component.onUpdateAttribute(async (id, attribute, value) => {
-                await mUpdateAttributeCallback(id, attribute, value);
+            component.onUpdateAttribute(async (id, attrs) => {
+                await mUpdateAttributeCallback(id, attrs);
             });
             return component;
         })

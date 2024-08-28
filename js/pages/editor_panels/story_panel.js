@@ -17,7 +17,7 @@ export function StoryPanel(container) {
         .setId('story-name-input')
         .setLabel("Name")
         .setOnChange(async (newText) => {
-            await mUpdateAttributeCallback(mStory.id, 'name', newText);
+            await mUpdateAttributeCallback(mStory.id, { name: newText });
         });
 
     let mPathInput = new TwoButtonInput(mPanelContainer)

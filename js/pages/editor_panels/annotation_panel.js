@@ -4,7 +4,7 @@ import { TextInput } from "../components/text_input.js";
 
 export function AnnotationPanel(container) {
     let mAddCallback = async (parentId, itemClass, config) => { };
-    let mUpdateAttributeCallback = async (id, attr, value) => { };
+    let mUpdateAttributeCallback = async (id, attrs) => { };
     let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
     let mEditAnnotationCallback = async (id) => { };
@@ -29,7 +29,7 @@ export function AnnotationPanel(container) {
         .setId('annotation-name-input')
         .setLabel("Name")
         .setOnChange(async (newText) => {
-            await mUpdateAttributeCallback(mAnnotationId, 'name', newText);
+            await mUpdateAttributeCallback(mAnnotationId, { name: newText });
         });
 
     let mEditButton = new ButtonInput(mPanelContainer)
@@ -47,17 +47,17 @@ export function AnnotationPanel(container) {
     let mPositionXInput = new TextInput(mPanelContainer, 'number')
         .setLabel("x")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, 'x', newNum);
+            await mUpdateAttributeCallback(mComponentId, { x: newNum });
         });
     let mPositionYInput = new TextInput(mPanelContainer, 'number')
         .setLabel("y")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, 'y', newNum);
+            await mUpdateAttributeCallback(mComponentId, { y: newNum });
         });
     let mPositionZInput = new TextInput(mPanelContainer, 'number')
         .setLabel("z")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, 'z', newNum);
+            await mUpdateAttributeCallback(mComponentId, { z: newNum });
         });
 
     let mDeleteButton = new ButtonInput(mPanelContainer)

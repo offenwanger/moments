@@ -2,9 +2,10 @@ import bodyParser from 'body-parser';
 import { spawn, spawnSync } from 'child_process';
 import express from 'express';
 import * as fs from 'fs';
+import http from 'http';
 import { dirname } from 'path';
+import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
-import { WebSocketServer } from 'ws';
 import { ServerMessage } from './js/constants.js';
 import { TOKEN } from './token.js';
 
@@ -60,8 +61,10 @@ app.post('/upload', async (req, res) => {
 (console).log("************* Starting the server *************");
 const port = 8000;
 // Start the application
-app.listen(port, '0.0.0.0');
+const server = http.createServer(app);
+server.listen(port);
 
+//////////////// ngrok /////////////////
 try {
     (console).log('Spawning ngrok. Public URL: https://careful-loosely-moose.ngrok-free.app')
     spawnSync(`ngrok config add-authtoken ${TOKEN}`);
@@ -71,69 +74,55 @@ try {
     ngrok.on("error", function (error) { console.error(error) })
 } catch (e) { console.error(e); }
 
-const sockserver = new WebSocketServer({ port: 443 });
+
+///////////// websockets ///////////////
+const sockserver = new Server(server);
 (console).log("Socket Server ready.")
 sockserver.on('connection', client => {
     client.clientId = nextClientId++;
     (console).log('New client connected!')
-    send(client, { type: ServerMessage.SHARED_STORIES, sharedStories });
-    client.on('close', () => disconnect(client));
-    client.on('message', data => {
-        try {
-            data = JSON.parse(data);
-            if (data.type == ServerMessage.START_SHARE) {
-                startStory(client, data.story);
-            } else if (data.type == ServerMessage.SHARED_STORIES) {
-                send(client, {
-                    type: ServerMessage.SHARED_STORIES,
-                    stories: formatStoriesData(),
-                });
-            } else if (data.type == ServerMessage.UPDATE_STORY) {
-                let story = sharedStories.find(s => s.participants.includes(client));
-                if (!story) { console.error("No story found for story update!"); return; }
-                console.error("TODO: finish me!")
-            } else if (data.type == ServerMessage.UPDATE_PARTICIPANT) {
-                let story = sharedStories.find(s => s.participants.includes(client));
-                if (!story) { console.error("No story found for participant update!"); return; }
-                for (let p of story.participants) {
-                    if (p != client) {
-                        data.id = p.clientId;
-                        send(p, data);
-                    }
-                }
-            } else if (data.type == ServerMessage.CONNECT_TO_STORY) {
-                let storyId = data.storyId;
-                let share = sharedStories.find(s => s.story.id == storyId);
-                if (!share) {
-                    send(client, {
-                        type: ServerMessage.ERROR,
-                        message: "Invalid story id" + storyId,
-                    });
-                    return;
-                }
-                send(client, {
-                    type: ServerMessage.CONNECT_TO_STORY,
-                    story: share.story,
-                })
-                share.participants.push(client);
-            } else {
-                console.error("Unhandled message: " + data);
-            }
-        } catch (e) {
-            console.error(e);
-            try {
-                send(client, {
-                    type: ServerMessage.ERROR,
-                    message: e.message,
-                })
-            } catch (e2) {
-                console.error(e2);
-            }
+    client.emit(ServerMessage.SHARED_STORIES, getSharedStoryData())
+
+    client.on('disconnect', () => disconnect(client));
+
+    client.on(ServerMessage.START_SHARE, story => {
+        sharedStories.push({ participants: [client], story });
+        sockserver.emit(ServerMessage.SHARED_STORIES, getSharedStoryData());
+
+        (console).log('New Story shared: ' + story.id);
+    });
+
+    client.on(ServerMessage.UPDATE_STORY, data => {
+        // sending story update
+        let story = sharedStories.find(s => s.participants.includes(client));
+        if (!story) { console.error("No story found for story update!"); return; }
+
+        console.log("Update the stored story!")
+
+        for (let p of story.participants) {
+            if (p != client) p.emit(ServerMessage.UPDATE_STORY, data);
         }
-    })
-    client.onerror = function (e) {
-        (console).log('websocket error', e)
-    }
+    });
+
+    client.on(ServerMessage.UPDATE_PARTICIPANT, data => {
+        // sending position update
+        let story = sharedStories.find(s => s.participants.includes(client));
+        if (!story) { console.error("No story found for participant update!"); return; }
+
+        data.id = client.clientId;
+        for (let p of story.participants) {
+            if (p != client) p.emit(ServerMessage.UPDATE_PARTICIPANT, data);
+        }
+    });
+
+    client.on(ServerMessage.CONNECT_TO_STORY, storyId => {
+        // requesting story connection
+        let share = sharedStories.find(s => s.story.id == storyId);
+        if (!share) { client.emit(ServerMessage.ERROR, "Invalid story id" + storyId); return; }
+
+        client.emit(ServerMessage.CONNECT_TO_STORY, share.story);
+        share.participants.push(client);
+    });
 })
 
 function sendFileReplaceImportMap(res, filename) {
@@ -155,48 +144,14 @@ function disconnect(client) {
             }
             return true;
         })
-        if (closed) sendAll({
-            type: ServerMessage.SHARED_STORIES,
-            stories: formatStoriesData(),
-        });
+        if (closed) sockserver.emit(ServerMessage.SHARED_STORIES, getSharedStoryData())
     } catch (error) {
         console.error(error);
     }
 }
 
-function startStory(client, story) {
-    try {
-        sharedStories.push({
-            participants: [client],
-            story
-        });
-        sendAll({
-            type: ServerMessage.SHARED_STORIES,
-            stories: formatStoriesData(),
-        });
-        (console).log('New Story shared: ' + story.id);
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-function formatStoriesData() {
-    return sharedStories.map(d => {
-        return {
-            id: d.story.id,
-            name: d.story.name
-        }
-    });
-}
-
-function send(client, data) {
-    client.send(JSON.stringify(data));
-}
-
-function sendAll(data) {
-    sockserver.clients.forEach(client => {
-        client.send(JSON.stringify(data));
-    });
+function getSharedStoryData() {
+    return sharedStories.map(d => { return { id: d.story.id, name: d.story.name } });
 }
 
 async function writeFile(filename, contents) {

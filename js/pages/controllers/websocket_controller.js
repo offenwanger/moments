@@ -30,34 +30,27 @@ export function WebsocketController() {
     let mStoryUpdateCallback = async () => { }
     let mParticipantUpdateCallback = () => { }
 
-    function requestStories() {
-        send({ type: ServerMessage.SHARED_STORIES })
-    }
+    const mWebSocket = io();
 
-    const mWebSocket = new WebSocket(`ws://${window.location.hostname}:443/`);
-    mWebSocket.onmessage = async (event) => {
-        let data = JSON.parse(event.data);
-        if (data.type == ServerMessage.SHARED_STORIES) {
-            mSharedStoriesUpdatedCallback(data.stories);
-        } else if (data.type == ServerMessage.CONNECT_TO_STORY) {
-            await mStoryConnectCallback(data.story);
-        } else if (data.type == ServerMessage.UPDATE_STORY) {
-            await mStoryUpdateCallback(data.updates);
-        } else if (data.type == ServerMessage.UPDATE_PARTICIPANT) {
-            mParticipantUpdateCallback(data.id, data.head, data.handR, data.handL);
-        } else if (data.type == ServerMessage.ERROR) {
-            console.error(data.message);
-        } else {
-            console.error("Unhandled message: " + data);
-        }
-    };
+    mWebSocket.on(ServerMessage.SHARED_STORIES, (stories) => {
+        mSharedStoriesUpdatedCallback(stories);
+    });
 
-    let mConnect = new Promise((resolve, reject) => {
-        mWebSocket.addEventListener("open", () => {
-            (console).log("Socket connected");
-            resolve();
-        });
-    })
+    mWebSocket.on(ServerMessage.CONNECT_TO_STORY, async (story) => {
+        await mStoryConnectCallback(story);
+    });
+
+    mWebSocket.on(ServerMessage.UPDATE_STORY, async (updates) => {
+        await mStoryUpdateCallback(updates);
+    });
+
+    mWebSocket.on(ServerMessage.UPDATE_PARTICIPANT, (data) => {
+        mParticipantUpdateCallback(data.id, data.head, data.handR, data.handL);
+    });
+
+    mWebSocket.on(ServerMessage.ERROR, (message) => {
+        console.error(message);
+    });
 
     async function shareStory(model, workspace) {
         let filenames = model.assets.map(a => a.filename);
@@ -65,21 +58,18 @@ export function WebsocketController() {
             await uploadAsset(model.id, filename, workspace)
         }
         model.annotations.forEach(a => a.json = null);
-        send({
-            type: ServerMessage.START_SHARE,
-            story: model,
-        })
+        mWebSocket.emit(ServerMessage.START_SHARE, model);
         mConnectedToStory = true;
     }
 
     function connectToStory(storyId) {
-        send({ type: ServerMessage.CONNECT_TO_STORY, storyId })
+        mWebSocket.emit(ServerMessage.CONNECT_TO_STORY, storyId)
         mConnectedToStory = true;
     }
 
     function updateStory(updates) {
         if (!mConnectedToStory) return;
-        send({ type: ServerMessage.UPDATE_STORY, updates })
+        mWebSocket.emit(ServerMessage.UPDATE_STORY, updates);
     }
 
     async function uploadAsset(storyId, filename, workspace) {
@@ -98,17 +88,11 @@ export function WebsocketController() {
         });
     }
 
-
     function updateParticipant(head, handR = null, handL = null) {
         if (!mConnectedToStory) return;
-        send({ type: ServerMessage.UPDATE_PARTICIPANT, head, handR, handL })
+        mWebSocket.emit(ServerMessage.UPDATE_PARTICIPANT, { head, handR, handL })
     }
 
-    function send(data) {
-        mWebSocket.send(JSON.stringify(data))
-    }
-
-    this.requestStories = requestStories;
     this.shareStory = shareStory;
     this.uploadAsset = uploadAsset;
     this.connectToStory = connectToStory;

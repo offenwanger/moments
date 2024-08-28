@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EditMode } from '../../constants.js';
 import { Data } from '../../data.js';
 import { StoryWrapper } from '../scene_objects/story_wrapper.js';
+import { OtherUserWrapper } from '../scene_objects/other_user_wrapper.js';
 
 export function StorySceneController() {
     let mScene = new THREE.Scene();
@@ -19,7 +20,9 @@ export function StorySceneController() {
     }
 
     function updateOtherUser(id, head, handR, handL) {
-        console.log("TODO: Finish me!")
+        let otherUser = mOtherUsers.find(o => o.getId() == id);
+        if (!otherUser) console.error("User not found!", id);
+        otherUser.update(head, handR, handL);
     }
 
     function removeOtherUser(id) {
@@ -29,7 +32,9 @@ export function StorySceneController() {
     }
 
     function addOtherUser(id, head, handR, handL) {
-        console.log("TODO: Finish me!")
+        let otherUser = new OtherUserWrapper(mScene, id);
+        otherUser.update(head, handR, handL);
+        mOtherUsers.push(otherUser);
     }
 
 

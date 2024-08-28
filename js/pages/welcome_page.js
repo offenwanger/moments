@@ -43,7 +43,6 @@ export function WelcomePage(parentContainer, lastFolder = false, mWebsocketContr
                 .on('click', async () => await mViewStoryCallback(story.id));
         }
     });
-    mWebsocketController.requestStories();
 
     this.onFolderSelected = (func) => mFolderSelectedCallback = func;
     this.onLastFolder = (func) => mLastFolderCallback = func;

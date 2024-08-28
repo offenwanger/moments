@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { EditMode } from "../../constants.js";
 
-export function UserWrapper(parent, id) {
+export function OtherUserWrapper(parent, id) {
     let mParent = parent;
     let mId = id;
     let mMode = EditMode.MODEL;
+    let mHandRIn = false;
+    let mHandLIn = false;
 
     const mMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(Math.random(), Math.random(), Math.random)
@@ -22,7 +24,7 @@ export function UserWrapper(parent, id) {
             color: new THREE.Color(0, 0, 0)
         })
     );
-    mEye1.scale(0.1, 0.3, 0.1)
+    mEye1.scale.set(0.1, 0.3, 0.1)
     mEye1.position.set(-0.05, 0, -0.2)
 
     const mEye2 = new THREE.Mesh(
@@ -31,7 +33,7 @@ export function UserWrapper(parent, id) {
             color: new THREE.Color(0, 0, 0)
         })
     );
-    mEye2.scale(0.1, 0.3, 0.1)
+    mEye2.scale.set(0.1, 0.3, 0.1)
     mEye2.position.set(0.05, 0, -0.2)
 
     const mHead = new THREE.Group;
@@ -42,13 +44,11 @@ export function UserWrapper(parent, id) {
 
     const mConeGeometry = new THREE.ConeGeometry(0.01, 0.02, 3);
 
-    let mHandRIn = false;
     const mHandR = new THREE.Mesh(
         mConeGeometry,
         mMaterial
     );
 
-    let mHandLIn = false;
     const mHandL = new THREE.Mesh(
         mConeGeometry,
         mMaterial
@@ -70,15 +70,31 @@ export function UserWrapper(parent, id) {
         }
     }
 
-    function getId() {
-        return id;
-    }
-
     function remove() {
         mParent.remove(mHead)
         mParent.remove(mHandR)
         mParent.remove(mHandL)
     }
+
+    function setHead(pos, orientation) {
+        mHead.position.set(pos.x, pos.y, pos.z);
+        mHead.quaternion.set(...orientation);
+    }
+
+    function setHandR(pos = null, orientation = null) {
+        if (!pos) {
+            mParent.remove(mHandR);
+        } else {
+            mHandR.position.set(pos.x, pos.y, pos.z);
+            mHandR.quaternion.set(...orientation);
+        }
+    }
+
+    function setHandL(pos = null, orientation = null) {
+        mHandL.position.set(pos.x, pos.y, pos.z);
+        mHandL.quaternion.set(...orientation);
+    }
+
 
     function setMode(mode) {
         mMode = mode;
@@ -87,6 +103,6 @@ export function UserWrapper(parent, id) {
     this.getTargets = () => [];
     this.setMode = setMode;
     this.update = update;
-    this.getId = getId;
+    this.getId = () => mId;
     this.remove = remove;
 }

@@ -14,24 +14,33 @@ export async function main() {
     async function updatePage() {
         d3.select('#content').selectAll("*").remove();
         let folder = await HandleStorage.getItem('folder');
-        let story = new URLSearchParams(window.location.search).get("story")
-        if (story && new URLSearchParams(window.location.search).get("view") == 'true') {
-            await showViewPage();
-        } else if (folder) {
-            if (await folder.queryPermission({ mode: 'readwrite' }) !== 'granted') {
-                await showWelcomePage(true);
+        let missingPermissions = folder ? await folder.queryPermission({ mode: 'readwrite' }) !== 'granted' : false;
+        let story = new URLSearchParams(window.location.search).get("story");
+        let view = new URLSearchParams(window.location.search).get("view") == 'true';
+        let remote = new URLSearchParams(window.location.search).get("remote") == 'true';
+        let list = new URLSearchParams(window.location.search).get("list") == 'true';
+
+        if (story && remote) {
+            if (view) {
+                await showViewPage();
             } else {
-                // folder all set
-                let workspaceManager = new WorkspaceManager(folder);
-                if (story) {
-                    await showEditorPage(workspaceManager)
-                } else if (new URLSearchParams(window.location.search).get("list") == 'true') {
-                    await showListPage(workspaceManager);
-                } else {
-                    await showWelcomePage(true);
-                }
+                await showEditorPage()
             }
-        } else { await showWelcomePage(false); }
+        } else if (!folder) {
+            await showWelcomePage(false);
+        } else if (folder && missingPermissions) {
+            await showWelcomePage(true);
+        } else if (folder && !missingPermissions && story) {
+            let workspaceManager = new WorkspaceManager(folder);
+            await showEditorPage(workspaceManager)
+        } else if (folder && !missingPermissions && list) {
+            let workspaceManager = new WorkspaceManager(folder);
+            await showListPage(workspaceManager);
+        } else if (folder && !missingPermissions && !list) {
+            await showWelcomePage(true);
+        } else {
+            console.error("Unknown state! folder: " + folder + " - missingPermissions: " + missingPermissions + " - story: " + story + " - view: " + view + " - remote: " + remote + " - list: " + list)
+        }
     }
 
     async function showWelcomePage(withLastFolder) {
@@ -57,10 +66,10 @@ export async function main() {
             await updatePage();
         });
 
-        page.onViewStory(async (storyId) => {
+        page.onOpenRemoteStory(async (storyId) => {
             let params = new URLSearchParams(window.location.search)
             params.set("story", storyId)
-            params.set("view", 'true')
+            params.set("remote", 'true')
             window.location.search = params.toString();
             await updatePage();
         });

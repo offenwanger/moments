@@ -1,7 +1,7 @@
 export function WelcomePage(parentContainer, lastFolder = false, mWebsocketController) {
     let mFolderSelectedCallback = async () => { };
     let mLastFolderCallback = async () => { };
-    let mViewStoryCallback = async () => { };
+    let mOpenRemoteStoryCallback = async () => { };
 
     let div = parentContainer.append('div')
         .style('padding', "10px");
@@ -40,11 +40,11 @@ export function WelcomePage(parentContainer, lastFolder = false, mWebsocketContr
             li.append('button').html('👀')
                 .classed('view-story-button', true)
                 .style('margin-left', '10px')
-                .on('click', async () => await mViewStoryCallback(story.id));
+                .on('click', async () => await mOpenRemoteStoryCallback(story.id));
         }
     });
 
     this.onFolderSelected = (func) => mFolderSelectedCallback = func;
     this.onLastFolder = (func) => mLastFolderCallback = func;
-    this.onViewStory = (func) => mViewStoryCallback = func;
+    this.onOpenRemoteStory = (func) => mOpenRemoteStoryCallback = func;
 }

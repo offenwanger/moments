@@ -11,7 +11,7 @@ export function ModelController(story = new Data.StoryModel()) {
     async function applyUpdates(updates) {
         for (let update of updates) {
             if (update.action == 'delete') {
-                _delete(update.id);
+                _deleteOne(update.id);
             } else if (update.action == 'update') {
                 let item = mModel.find(update.row.id);
                 if (!item) {

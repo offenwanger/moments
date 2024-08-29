@@ -238,5 +238,6 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     this.onUpdateTimeline = (func) => mUpdateTimelineCallback = func;
     this.onUpdateAnnotationImage = (func) => mUpdateAnnotationImageCallback = func;
     this.onStartShare = (func) => mStartShareCallback = func;
+    this.hideShare = () => mShareButton.style("display", 'none');
 }
 

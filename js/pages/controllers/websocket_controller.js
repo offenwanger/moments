@@ -57,7 +57,6 @@ export function WebsocketController() {
         for (let filename of filenames) {
             await uploadAsset(model.id, filename, workspace)
         }
-        model.annotations.forEach(a => a.json = null);
         mWebSocket.emit(ServerMessage.START_SHARE, model);
         mConnectedToStory = true;
     }

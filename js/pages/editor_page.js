@@ -89,7 +89,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
             }
             return true;
         }).map(p => { return { x: p.x, y: p.y, z: p.z } })
-        await mModelController.update(mModel.getModel().storyId, { timeline: line });
+        await mModelController.update(mModelController.getModel().id, { timeline: line });
         await updateModel();
     })
 
@@ -100,11 +100,15 @@ export function EditorPage(parentContainer, mWebsocketController) {
     })
 
     mStoryDisplayController.onStartShare(async () => {
+        if (!mWorkspace) { console.error("Invalid state, should not share unless running local worksapce."); }
+
         mWebsocketController.shareStory(mModelController.getModel(), mWorkspace);
     })
 
     let mAssetPicker = new AssetPicker(parentContainer);
     mAssetPicker.setNewAssetCallback(async (fileHandle, type) => {
+        if (!mWorkspace) { console.error("Remote asset upload not implemented."); return; }
+
         let filename = await mWorkspace.storeAsset(fileHandle);
         let asset = null;
         if (type == AssetTypes.MODEL) {
@@ -169,20 +173,47 @@ export function EditorPage(parentContainer, mWebsocketController) {
         updateModel();
     })
 
-    async function show(workspace) {
+    async function show(workspace = null) {
         mWorkspace = workspace;
 
         const searchParams = new URLSearchParams(window.location.search)
         const storyId = searchParams.get("story");
         if (!storyId) { console.error("Story not set!"); return; }
 
-        let story = await mWorkspace.getStory(storyId);
-        if (!story) throw Error("Invalid workspace!");
+        const remote = searchParams.get("remote") == 'true';
 
-        mModelController = new ModelController(story);
-        mModelController.addUpdateCallback((updates, model) => mWorkspace.updateStory(model));
+        if (remote) {
+            mStoryDisplayController.hideShare();
+            let story = await new Promise((resolve, reject) => {
+                mWebsocketController.connectToStory(storyId);
+                mWebsocketController.onStoryConnect(async (story) => {
+                    resolve(story);
+                })
+            })
+            let model = Data.StoryModel.fromObject(story);
+            mModelController = new ModelController(model);
+
+            mAssetUtil = new AssetUtil({
+                downloads: {},
+                getAssetAsURL: async function (filename) {
+                    if (this.downloads[filename]) return this.downloads[filename];
+                    let file = await (await fetch('uploads/' + storyId + "/" + filename)).text();
+                    this.downloads[filename] = file;
+                    return file;
+                }
+            });
+
+            mAssetPicker.hideNew();
+        } else {
+            let story = await mWorkspace.getStory(storyId);
+            if (!story) throw Error("Invalid workspace!");
+
+            mModelController = new ModelController(story);
+            mModelController.addUpdateCallback((updates, model) => mWorkspace.updateStory(model));
+            mAssetUtil = new AssetUtil(mWorkspace);
+        }
+
         mModelController.addUpdateCallback(mWebsocketController.updateStory);
-        mAssetUtil = new AssetUtil(mWorkspace);
 
         resize(mWidth, mHeight);
 

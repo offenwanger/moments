@@ -137,6 +137,13 @@ function sendFileReplaceImportMap(res, filename) {
 
 function disconnect(client) {
     try {
+        let story = sharedStories.find(s => s.participants.includes(client));
+        if (story) {
+            for (let p of story.participants) {
+                if (p != client) p.emit(ServerMessage.UPDATE_PARTICIPANT, { id: client.clientId });
+            }
+        }
+
         sharedStories.forEach(s => s.participants = s.participants.filter(c => c != client));
         let closed = false;
         sharedStories = sharedStories.filter(s => {

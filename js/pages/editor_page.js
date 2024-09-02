@@ -67,7 +67,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
     });
 
     mStoryDisplayController.onMoveChain(async (items) => {
-        await mModelController.updatePositionsAndOrientations(items);
         await mModelController.updateMany(items.map(({ id, position, orientation }) => {
             return {
                 id, attrs: {

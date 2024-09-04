@@ -41,6 +41,7 @@ export function ListPage(parentContainer) {
         mWorkspace = workspace;
 
         let stories = await mWorkspace.getStoryList();
+        mList.selectAll('*').remove();
         stories.forEach(story => {
             let li = mList.append('li')
                 .attr('id', story.id);

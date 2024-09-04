@@ -387,7 +387,7 @@ export function XRSessionController(mWebsocketController) {
                     orientation: root.getTargetLocalOrientation(),
                 })
             }
-            await mMoveChainCallback(affectedTargets);
+            await mMoveChainCallback(moveUpdates);
 
             mIKSolver = null
         }

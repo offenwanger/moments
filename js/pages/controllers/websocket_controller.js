@@ -31,12 +31,32 @@ export function WebsocketController() {
     let mParticipantUpdateCallback = () => { }
 
     const mWebSocket = io();
+    let mSocketId = null;
+
+    mWebSocket.on("connect", () => {
+        mWebSocket.emit(ServerMessage.CONNECTION_ID, mSocketId);
+    });
+
+    mWebSocket.on("disconnect", (reason) => {
+        (console).log("Disconnecting because: " + reason);
+    });
+
+    mWebSocket.on("error", (error) => {
+        console.error(error);
+    });
+
+    mWebSocket.on(ServerMessage.CONNECTION_ID, id => {
+        (console).log("Received new id: " + id);
+        mSocketId = id;
+    })
+
 
     mWebSocket.on(ServerMessage.SHARED_STORIES, (stories) => {
         mSharedStoriesUpdatedCallback(stories);
     });
 
     mWebSocket.on(ServerMessage.CONNECT_TO_STORY, async (story) => {
+        mConnectedToStory = true;
         await mStoryConnectCallback(story);
     });
 
@@ -52,18 +72,38 @@ export function WebsocketController() {
         console.error(message);
     });
 
-    async function shareStory(model, workspace) {
-        let filenames = model.assets.map(a => a.filename);
-        for (let filename of filenames) {
-            await uploadAsset(model.id, filename, workspace)
-        }
-        mWebSocket.emit(ServerMessage.START_SHARE, model);
+    mWebSocket.on(ServerMessage.START_SHARE, () => {
         mConnectedToStory = true;
+        (console).log("Sharing started successfully.")
+    })
+
+    async function shareStory(model, workspace) {
+        try {
+            let usedAssets = model.model3Ds.map(m => m.assetId);
+            let filenames = model.assets.filter(a => usedAssets
+                .includes(a.id))
+                .map(a => a.filename);
+            for (let filename of filenames) {
+                await uploadAsset(model.id, filename, workspace)
+            }
+            (console).log("Files uploaded.")
+            mWebSocket.emit(ServerMessage.START_SHARE, model);
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     function connectToStory(storyId) {
-        mWebSocket.emit(ServerMessage.CONNECT_TO_STORY, storyId)
-        mConnectedToStory = true;
+        mWebSocket.emit(ServerMessage.CONNECT_TO_STORY, storyId);
+        setTimeout(() => {
+            if (!mConnectedToStory) {
+                console.error("Connection to " + storyId + " failed, retrying.");
+                mWebSocket.emit(ServerMessage.CONNECT_TO_STORY, storyId);
+            };
+            setTimeout(() => {
+                console.error("Connection to " + storyId + " failed.");
+            }, 1000)
+        }, 1000)
     }
 
     function updateStory(updates) {
@@ -73,6 +113,7 @@ export function WebsocketController() {
 
     async function uploadAsset(storyId, filename, workspace) {
         let url = await workspace.getAssetAsURL(filename);
+        (console).log("Uploading " + filename);
         await fetch('/upload', {
             method: "POST",
             headers: {
@@ -85,6 +126,7 @@ export function WebsocketController() {
                 url,
             })
         });
+        (console).log(filename + " uploaded.");
     }
 
     function updateParticipant(head, handR = null, handL = null) {

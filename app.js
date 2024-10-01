@@ -11,9 +11,6 @@ import { Data } from './js/data.js';
 import { ModelController } from './js/pages/controllers/model_controller.js';
 import { TOKEN } from './token.js';
 
-let sharedStories = [];
-let nextClientId = 0;
-
 const LOCAL_IMPORT = ` 
 <script type="importmap">
     {
@@ -42,6 +39,8 @@ app.use('/', express.static(__dirname + '/'));
 app.post('/upload', async (req, res) => {
     try {
         let data = req.body;
+        (console).log("Received upload: " + data.filename);
+
         if (data.json) {
             data.filename = "story.json"
             data.url = JSON.stringify(data.json);
@@ -78,54 +77,91 @@ try {
 
 
 ///////////// websockets ///////////////
-const sockserver = new Server(server);
-(console).log("Socket Server ready.")
-sockserver.on('connection', client => {
-    client.clientId = nextClientId++;
-    (console).log('New client connected!')
-    client.emit(ServerMessage.SHARED_STORIES, getSharedStoryData())
+const sockserver = new Server(server, { pingTimeout: 30000, maxHttpBufferSize: 1e8, });
+const clientMap = {};
+let sharedStories = [];
+let nextClientId = 1;
 
-    client.on('disconnect', () => disconnect(client));
+(console).log("Socket Server ready.")
+
+sockserver.on('connection', client => {
+    (console).log('Incoming connection!', client.recovered, client.id)
+
+    client.emit(ServerMessage.SHARED_STORIES, getSharedStoryData());
+
+    client.on('disconnect', (reason) => disconnect(client, reason));
+
+    client.on(ServerMessage.CONNECTION_ID, id => {
+        if (!id) {
+            client.clientId = Date.now() + "_" + nextClientId++;
+            client.emit(ServerMessage.CONNECTION_ID, client.clientId);
+            (console).log(client.clientId + ' connected!')
+        } else {
+            // client is reconnecting, possibly after a server reboot.
+            client.clientId = id;
+            (console).log(client.clientId + ' reconnected!');
+        }
+        clientMap[client.clientId] = client;
+    })
 
     client.on(ServerMessage.START_SHARE, story => {
-        sharedStories.push({ participants: [client], storyController: new ModelController(Data.StoryModel.fromObject(story)) });
-        sockserver.emit(ServerMessage.SHARED_STORIES, getSharedStoryData());
+        if (!client.clientId) { console.error('Invalid init state!'); return; }
 
-        (console).log('New Story shared: ' + story.id);
+        try {
+            sharedStories.push({ participants: [client.clientId], storyController: new ModelController(Data.StoryModel.fromObject(story)) });
+            sockserver.emit(ServerMessage.SHARED_STORIES, getSharedStoryData());
+            client.emit(ServerMessage.START_SHARE, { shared: true });
+
+            (console).log('New Story shared: ' + story.id);
+        } catch (error) {
+            console.error(error);
+        }
     });
 
     client.on(ServerMessage.UPDATE_STORY, updates => {
+        if (!client.clientId) { console.error('Invalid init state!'); return; }
+
         // sending story update
-        let story = sharedStories.find(s => s.participants.includes(client));
+        let story = sharedStories.find(s => s.participants.includes(client.clientId));
         if (!story) { console.error("No story found for story update!"); return; }
 
         story.storyController.applyUpdates(updates);
 
-        for (let p of story.participants) {
-            if (p != client) p.emit(ServerMessage.UPDATE_STORY, updates);
+        for (let pId of story.participants) {
+            if (pId != client.clientId) emitToId(pId, ServerMessage.UPDATE_STORY, updates);
         }
     });
 
     client.on(ServerMessage.UPDATE_PARTICIPANT, data => {
+        if (!client.clientId) { console.error('Invalid init state!'); return; }
+
         // sending position update
-        let story = sharedStories.find(s => s.participants.includes(client));
+        let story = sharedStories.find(s => s.participants.includes(client.clientId));
         if (!story) { console.error("No story found for participant update!"); return; }
 
         data.id = client.clientId;
-        for (let p of story.participants) {
-            if (p != client) p.emit(ServerMessage.UPDATE_PARTICIPANT, data);
+        for (let pId of story.participants) {
+            if (pId != client.clientId) emitToId(pId, ServerMessage.UPDATE_PARTICIPANT, data);
         }
     });
 
     client.on(ServerMessage.CONNECT_TO_STORY, storyId => {
+        if (!client.clientId) { console.error('Invalid init state!'); return; }
+
         // requesting story connection
         let share = sharedStories.find(s => s.storyController.getModel().id == storyId);
         if (!share) { client.emit(ServerMessage.ERROR, "Invalid story id" + storyId); return; }
 
         client.emit(ServerMessage.CONNECT_TO_STORY, share.storyController.getModel());
-        share.participants.push(client);
+        share.participants.push(client.clientId);
+        (console).log("Client " + client.clientId + " connected to " + storyId);
     });
 })
+
+function emitToId(id, message, data) {
+    if (!clientMap[id]) { console.error("No connection for " + id); return; }
+    clientMap[id].emit(message, data);
+}
 
 function sendFileReplaceImportMap(res, filename) {
     let html = fs.readFileSync(filename, 'utf8');
@@ -135,16 +171,21 @@ function sendFileReplaceImportMap(res, filename) {
     res.end(html);
 }
 
-function disconnect(client) {
+function disconnect(client, reason) {
+    if (!client) { console.error("Bad client: " + client); }
+    if (!client.clientId) { console.error('Invalid init state!'); return; }
     try {
-        let story = sharedStories.find(s => s.participants.includes(client));
+        (console).log('Client ' + client.clientId + " disconnected because " + reason)
+        clientMap[client.clientId] = null;
+
+        let story = sharedStories.find(s => s.participants.includes(client.clientId));
         if (story) {
-            for (let p of story.participants) {
-                if (p != client) p.emit(ServerMessage.UPDATE_PARTICIPANT, { id: client.clientId });
+            for (let pId of story.participants) {
+                if (pId != client.clientId) emitToId(pId, ServerMessage.UPDATE_PARTICIPANT, { id: client.clientId });
             }
         }
 
-        sharedStories.forEach(s => s.participants = s.participants.filter(c => c != client));
+        sharedStories.forEach(s => s.participants = s.participants.filter(c => c != client.clientId));
         let closed = false;
         sharedStories = sharedStories.filter(s => {
             if (s.participants.length == 0) {

@@ -31,6 +31,7 @@ export const BOX_ASSET_PREFIXES = ['px_', 'nx_', 'py_', 'ny_', 'pz_', 'nz_'];
 export const DOUBLE_CLICK_SPEED = 500;
 
 export const ServerMessage = {
+    CONNECTION_ID: "connectionid",
     SHARED_STORIES: "listofsharedstories",
     START_SHARE: "startsharing",
     CONNECT_TO_STORY: "connectingtostory",

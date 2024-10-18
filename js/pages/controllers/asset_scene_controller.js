@@ -41,7 +41,7 @@ export function AssetSceneController() {
         mModel3D = new Data.Model3D();
         mModel3D.z = -1;
         mModel3D.assetId = assetId;
-        mModel3DWrapper.update(mModel3D, null, assetUtil)
+        await mModel3DWrapper.update(mModel3D, null, assetUtil)
     }
 
     function userMove(globalPosition) {

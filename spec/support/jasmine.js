@@ -7,7 +7,7 @@ const config = {
         "helpers/**/*.?(m)js"
     ],
     "env": {
-        "stopSpecOnExpectationFailure": false,
+        "stopSpecOnExpectationFailure": true,
         "random": true
     }
 };

@@ -22,6 +22,11 @@ export async function setup() {
 
     global.d3 = new mockD3();
     global.indexedDB = new mockIndexedDB();
+    //// THREE things /////
+    global.HTMLCanvasElement = Object;
+    global.ProgressEvent = Event;
+    global.navigator = undefined;
+    ////
     global.document = {
         createElement: (e) => {
             if (e == 'canvas') return createCanvas();
@@ -31,7 +36,6 @@ export async function setup() {
         addEventListener: function (event, listener) { },
         body: { appendChild: function (vrbutton) { } }
     }
-    global.navigator = {};
     global.window = {
         callbacks: {},
         directories: [],
@@ -45,7 +49,7 @@ export async function setup() {
         innerHeight: 800
     };
     global.Image = function Image() { };
-    global.FileReader = function () { this.readAsDataURL = function (filename) { this.onload(mockFileSystem[filename]) } }
+    global.FileReader = mockFileSystem.mockFileReader;
     global.io = function () { return { on: () => { }, emit: () => { }, } };
 
     await mockThreeSetup();

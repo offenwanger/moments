@@ -1,5 +1,6 @@
+
 import { Data } from '../../js/data.js';
-import { mockFileSystemDirectoryHandle, mockFileSystemFileHandle } from './mock_filesystem.js';
+import { loadRealFile, mockFileSystemDirectoryHandle, mockFileSystemFileHandle } from './mock_filesystem.js';
 
 async function createAndEditStory() {
     window.directories.push(new mockFileSystemDirectoryHandle('test'));
@@ -9,14 +10,16 @@ async function createAndEditStory() {
 }
 
 async function createAndOpenModel3D() {
-    global.fileSystem['test.glb'] = "glbstuff";
-    window.files.push(new mockFileSystemFileHandle('test.glb'));
     await createAndEditStory();
-    let promise = TestUtils.clickButtonInput('#story-model3D-add-button');
-    await TestUtils.clickButtonInput('#asset-add-button');
+
+    await loadRealFile('sample.glb')
+    window.files.push(new mockFileSystemFileHandle('sample.glb'));
+    let promise = clickButtonInput('#story-model3D-add-button');
+    await clickButtonInput('#asset-add-button');
     await promise;
-    expect(TestUtils.model().model3Ds.length).toBe(1);
-    await TestUtils.clickButtonInput('#model3D-button-' + TestUtils.model().model3Ds[0].id);
+
+    expect(model().model3Ds.length).toBe(1);
+    await clickButtonInput('#model3D-button-' + model().model3Ds[0].id);
 }
 
 function getInputValue(id) {

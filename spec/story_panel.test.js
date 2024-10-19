@@ -1,7 +1,7 @@
 
-import { setup, cleanup } from './test_utils/test_environment.js';
+import { cleanup, setup } from './test_utils/test_environment.js';
 
-import { mockFileSystemFileHandle } from './test_utils/mock_filesystem.js';
+import { loadRealFile, mockFileSystemFileHandle } from './test_utils/mock_filesystem.js';
 import { TestUtils } from './test_utils/utils.js';
 
 describe('Test ListPage', function () {
@@ -31,17 +31,17 @@ describe('Test ListPage', function () {
 
         it('should add a story model3D', async function () {
             await TestUtils.createAndEditStory();
-            global.fileSystem['test.glb'] = "glbstuff";
-            window.files.push(new mockFileSystemFileHandle('test.glb'));
+            await loadRealFile('sample.glb');
+            window.files.push(new mockFileSystemFileHandle('sample.glb'));
             let promise = TestUtils.clickButtonInput('#story-model3D-add-button');
             await TestUtils.clickButtonInput('#asset-add-button');
             await promise;
             expect(TestUtils.model().model3Ds.length).toBe(1);
-            window.files.push(new mockFileSystemFileHandle('test.glb'));
+            window.files.push(new mockFileSystemFileHandle('sample.glb'));
             promise = TestUtils.clickButtonInput('#story-model3D-add-button');
             await TestUtils.clickButtonInput('#asset-add-button');
             await promise;
-            window.files.push(new mockFileSystemFileHandle('test.glb'));
+            window.files.push(new mockFileSystemFileHandle('sample.glb'));
             promise = TestUtils.clickButtonInput('#story-model3D-add-button');
             await TestUtils.clickButtonInput('#asset-add-button');
             await promise;

@@ -1,6 +1,5 @@
-
-import { createCanvas as createCan } from 'node-canvas-webgl';
 import fs from 'fs';
+import { createCanvas as createCan } from 'node-canvas-webgl';
 const RUN = Math.random();
 let fileCount = 0;
 

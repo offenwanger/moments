@@ -84,6 +84,6 @@ export function AssetPicker(container) {
     }
 
     this.showOpenAssetPicker = showOpenAssetPicker;
-    this.setNewAssetCallback = (func) => mNewAssetCallback = func;
+    this.onNewAsset = (func) => mNewAssetCallback = func;
     this.hideNew = () => mNewAssetButton.hide();
 }

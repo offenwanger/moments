@@ -9,7 +9,7 @@ async function updateWrapperArray(wrappers, dataItems, model, assetUtil, createF
             wrapper = await createFunction(item);
             wrappers.push(wrapper);
         }
-        wrapper.update(item, model, assetUtil);
+        await wrapper.update(item, model, assetUtil);
     }
 
     for (const unusedWrapper of unusedOldWrappers) {

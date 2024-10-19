@@ -112,7 +112,7 @@ export function WebsocketController() {
     }
 
     async function uploadAsset(storyId, filename, workspace) {
-        let url = await workspace.getAssetAsURL(filename);
+        let url = await workspace.getAssetAsDataURI(filename);
         (console).log("Uploading " + filename);
         await fetch('/upload', {
             method: "POST",

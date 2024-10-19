@@ -208,6 +208,7 @@ export function Model3DWrapper(parent) {
         const group = new THREE.Group();
         group.userData.boneLines = true;
         group.visible = false;
+        group.name = bone.name;
         bone.add(group);
         // group.visible = false;
         let childBones = bone.children.filter(i => i.type == "Bone");
@@ -222,6 +223,7 @@ export function Model3DWrapper(parent) {
                 geometry.setFromPoints([point1, point2]);
                 const line = new THREE.Line(geometry, BoneMaterial);
                 line.userData.poseId = poseId;
+                line.name = bone.name;
                 group.attach(line);
             })
         } else {

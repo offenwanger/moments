@@ -21,8 +21,8 @@ describe('Test Moment Panel', function () {
     describe('edit tests', function () {
         it('should update model name', async function () {
             await TestUtils.createAndOpenModel3D();
-            expect(TestUtils.getInputValue("#model3D-name-input")).toBe('test.glb');
-            expect(TestUtils.model().model3Ds[0].name).toBe('test.glb');
+            expect(TestUtils.getInputValue("#model3D-name-input")).toBe('sample.glb');
+            expect(TestUtils.model().model3Ds[0].name).toBe('sample.glb');
             await TestUtils.enterInputValue("#model3D-name-input", 'new name')
             expect(TestUtils.getInputValue("#model3D-name-input")).toBe('new name');
             expect(TestUtils.model().model3Ds[0].name).toBe("new name");

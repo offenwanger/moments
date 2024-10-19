@@ -14,13 +14,14 @@ async function getDataUriFromFile(dir, filename) {
     let file = await handle.getFile();
 
     const reader = new FileReader();
-    const promise = new Promise(resolve => {
-        reader.onload = function (e) {
+    reader.addEventListener('error', function () { console.error(e); })
+    let uri = await new Promise(resolve => {
+        reader.addEventListener('load', function () {
             resolve(reader.result);
-        }
+        });
+        reader.readAsDataURL(file);
     });
-    reader.readAsDataURL(file);
-    return promise;
+    return uri;
 }
 
 async function getFile(dir, filename) {

@@ -192,11 +192,11 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
 
     async function pointerMove(screenCoords) {
         mLastPointerPosition = screenCoords;
+        let pointer = screenToNomralizedCoords(screenCoords);
 
         mIKSolver?.update();
         if (!mRendering) return;
         if (!mInteraction) {
-            let pointer = screenToNomralizedCoords(screenCoords);
             mRaycaster.setFromCamera(pointer, mPageCamera);
 
             let targets = mSceneController.getTargets(mRaycaster);
@@ -213,13 +213,11 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
                 mOrbitControls.enabled = false;
             }
         } else if (mInteraction.type == DRAGGING) {
-            let pointer = screenToNomralizedCoords(screenCoords);
             mRaycaster.setFromCamera(pointer, mPageCamera);
             let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
             position.add(mInteraction.targetToPos)
             mInteraction.target.setTargetWorldPosition(position);
         } else if (mInteraction.type == DRAGGING_KINEMATIC) {
-            let pointer = screenToNomralizedCoords(screenCoords);
             mRaycaster.setFromCamera(pointer, mPageCamera);
             let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
             let localPosition = mInteraction.rootBone.worldToLocal(position);

@@ -105,7 +105,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
     })
 
     let mAssetPicker = new AssetPicker(parentContainer);
-    mAssetPicker.setNewAssetCallback(async (fileHandle, type) => {
+    mAssetPicker.onNewAsset(async (fileHandle, type) => {
         if (!mWorkspace) { console.error("Remote asset upload not implemented."); return; }
 
         let filename = await mWorkspace.storeAsset(fileHandle);
@@ -192,15 +192,16 @@ export function EditorPage(parentContainer, mWebsocketController) {
             let model = Data.StoryModel.fromObject(story);
             mModelController = new ModelController(model);
 
-            mAssetUtil = new AssetUtil({
+            let workspace = {
                 downloads: {},
-                getAssetAsURL: async function (filename) {
+                getAssetAsDataURI: async function (filename) {
                     if (this.downloads[filename]) return this.downloads[filename];
                     let file = await (await fetch('uploads/' + storyId + "/" + filename)).text();
                     this.downloads[filename] = file;
                     return file;
                 }
-            });
+            }
+            mAssetUtil = new AssetUtil(workspace);
 
             mAssetPicker.hideNew();
         } else {

@@ -30,15 +30,16 @@ export function ViewerPage(parentContainer, mWebsocketController) {
         const storyId = searchParams.get("story");
         if (!storyId) { console.error("Story not set!"); return; }
         mWebsocketController.connectToStory(storyId);
-        mAssetUtil = new AssetUtil({
+        let workspace = {
             downloads: {},
-            getAssetAsURL: async function (filename) {
+            getAssetAsDataURI: async function (filename) {
                 if (this.downloads[filename]) return this.downloads[filename];
                 let file = await (await fetch('uploads/' + storyId + "/" + filename)).text();
                 this.downloads[filename] = file;
                 return file;
             }
-        });
+        }
+        mAssetUtil = new AssetUtil(workspace);
 
         resize(mWidth, mHeight);
 

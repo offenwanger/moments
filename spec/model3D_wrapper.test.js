@@ -21,9 +21,42 @@ describe('Test Moment Panel', function () {
     describe('target tests', function () {
         it('should target model mesh', async function () {
             await TestUtils.createAndOpenModel3D();
-            await window.callbacks.pointermove({ clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 })
+            let model3D = TestUtils.model().model3Ds[0];
 
-            expect('done').toBe('true');
+            expect(TestUtils.model().assetPoses
+                .find(p => p.name == "Cube" && model3D.poseIds.includes(p.id)).x)
+                .toBeCloseTo(0.6, 3);
+            expect(TestUtils.model().assetPoses
+                .find(p => p.name == "Cube" && model3D.poseIds.includes(p.id)).z)
+                .toBeCloseTo(-1, 4);
+
+
+            await window.callbacks.pointermove({
+                clientX: window.innerWidth,
+                clientY: window.innerHeight / 2
+            });
+
+            await d3.select("#main-canvas").getCallbacks().pointerdown({
+                clientX: window.innerWidth,
+                clientY: window.innerHeight / 2
+            });
+
+            await window.callbacks.pointermove({
+                clientX: window.innerWidth / 2 - 100,
+                clientY: window.innerHeight / 2
+            });
+
+            await window.callbacks.pointerup({
+                clientX: window.innerWidth / 2 - 100,
+                clientY: window.innerHeight / 2
+            });
+
+            expect(TestUtils.model().assetPoses
+                .find(p => p.name == "Cube" && model3D.poseIds.includes(p.id)).x)
+                .toBeCloseTo(-0.583, 3);
+            expect(TestUtils.model().assetPoses
+                .find(p => p.name == "Cube" && model3D.poseIds.includes(p.id)).z)
+                .toBeCloseTo(-1.35, 3);
         });
 
         it('should drag skinnedmesh', async function () {
@@ -31,8 +64,11 @@ describe('Test Moment Panel', function () {
             let model3D = TestUtils.model().model3Ds[0];
 
             expect(TestUtils.model().assetPoses
-                .find(p => p.name == "Bone0" && model3D.poseIds.includes(p.id)).x)
-                .toBe(0);
+                .find(p => p.name == "Bone" && model3D.poseIds.includes(p.id)).x)
+                .toBeCloseTo(0.004, 3);
+            expect(TestUtils.model().assetPoses
+                .find(p => p.name == "Bone" && model3D.poseIds.includes(p.id)).z)
+                .toBeCloseTo(0.0, 4);
 
             await window.callbacks.pointermove({
                 clientX: window.innerWidth / 2,
@@ -55,8 +91,11 @@ describe('Test Moment Panel', function () {
             });
 
             expect(TestUtils.model().assetPoses
-                .find(p => p.name == "Bone0" && model3D.poseIds.includes(p.id)).x)
-                .toBe(-0.48);
+                .find(p => p.name == "Bone" && model3D.poseIds.includes(p.id)).x)
+                .toBeCloseTo(-0.185, 3);
+            expect(TestUtils.model().assetPoses
+                .find(p => p.name == "Bone" && model3D.poseIds.includes(p.id)).z)
+                .toBeCloseTo(0.0179, 4);
         });
     });
 });

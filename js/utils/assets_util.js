@@ -24,7 +24,7 @@ export function AssetUtil(workspace) {
         let files = [];
         for (const prefix of BOX_ASSET_PREFIXES) {
             let filename = prefix + asset.filename;
-            files.push(await mWorkspace.getAssetAsURL(filename))
+            files.push(await mWorkspace.getAssetAsDataURI(filename))
         }
         let cubeLoader = new THREE.CubeTextureLoader();
         return cubeLoader.load(files)
@@ -64,16 +64,17 @@ export function AssetUtil(workspace) {
     async function loadAssetModel(assetId) {
         let asset = mModel.find(assetId);
         if (!asset || asset.type != AssetTypes.MODEL) { console.error("Bad asset", assetId, asset); throw new Error("Invalid model asset: " + assetId); }
-        return loadGLTFModel(asset.filename);
+        let model = await loadGLTFModel(asset.filename);
+        return model;
     }
 
     async function loadGLTFModel(filename) {
-        let fileUrl = await mWorkspace.getAssetAsURL(filename)
+        let dataUri = await mWorkspace.getAssetAsDataURI(filename)
         const modelLoader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('./node_modules/three/examples/jsm/libs/draco/');
         modelLoader.setDRACOLoader(dracoLoader);
-        let model = await modelLoader.loadAsync(fileUrl, null,
+        let model = await modelLoader.loadAsync(dataUri, null,
             // called while loading is progressing
             function (xhr) {
                 (console).log(file + " "(xhr.loaded / xhr.total * 100) + '% loaded');

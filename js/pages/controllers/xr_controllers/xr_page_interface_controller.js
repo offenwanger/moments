@@ -9,6 +9,8 @@ export function XRPageInterfaceController() {
     let mMousePosition = { x: 0, y: 0 };
     let mMouseDown = false;
 
+    let mSceneController;
+
     let mLeftGroup = new THREE.Group();
     // in case we want something on that wrist
     let mRightGroup = new THREE.Group();
@@ -45,10 +47,10 @@ export function XRPageInterfaceController() {
     let mWindowWidth = 1;
     let mWindowHeight = 1;
 
-    async function updateSystemState(systemState) {
-        if (systemState.primaryRPressed && !mMouseDown) {
+    async function updateClickState(primaryRPressed) {
+        if (primaryRPressed && !mMouseDown) {
             await mouseDown(mMousePosition);
-        } else if (!systemState.primaryRPressed && mMouseDown) {
+        } else if (!primaryRPressed && mMouseDown) {
             await mouseUp(mMousePosition);
         }
     }
@@ -235,9 +237,16 @@ export function XRPageInterfaceController() {
         }
     }
 
+    function setSceneController(sceneController) {
+        mSceneController?.getScene().remove(mGroup);
+        mSceneController = sceneController;
+        mSceneController.getScene().add(mGroup);
+    }
+
     this.userMoved = userMoved;
     this.isInteracting = isInteracting;
-    this.updateSystemState = updateSystemState;
+    this.updateClickState = updateClickState;
     this.renderWebpage = renderWebpage;
     this.getGroup = () => mGroup;
+    this.setSceneController = setSceneController;
 }

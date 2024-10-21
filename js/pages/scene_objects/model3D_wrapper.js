@@ -90,8 +90,7 @@ export function Model3DWrapper(parent) {
         if (mModel3D.isWorld && mMode != EditMode.WORLD) return [];
         if (!mModel3D.isWorld && mMode != EditMode.MODEL) return [];
 
-        if (!mGLTF) return []
-
+        if (!mGLTF) return [];
         const intersects = ray.intersectObjects(mTargets);
         let targets = intersects.map(i => {
             if (!i.object) { console.error("Invalid Intersect!"); return null; }
@@ -150,7 +149,7 @@ export function Model3DWrapper(parent) {
                 let obj = mGLTF.scene.getObjectByName(pose.name);
                 if (!obj.parent || obj.parent == mGLTF.scene) return null;
                 let parentPose = mPoses.find(p => p.name == obj.parent.name);
-                if (!parentPose) { console.error("Invalid target!", obj.parent); return null; };
+                if (!parentPose) { console.error("Invalid target: " + obj.parent.name); return null; };
                 let parentTarget = mInteractionTargets.find(t => t.getId() == parentPose.id);
                 if (!parentTarget) { console.error("Invalid target!", root); return null; };
                 return parentTarget;
@@ -167,6 +166,18 @@ export function Model3DWrapper(parent) {
                 if (!rootPose) { console.error("Invalid target!", root); return null; };
                 let target = mInteractionTargets.find(t => t.getId() == rootPose.id);
                 return target;
+            }
+
+            interactionTarget.getDepth = () => {
+                let obj = mGLTF.scene.getObjectByName(pose.name);
+                let root = obj;
+                let count = 0;
+                while (root.parent && root.parent != mGLTF.scene && root.parent.type == "Bone") {
+                    root = root.parent;
+                    count++;
+                }
+
+                return count;
             }
 
             interactionTarget.getObject3D = () => {

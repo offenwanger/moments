@@ -2,19 +2,18 @@
 import * as td from 'testdouble';
 import * as THREE from 'three';
 import { createCanvas } from './mock_canvas.js';
+import { mockXR, mockXRControllerModelFactory } from './mock_xr.js';
 
 export async function mockThreeSetup() {
     await td.replaceEsm('three', {
         ...THREE,
         WebGLRenderer: function () {
+            this.animationLoop = null;
+            this.lastRender = { scene: null, camera: null }
             this.setSize = () => { }
-            this.setAnimationLoop = () => { }
-            this.xr = {
-                enabled: false,
-                addEventListener: () => { },
-                getController: () => { return new THREE.Object3D(); },
-                getControllerGrip: () => { return new THREE.Object3D(); },
-            }
+            this.setAnimationLoop = (func) => { this.animationLoop = func }
+            this.xr = new mockXR()
+            this.render = function (scene, camera) { this.lastRender = { scene, camera }; }
         },
         ImageLoader: function () {
             this.loadAsync = () => { return createCanvas() }
@@ -30,7 +29,6 @@ export async function mockThreeSetup() {
 }
 
 export function mockOrbitControls(camera) {
-    camera.position.add(new THREE.Vector3(0, 2, 0))
     this.minDistance = 0;
     this.maxDistance = 0;
     this.target = new THREE.Vector3();
@@ -40,15 +38,12 @@ export function mockOrbitControls(camera) {
 }
 
 export const mockVRButton = {
-    createButton: function () {
+    createButton: function (XRRenderer) {
+        global.XRRenderer = XRRenderer;
         return d3.root.append('div').attr("id", "VRButton");
     }
 }
 
 export function mockDRACOLoader() {
     this.setDecoderPath = () => { };
-}
-
-export function mockXRControllerModelFactory() {
-    this.createControllerModel = function () { return new THREE.Object3D() }
 }

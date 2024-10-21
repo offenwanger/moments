@@ -381,7 +381,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     this.setUserPositionAndDirection = setUserPositionAndDirection;
     this.getUserPositionAndDirection = getUserPositionAndDirection;
 
-    this.setScene = (scene) => { mSceneController = scene }
+    this.setSceneController = (sceneContoller) => { mSceneController = sceneContoller }
     this.onMove = (func) => { mMoveCallback = func }
     this.onMoveChain = (func) => { mMoveChainCallback = func }
     this.onUpdateTimeline = (func) => { mUpdateTimelineCallback = func }

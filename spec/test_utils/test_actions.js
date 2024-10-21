@@ -1,15 +1,21 @@
 
+import * as THREE from 'three';
 import { Data } from '../../js/data.js';
 import { loadRealFile, mockFileSystemDirectoryHandle, mockFileSystemFileHandle } from './mock_filesystem.js';
 
-async function createAndEditStory() {
+export function testmodel() {
+    let storyFile = Object.keys(global.fileSystem).find(k => k.startsWith('test/StoryModel_'))
+    return Data.StoryModel.fromObject(JSON.parse(global.fileSystem[storyFile]))
+}
+
+export async function createAndEditStory() {
     window.directories.push(new mockFileSystemDirectoryHandle('test'));
     await d3.select('#choose-folder-button').getCallbacks().click();
     await d3.select('#new-story-button').getCallbacks().click();
     await d3.select('.edit-story-button').getCallbacks().click();
 }
 
-async function createAndOpenModel3D() {
+export async function createAndOpenModel3D() {
     await createAndEditStory();
 
     await loadRealFile('sample.glb')
@@ -18,11 +24,11 @@ async function createAndOpenModel3D() {
     await clickButtonInput('#asset-add-button');
     await promise;
 
-    expect(model().model3Ds.length).toBe(1);
-    await clickButtonInput('#model3D-button-' + model().model3Ds[0].id);
+    expect(testmodel().model3Ds.length).toBe(1);
+    await clickButtonInput('#model3D-button-' + testmodel().model3Ds[0].id);
 }
 
-function getInputValue(id) {
+export function getInputValue(id) {
     let inputContainer = d3.select(id);
     expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
     let input = inputContainer.getChildren()[1];
@@ -34,7 +40,8 @@ function getInputValue(id) {
         console.error("Not a valid type", input.attr('type'))
     }
 }
-async function enterInputValue(id, value) {
+
+export async function enterInputValue(id, value) {
     let inputContainer = d3.select(id);
     expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
     let input = inputContainer.getChildren()[1];
@@ -49,7 +56,7 @@ async function enterInputValue(id, value) {
     }
 }
 
-async function clickButtonInput(id) {
+export async function clickButtonInput(id) {
     let inputContainer = d3.select(id);
     expect(Object.keys(inputContainer.getCallbacks())).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
     await inputContainer.getCallbacks().pointerenter();
@@ -59,7 +66,7 @@ async function clickButtonInput(id) {
     await inputContainer.getCallbacks().pointerout();
 }
 
-async function clickButtonInput1(id) {
+export async function clickButtonInput1(id) {
     let inputContainer = d3.select(id);
     expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
     expect(Object.keys(inputContainer.getChildren()[0].getCallbacks())).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
@@ -70,7 +77,7 @@ async function clickButtonInput1(id) {
     await inputContainer.getChildren()[0].getCallbacks().pointerout();
 }
 
-async function clickButtonInput2(id) {
+export async function clickButtonInput2(id) {
     let inputContainer = d3.select(id);
     expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
     expect(Object.keys(inputContainer.getChildren()[1].getCallbacks())).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
@@ -81,12 +88,7 @@ async function clickButtonInput2(id) {
     await inputContainer.getChildren()[1].getCallbacks().pointerout();
 }
 
-function model() {
-    let storyFile = Object.keys(global.fileSystem).find(k => k.startsWith('test/StoryModel_'))
-    return Data.StoryModel.fromObject(JSON.parse(global.fileSystem[storyFile]))
-}
-
-function createStoryModel() {
+export function createStoryModel() {
     let model = new Data.StoryModel();
     model.name = "TestStory"
     model.timeline = [{ x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 1 }, { x: 1, y: -1, z: -2 }];
@@ -132,17 +134,70 @@ function createStoryModel() {
     model.annotations.push(annotation)
 
     return model;
-
 }
 
-export const TestUtils = {
-    createAndEditStory,
-    createAndOpenModel3D,
-    getInputValue,
-    enterInputValue,
-    clickButtonInput,
-    clickButtonInput1,
-    clickButtonInput2,
-    model,
-    createStoryModel,
+export async function startXR() {
+    global.XRRenderer.xr.eventListeners.sessionstart();
+    let c0 = global.XRRenderer.xr.getController(0)
+    c0.eventListeners.connected({ data: { handedness: c0.handedness } });
+    let c1 = global.XRRenderer.xr.getController(1)
+    c1.eventListeners.connected({ data: { handedness: c1.handedness } });
+    await global.XRRenderer.animationLoop();
+}
+
+export async function stopXR() {
+    global.XRRenderer.xr.getController(0).eventListeners.disconnected({ data: { handedness: 'left' } });
+    global.XRRenderer.xr.getController(1).eventListeners.disconnected({ data: { handedness: 'right' } });
+    global.XRRenderer.xr.eventListeners.sessionend();
+}
+
+export async function moveHead(x, y, z) {
+    let camera = global.XRRenderer.lastRender.camera;
+    camera.position.set(x, y, z);
+}
+
+export async function lookHead(x, y, z) {
+    let camera = global.XRRenderer.lastRender.camera;
+    camera.lookAt(x, y, z);
+}
+
+export async function moveXRController(left, x, y, z) {
+    let controller = global.XRRenderer.xr.getSession().inputSources
+        .find(s => s.handedness == (left ? 'left' : 'right'));
+    let v = new THREE.Vector3();
+    controller.getWorldPosition(v)
+    let pos = new THREE.Vector3(x, y, z);
+    let moveTransform = pos.sub(v);
+    controller.position.add(moveTransform);
+    await global.XRRenderer.animationLoop();
+}
+
+export async function pressXRTrigger(left) {
+    let controller = global.XRRenderer.xr.getSession().inputSources
+        .find(s => s.handedness == (left ? 'left' : 'right'));
+    controller.gamepad.buttons[0].pressed = true;
+    await global.XRRenderer.xr.getSession().eventListeners.selectstart();
+    await global.XRRenderer.animationLoop();
+}
+
+export async function releaseXRTrigger(left) {
+    let controller = global.XRRenderer.xr.getSession().inputSources
+        .find(s => s.handedness == (left ? 'left' : 'right'));
+    controller.gamepad.buttons[0].pressed = false;
+    await global.XRRenderer.xr.getSession().eventListeners.selectend();
+    await global.XRRenderer.animationLoop();
+}
+
+export async function pushXRToggle(left, axes) {
+    let controller = global.XRRenderer.xr.getSession().inputSources
+        .find(s => s.handedness == (left ? 'left' : 'right'));
+    controller.gamepad.axes = axes;
+    await global.XRRenderer.animationLoop();
+}
+
+export async function releaseXRToggle(left) {
+    let controller = global.XRRenderer.xr.getSession().inputSources
+        .find(s => s.handedness == (left ? 'left' : 'right'));
+    controller.gamepad.axes = [0, 0, 0, 0];
+    await global.XRRenderer.animationLoop();
 }

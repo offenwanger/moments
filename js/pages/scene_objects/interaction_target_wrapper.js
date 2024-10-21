@@ -11,4 +11,5 @@ export function InteractionTargetWrapper() {
     this.getObject3D = () => { return null; }
     this.getParent = () => { return new InteractionTargetWrapper(); }
     this.getRoot = () => { return new InteractionTargetWrapper(); }
+    this.getDepth = () => { return 0; }
 }

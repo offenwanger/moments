@@ -4,7 +4,7 @@ import { Data } from "../../data.js";
 import { AssetSceneController } from './asset_scene_controller.js';
 import { CanvasViewController } from './canvas_view_controller.js';
 import { StorySceneController } from './story_scene_controller.js';
-import { XRSessionController } from './xr_session_controller.js';
+import { XRSessionController } from './xr_controllers/xr_session_controller.js';
 import { AnnotationEditorController } from "./annotation_editor_controller.js";
 
 /**
@@ -30,9 +30,9 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     let mOtherUsers = {};
 
     let mXRSessionController = new XRSessionController(mWebsocketController);
-    mXRSessionController.setScene(mActiveScene);
+    mXRSessionController.setSceneController(mActiveScene);
     let mCanvasViewController = new CanvasViewController(parentContainer, mWebsocketController);
-    mCanvasViewController.setScene(mActiveScene);
+    mCanvasViewController.setSceneController(mActiveScene);
     mCanvasViewController.setMode(mMode)
     mCanvasViewController.startRendering();
 
@@ -53,7 +53,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         .style('left', '20px')
         .html('Edit Models')
         .on('click', async () => {
-            await setScene(mStorySceneController);
+            await setSceneController(mStorySceneController);
             mMode = EditMode.MODEL;
             mActiveController.setMode(mMode);
         });
@@ -64,7 +64,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         .style('left', '20px')
         .html('Edit Timeline')
         .on('click', async () => {
-            await setScene(mStorySceneController);
+            await setSceneController(mStorySceneController);
             mMode = EditMode.TIMELINE;
             mActiveController.setMode(mMode);
         });
@@ -75,7 +75,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         .style('left', '20px')
         .html('Edit World')
         .on('click', async () => {
-            await setScene(mStorySceneController);
+            await setSceneController(mStorySceneController);
             mMode = EditMode.WORLD;
             mActiveController.setMode(mMode);
         });
@@ -96,7 +96,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         .html('x')
         .style("display", 'none')
         .on('click', async () => {
-            await setScene(mStorySceneController);
+            await setSceneController(mStorySceneController);
         });
 
     // this needs to go over the buttons
@@ -121,10 +121,9 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
             mXRSessionController.startRendering();
             let { pos, dir } = mActiveController.getUserPositionAndDirection();
             mActiveController = mXRSessionController;
-            mActiveController.setScene(mActiveScene);
+            mActiveController.setSceneController(mActiveScene);
             mActiveController.setMode(mMode);
             mActiveController.setUserPositionAndDirection(pos, dir);
-
         }
     })
 
@@ -135,7 +134,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
             mXRSessionController.stopRendering();
             let { pos, dir } = mActiveController.getUserPositionAndDirection();
             mActiveController = mCanvasViewController;
-            mActiveController.setScene(mActiveScene);
+            mActiveController.setSceneController(mActiveScene);
             mActiveController.setMode(mMode);
             mActiveController.setUserPositionAndDirection(pos, dir);
         }
@@ -176,9 +175,9 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         }
     })
 
-    async function setScene(scene) {
+    async function setSceneController(scene) {
         if (mActiveScene != scene) {
-            mActiveController.setScene(scene);
+            mActiveController.setSceneController(scene);
             if (mActiveScene == mAssetSceneController) { await mExitAssetViewCallback(); }
             mActiveScene = scene;
 
@@ -208,7 +207,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
 
     async function showAsset(assetId, assetUtil) {
         await mAssetSceneController.showAsset(assetId, assetUtil);
-        await setScene(mAssetSceneController);
+        await setSceneController(mAssetSceneController);
         mActiveController.setUserPositionAndDirection(new Vector3(0, 0, 0), new Vector3(0, 0, -1));
     }
 

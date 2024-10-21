@@ -1,7 +1,6 @@
 
 import { setup, cleanup } from './test_utils/test_environment.js';
-
-import { TestUtils } from './test_utils/utils.js';
+import { createAndOpenModel3D, enterInputValue, getInputValue, testmodel } from './test_utils/test_actions.js';
 
 describe('Test Moment Panel', function () {
     beforeEach(async function () {
@@ -14,18 +13,18 @@ describe('Test Moment Panel', function () {
 
     describe('init tests', function () {
         it('should open a model3D panel', async function () {
-            await TestUtils.createAndOpenModel3D();
+            await createAndOpenModel3D();
         });
     });
 
     describe('edit tests', function () {
         it('should update model name', async function () {
-            await TestUtils.createAndOpenModel3D();
-            expect(TestUtils.getInputValue("#model3D-name-input")).toBe('sample.glb');
-            expect(TestUtils.model().model3Ds[0].name).toBe('sample.glb');
-            await TestUtils.enterInputValue("#model3D-name-input", 'new name')
-            expect(TestUtils.getInputValue("#model3D-name-input")).toBe('new name');
-            expect(TestUtils.model().model3Ds[0].name).toBe("new name");
+            await createAndOpenModel3D();
+            expect(getInputValue("#model3D-name-input")).toBe('sample.glb');
+            expect(testmodel().model3Ds[0].name).toBe('sample.glb');
+            await enterInputValue("#model3D-name-input", 'new name')
+            expect(getInputValue("#model3D-name-input")).toBe('new name');
+            expect(testmodel().model3Ds[0].name).toBe("new name");
         });
     });
 });

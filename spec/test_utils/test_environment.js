@@ -28,6 +28,7 @@ export async function setup() {
     global.navigator = undefined;
     ////
     global.document = {
+        querySelector: (query) => { return { checkVisibility: () => false } },
         createElement: (e) => {
             if (e == 'canvas') return createCanvas();
             else return new HTMLElement(e);
@@ -48,9 +49,30 @@ export async function setup() {
         innerWidth: 1000,
         innerHeight: 800
     };
-    global.Image = function Image() { };
+    global.Image = function () {
+        let src;
+        let onload;
+        let img = createCanvas();
+        Object.defineProperty(img, "src", {
+            set: function (value) {
+                src = value
+                if (src && onload) onload();
+                return true;
+            }
+        });
+        Object.defineProperty(img, "onload", {
+            set: function (value) {
+                onload = value
+                if (src && onload) onload();
+                return true;
+            }
+        });
+
+        return img;
+    }
     global.FileReader = mockFileSystem.mockFileReader;
     global.io = function () { return { on: () => { }, emit: () => { }, } };
+    global.domtoimage = { toPng: () => createCanvas() }
 
     await mockThreeSetup();
 

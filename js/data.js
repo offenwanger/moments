@@ -62,6 +62,7 @@ class DataItem {
                     if (typeof item == 'string') return item != id;
                     if (!item) {
                         console.error('Removing invalid item: ' + this.id + " - " + key + " - " + item);
+                        return false;
                     }
                     return !item instanceof DataItem || item.id != id;
                 })
@@ -93,6 +94,7 @@ class DataItem {
                 continue;
             } else if (Array.isArray(item)) {
                 c[key] = item.map(o => {
+                    if (o == null) { console.error("Invalid array item for: " + key); return o; }
                     let obClass = o.id ? IdUtil.getClass(o.id) : false;
                     if (obClass) {
                         return obClass.fromObject(o);
@@ -158,7 +160,7 @@ class AssetComponentPose extends DataItem {
     y = 0;
     z = 0;
     orientation = [0, 0, 0, 1]; // quaternion
-    size = 1;
+    scale = 1;
     type = null;
 }
 
@@ -175,7 +177,7 @@ class Annotation extends DataItem {
     y = 0;
     x = 0;
     z = 0;
-    size = 0.3;
+    scale = 0.3;
     // default empty fabric canvas
     json = { version: '3.6.3', objects: [] };
     image = "";

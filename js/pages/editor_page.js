@@ -61,8 +61,21 @@ export function EditorPage(parentContainer, mWebsocketController) {
         .on('pointerdown', () => { mResizingWindows = true; });
 
     let mStoryDisplayController = new StoryDisplayController(mViewContainer, mWebsocketController);
-    mStoryDisplayController.onMove(async (id, newPosition) => {
-        await mModelController.update(id, { x: newPosition.x, y: newPosition.y, z: newPosition.z });
+    mStoryDisplayController.onTransform(async (id, newPosition = null, newOrientation = null, newScale = null) => {
+        let attrs = {}
+        if (newPosition) {
+            attrs.x = newPosition.x;
+            attrs.y = newPosition.y;
+            attrs.z = newPosition.z;
+        }
+        if (newOrientation && IdUtil.getClass(id) != Data.Annotation) {
+            attrs.orientation = newOrientation.toArray();
+        }
+        if (newScale) {
+            attrs.scale = newScale;
+        }
+        console.log('updating ', id, attrs)
+        await mModelController.update(id, attrs);
         await updateModel();
     });
 

@@ -144,7 +144,8 @@ export function ModelController(story = new Data.StoryModel()) {
                     x: child.position.x,
                     y: child.position.y,
                     z: child.position.z,
-                    orientation: child.quaternion.toArray()
+                    orientation: child.quaternion.toArray(),
+                    scale: child.scale.x,
                 };
                 let poseId = _create(Data.AssetComponentPose, poseAttrs)
                 updates.push({ action: 'update', row: { ...poseAttrs, id: poseId } });

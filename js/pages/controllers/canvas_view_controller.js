@@ -11,7 +11,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     const NAVIGATING = 'navigating'
     const TIMELINE_DRAW = 'drawingTimeline'
 
-    let mMoveCallback = async () => { }
+    let mTransformCallback = async () => { }
     let mMoveChainCallback = async () => { }
     let mUpdateTimelineCallback = async () => { }
 
@@ -138,7 +138,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
                 } else {
                     let intersection = target.getIntersection();
                     let rootTarget = target.getRoot();
-                    let targetToPos = new THREE.Vector3().subVectors(rootTarget.getTargetWorldPosition(), intersection.point)
+                    let targetToPos = new THREE.Vector3().subVectors(rootTarget.getWorldPosition(), intersection.point)
 
                     mInteraction = {
                         type: DRAGGING,
@@ -216,7 +216,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
             mRaycaster.setFromCamera(pointer, mPageCamera);
             let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
             position.add(mInteraction.targetToPos)
-            mInteraction.target.setTargetWorldPosition(position);
+            mInteraction.target.setWorldPosition(position);
         } else if (mInteraction.type == DRAGGING_KINEMATIC) {
             mRaycaster.setFromCamera(pointer, mPageCamera);
             let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
@@ -236,14 +236,14 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         mInteraction = false;
         if (interaction) {
             if (interaction.type == DRAGGING) {
-                let localPos = interaction.target.getTargetLocalPosition();
-                await mMoveCallback(interaction.target.getId(), localPos);
+                let localPos = interaction.target.getLocalPosition();
+                await mTransformCallback(interaction.target.getId(), localPos);
             } else if (interaction.type == DRAGGING_KINEMATIC) {
                 await mMoveChainCallback(interaction.affectedTargets.map(t => {
                     return {
                         id: t.getId(),
-                        position: t.getTargetLocalPosition(),
-                        orientation: t.getTargetLocalOrientation(),
+                        position: t.getLocalPosition(),
+                        orientation: t.getLocalOrientation(),
                     }
                 }))
             } else if (interaction.type == TIMELINE_DRAW) {
@@ -382,7 +382,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     this.getUserPositionAndDirection = getUserPositionAndDirection;
 
     this.setSceneController = (sceneContoller) => { mSceneController = sceneContoller }
-    this.onMove = (func) => { mMoveCallback = func }
+    this.onTransform = (func) => { mTransformCallback = func }
     this.onMoveChain = (func) => { mMoveChainCallback = func }
     this.onUpdateTimeline = (func) => { mUpdateTimelineCallback = func }
 }

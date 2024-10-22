@@ -5,12 +5,13 @@ import { EditMode, XRInteraction } from '../../../constants.js';
 import { GLTKUtil } from '../../../utils/gltk_util.js';
 import { XRInputController } from './xr_input_controller.js';
 import { XRPageInterfaceController } from './xr_page_interface_controller.js';
+import { Util } from '../../../utils/utility.js';
 
 export function XRSessionController(mWebsocketController) {
     let mOnSessionStartCallback = () => { }
     let mOnSessionEndCallback = () => { }
 
-    let mMoveCallback = async () => { }
+    let mTransformCallback = async () => { }
     let mMoveChainCallback = async () => { }
     let mUpdateTimelineCallback = async () => { }
 
@@ -98,19 +99,52 @@ export function XRSessionController(mWebsocketController) {
             mWebsocketController.updateParticipant(pos.head, pos.handR, pos.handL);
         }
 
+        if (mSystemState.interactionType != XRInteraction.NONE) updateInteractionObjects();
+        await mXRInputController.updateInteractionState(mSystemState);
+
+        if (mXRPageInterfaceController.isInteracting()) {
+            await mXRPageInterfaceController.updateClickState(
+                mXRInputController.getPrimaryRPressed());
+        }
+    }
+
+    function updateInteractionObjects() {
         if (mSystemState.interactionType == XRInteraction.ONE_HAND_MOVE) {
             let controllerPos = mSystemState.interactionData.isLeft ?
                 mXRInputController.getLeftControllerPosition() :
                 mXRInputController.getRightControllerPosition()
-            mSystemState.interactionData.rootTarget.setTargetWorldPosition(
+            mSystemState.interactionData.rootTarget.setWorldPosition(
                 new THREE.Vector3().addVectors(controllerPos, mSystemState.interactionData.targetPositionOffset));
         } else if (mSystemState.interactionType == XRInteraction.TWO_HAND_MOVE) {
-            console.error('impliment me!')
+            let left = mXRInputController.getLeftControllerPosition();
+            let right = mXRInputController.getRightControllerPosition();
+            let midpoint = new THREE.Vector3().addVectors(left, right).multiplyScalar(0.5);
+
+            let newDirection = new THREE.Vector3().subVectors(left, right).normalize();
+            let rotation = new THREE.Quaternion().setFromUnitVectors(mSystemState.interactionData.direction, newDirection);
+
+
+            let newOrienatation = new THREE.Quaternion().multiplyQuaternions(rotation, mSystemState.interactionData.originalRotation)
+            mSystemState.interactionData.rootTarget.setLocalOrientation(newOrienatation);
+
+            let dist = new THREE.Vector3().subVectors(left, right).length();
+            let newScale = mSystemState.interactionData.originalScale * (dist / mSystemState.interactionData.dist)
+            mSystemState.interactionData.rootTarget.setScale(newScale);
+
+            // the original position, translated by the change in the position of the midpoint, 
+            // translated to offset the scale
+            // and then rotated around the midpoint
+
+            let newPosition = new THREE.Vector3().copy(midpoint)
+            newPosition.addScaledVector(mSystemState.interactionData.targetMidpointOffset, newScale);
+            newPosition = Util.pivot(newPosition, midpoint, rotation);
+            mSystemState.interactionData.rootTarget.setWorldPosition(newPosition);
+
         } else if (mSystemState.interactionType == XRInteraction.TWO_HAND_POSE) {
             let anchorControllerPos = mSystemState.interactionData.isLeftAnchor ?
                 mXRInputController.getLeftControllerPosition() :
                 mXRInputController.getRightControllerPosition()
-            mSystemState.interactionData.rootTarget.setTargetWorldPosition(
+            mSystemState.interactionData.rootTarget.setWorldPosition(
                 new THREE.Vector3().addVectors(anchorControllerPos, mSystemState.interactionData.targetPositionOffset));
 
             let controllerPos = mSystemState.interactionData.isLeftAnchor ?
@@ -120,13 +154,6 @@ export function XRSessionController(mWebsocketController) {
                 .worldToLocal(controllerPos);
             mSystemState.interactionData.controlBone.position.copy(localPosition);
             mIKSolver?.update();
-        }
-
-        await mXRInputController.updateInteractionState(mSystemState);
-
-        if (mXRPageInterfaceController.isInteracting()) {
-            await mXRPageInterfaceController.updateClickState(
-                mXRInputController.getPrimaryRPressed());
         }
     }
 
@@ -138,7 +165,7 @@ export function XRSessionController(mWebsocketController) {
             mXRInputController.getRightControllerPosition();
 
         let targetPositionOffset = new THREE.Vector3().subVectors(
-            rootTarget.getTargetWorldPosition(),
+            rootTarget.getWorldPosition(),
             controllerStart);
 
         mSystemState.interactionType = XRInteraction.ONE_HAND_MOVE;
@@ -151,17 +178,31 @@ export function XRSessionController(mWebsocketController) {
     })
 
     mXRInputController.onTwoHandDragStarted((target) => {
+        let rootTarget = target.getRoot();
+
         let rightStart = mXRInputController.getRightControllerPosition()
         let leftStart = mXRInputController.getLeftControllerPosition()
-        let midpoint = new Vector3().copy(rightPosition).add(leftPosition).multiplyScalar(0.5);
+        let midpoint = new THREE.Vector3().addVectors(leftStart, rightStart).multiplyScalar(0.5);
+
+        let direction = new THREE.Vector3().subVectors(leftStart, rightStart).normalize();
+        let dist = new THREE.Vector3().subVectors(leftStart, rightStart).length();
+
+        let targetMidpointOffset = new THREE.Vector3().subVectors(
+            rootTarget.getWorldPosition(),
+            midpoint);
 
         mSystemState.interactionType = XRInteraction.TWO_HAND_MOVE;
         mSystemState.interactionData = {
+            target,
+            rootTarget,
             midpoint,
             rightStart,
             leftStart,
-            originalRotation: target.getRotation(),
-            originalScale: target.getScale(),
+            direction,
+            dist,
+            targetMidpointOffset,
+            originalRotation: rootTarget.getLocalOrientation(),
+            originalScale: rootTarget.getScale(),
         }
     })
 
@@ -186,7 +227,7 @@ export function XRSessionController(mWebsocketController) {
         mSceneController.getContent().add(mCCDIKHelper);
 
         let targetPositionOffset = new THREE.Vector3().subVectors(
-            rootTarget.getTargetWorldPosition(),
+            rootTarget.getWorldPosition(),
             anchorControllerPosition);
 
         mSystemState.interactionType = XRInteraction.TWO_HAND_POSE;
@@ -210,24 +251,21 @@ export function XRSessionController(mWebsocketController) {
         mSystemState.interactionData = {};
 
         if (type == XRInteraction.ONE_HAND_MOVE) {
-            let newPosition = data.target.getTargetLocalPosition();
-            await mMoveCallback(data.target.getId(), newPosition);
+            let newPosition = data.rootTarget.getLocalPosition();
+            await mTransformCallback(data.rootTarget.getId(), newPosition);
 
         } else if (type == XRInteraction.TWO_HAND_MOVE) {
-            let leftControllerPosition = XRInteraction.getLeftControllerPosition()
-            let v1 = new THREE.Vector3().subVectors(data.leftStart, data.midpoint);
-            let v2 = new THREE.Vector3().subVectors(leftControllerPosition, data.midpoint);
-            let newScale = v2.length / v1.length() * data.originalScale;
-            let controllerRotation = new THREE.Quaternion().setFromUnitVectors(v1, v2);
-            let newRotation = data.originalRotation.applyQuaternion(controllerRotation);
-            await mScaleRotateCallback(data.target.getId(), newRotation, newScale);
+            let newPostion = data.rootTarget.getLocalPosition();
+            let newOrientation = data.rootTarget.getLocalOrientation();
+            let newScale = data.rootTarget.getScale();
+            await mTransformCallback(data.rootTarget.getId(), newPostion, newOrientation, newScale);
 
         } else if (type == XRInteraction.TWO_HAND_POSE) {
             let moveUpdates = data.affectedTargets.map(t => {
                 return {
                     id: t.getId(),
-                    position: t.getTargetLocalPosition(),
-                    orientation: t.getTargetLocalOrientation(),
+                    position: t.getLocalPosition(),
+                    orientation: t.getLocalOrientation(),
                 }
             })
 
@@ -235,8 +273,8 @@ export function XRSessionController(mWebsocketController) {
                 let root = data.affectedTargets[0].getRoot();
                 moveUpdates.push({
                     id: root.getId(),
-                    position: root.getTargetLocalPosition(),
-                    orientation: root.getTargetLocalOrientation(),
+                    position: root.getLocalPosition(),
+                    orientation: root.getLocalOrientation(),
                 })
             }
             await mMoveChainCallback(moveUpdates);
@@ -251,7 +289,7 @@ export function XRSessionController(mWebsocketController) {
 
     this.onSessionStart = (func) => mOnSessionStartCallback = func;
     this.onSessionEnd = (func) => mOnSessionEndCallback = func;
-    this.onMove = (func) => { mMoveCallback = func }
+    this.onTransform = (func) => { mTransformCallback = func }
     this.onMoveChain = (func) => { mMoveChainCallback = func }
     this.onUpdateTimeline = (func) => { mUpdateTimelineCallback = func }
     this.setUserPositionAndDirection = mXRInputController.setUserPositionAndDirection;

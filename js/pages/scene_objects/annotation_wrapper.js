@@ -19,7 +19,7 @@ export function AnnotationWrapper(parent) {
             mMaterial.needsUpdate = true;
         })
         mPlane.position.set(annotation.x, annotation.y, annotation.z);
-        mPlane.scale.set(annotation.size, annotation.size, 1)
+        mPlane.scale.set(annotation.scale, annotation.scale, annotation.scale)
         mAnnotation = annotation;
     }
 
@@ -47,24 +47,35 @@ export function AnnotationWrapper(parent) {
 
     function createInteractionTarget() {
         let target = new InteractionTargetWrapper();
-        target.getTargetLocalPosition = () => {
+        target.getLocalPosition = () => {
             let p = new THREE.Vector3();
             p.copy(mPlane.position)
             return p;
         }
-        target.getTargetWorldPosition = () => {
+        target.getWorldPosition = () => {
             let worldPos = new THREE.Vector3();
             mPlane.getWorldPosition(worldPos);
             return worldPos;
         }
-        target.setTargetWorldPosition = (worldPos) => {
+        target.setWorldPosition = (worldPos) => {
             let localPosition = mPlane.parent.worldToLocal(worldPos);
             mPlane.position.copy(localPosition)
         }
-        target.getTargetLocalOrientation = () => {
+        target.getLocalOrientation = () => {
             let q = new THREE.Quaternion();
             q.copy(mPlane.quaternion);
             return q;
+        }
+        target.setLocalOrientation = (orientation) => {
+            // can't set angle on these.
+        }
+        target.getScale = () => {
+            let scale = 1;
+            scale = mPlane.scale.x;
+            return scale;
+        }
+        target.setScale = (scale) => {
+            mPlane.scale.set(scale, scale, scale);
         }
         target.getParent = () => { return null; }
         target.getRoot = () => { return target; }

@@ -117,6 +117,13 @@ function perpendicularDist(p, p1, p2) {
     return closestPoint.distanceTo(p);
 }
 
+function pivot(vector, pivot, quaternion) {
+    let v = new THREE.Vector3().subVectors(vector, pivot)
+    v.applyQuaternion(quaternion)
+    v.add(pivot);
+    return v;
+}
+
 
 export const Util = {
     getSphereIntersection,
@@ -129,6 +136,7 @@ export const Util = {
     limit,
     setComponentListLength,
     simplify3DLine,
+    pivot,
 
     //// Debug Utils ////
     console: {

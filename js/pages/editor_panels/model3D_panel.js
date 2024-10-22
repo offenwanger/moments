@@ -76,7 +76,7 @@ export function Model3DPanel(container) {
             mAssetComponentList[i].setId("component-" + pose.id)
                 .setPosition(pose.type == "Mesh" ? pose : false)
                 .setOrientation(pose.orientation)
-                .setSize(pose.size)
+                .setScale(pose.scale)
                 .setName(pose.name)
                 .setComponentId(pose.id);
         }

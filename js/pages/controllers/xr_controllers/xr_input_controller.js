@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
-import { USER_HEIGHT, XRInteraction } from "../../../constants.js";
+import { UP, USER_HEIGHT, XRInteraction } from "../../../constants.js";
 import { Util } from "../../../utils/utility.js";
 
 export function XRInputController() {
@@ -63,11 +63,12 @@ export function XRInputController() {
         let grip = xr.getControllerGrip(index);
         controller.addEventListener('connected', function (event) {
             addTip(event.data.handedness == "left", controller);
+            controller.userData.handedness = event.data.handedness;
             grip.add(new XRControllerModelFactory()
                 .createControllerModel(grip));
         });
         controller.addEventListener('disconnected', function (event) {
-            removeTip(event.data.handedness == "left", controller);
+            removeTip(controller.userData.handedness == "left", controller);
         });
 
         mUserGroup.add(controller);
@@ -109,9 +110,14 @@ export function XRInputController() {
         } else if (!mMoved && Math.abs(axes[2]) > 0.5) {
             let cameraPos = new THREE.Vector3();
             mXRCamera.getWorldPosition(cameraPos);
-            let sign = -axes[2] / Math.abs(axes[2])
 
-            turnUser(Math.PI / 4 * sign)
+            let sign = -axes[2] / Math.abs(axes[2])
+            let angle = Math.PI / 4 * sign;
+            let rotation = new THREE.Quaternion().setFromAxisAngle(UP, angle);
+            let pos = Util.pivot(mUserGroup.position, cameraPos, rotation);
+
+            mUserGroup.position.copy(pos);
+            mUserGroup.applyQuaternion(rotation);
 
             mMoved = true;
         } else if (mMoved && axes.every(v => v == 0)) {
@@ -191,19 +197,19 @@ export function XRInputController() {
     }
 
     function updateControllerState(systemState) {
-        if (!systemState.session) return;
-
-        let leftController, rightController;
-
-        for (let source of systemState.session.inputSources) {
-            if (source.handedness == 'left') leftController = source;
-            if (source.handedness == 'right') rightController = source;
-        }
-
         mPrimaryLPressed = false;
         mPrimaryRPressed = false;
         mGripLPressed = false;
         mGripRPressed = false;
+
+        if (!systemState.session) return;
+        if (!systemState.session.inputSources) return;
+
+        let leftController, rightController;
+        for (let source of systemState.session.inputSources) {
+            if (source.handedness == 'left') leftController = source;
+            if (source.handedness == 'right') rightController = source;
+        }
 
         if (leftController && leftController.gamepad) {
             // trigger button
@@ -228,14 +234,6 @@ export function XRInputController() {
         let dir = new THREE.Vector3();
         dir.copy(direction).normalize()
         mUserGroup.position.addScaledVector(dir, distance);
-    }
-
-    function turnUser(angle) {
-        rotateAboutPoint(
-            mUserGroup,
-            cameraPos,
-            new THREE.Vector3(0, 1, 0),
-            angle);
     }
 
     function getHeadPosition() {
@@ -452,22 +450,6 @@ export function XRInputController() {
         sortation.sort((a, b) => a.distance - b.distance)
 
         return sortation[0].t;
-    }
-
-    function rotateAboutPoint(obj, point, axis, theta, pointIsWorld = true) {
-        if (pointIsWorld) {
-            obj.parent.localToWorld(obj.position); // compensate for world coordinate
-        }
-
-        obj.position.sub(point); // remove the offset
-        obj.position.applyAxisAngle(axis, theta); // rotate the POSITION
-        obj.position.add(point); // re-add the offset
-
-        if (pointIsWorld) {
-            obj.parent.worldToLocal(obj.position); // undo world coordinates compensation
-        }
-
-        obj.rotateOnAxis(axis, theta); // rotate the OBJECT
     }
 
     function setSceneController(sceneController) {

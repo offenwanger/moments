@@ -14,8 +14,8 @@ import { AnnotationEditorController } from "./annotation_editor_controller.js";
  */
 export function StoryDisplayController(parentContainer, mWebsocketController) {
     let mExitAssetViewCallback = async () => { }
-    let mMoveCallback = async () => { }
     let mMoveChainCallback = async () => { }
+    let mTransformCallback = async () => { }
     let mUpdateTimelineCallback = async () => { }
     let mUpdateAnnotationImageCallback = async () => { }
     let mStartShareCallback = async () => { }
@@ -102,8 +102,8 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     // this needs to go over the buttons
     let mAnnotationEditorController = new AnnotationEditorController(parentContainer);
 
-    mCanvasViewController.onMove(async (id, newPosition) => {
-        await mMoveCallback(id, newPosition);
+    mCanvasViewController.onTransform(async (id, newPosition) => {
+        await mTransformCallback(id, newPosition);
     })
 
     mCanvasViewController.onMoveChain(async (id, newPosition) => {
@@ -140,8 +140,8 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         }
     })
 
-    mXRSessionController.onMove(async (id, newPosition) => {
-        await mMoveCallback(id, newPosition);
+    mXRSessionController.onTransform(async (id, newPosition, newOrientation, newScale) => {
+        await mTransformCallback(id, newPosition, newOrientation, newScale);
     })
 
     mXRSessionController.onMoveChain(async (id, newPosition) => {
@@ -232,7 +232,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     this.editAnnotation = async (id, json) => await mAnnotationEditorController.show(id, json);
     this.closeEditAnnotation = async () => await mAnnotationEditorController.hide();
     this.onExitAssetView = (func) => mExitAssetViewCallback = func;
-    this.onMove = (func) => mMoveCallback = func;
+    this.onTransform = (func) => mTransformCallback = func;
     this.onMoveChain = (func) => mMoveChainCallback = func;
     this.onUpdateTimeline = (func) => mUpdateTimelineCallback = func;
     this.onUpdateAnnotationImage = (func) => mUpdateAnnotationImageCallback = func;

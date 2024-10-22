@@ -54,10 +54,10 @@ export function ComponentInput(container) {
             await mUpdateAttributeCallback(mComponentId, { orientation: quat.toArray() });
         });
 
-    let mSizeInput = new TextInput(mContainer, 'number')
-        .setLabel("Size")
+    let mScaleInput = new TextInput(mContainer, 'number')
+        .setLabel("Scale")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, { size: newNum });
+            await mUpdateAttributeCallback(mComponentId, { scale: newNum });
         });
 
     function setId(id) {
@@ -68,7 +68,7 @@ export function ComponentInput(container) {
         mOrientationXInput.setId(id + '-orientation-x-input')
         mOrientationYInput.setId(id + '-orientation-y-input')
         mOrientationZInput.setId(id + '-orientation-z-input')
-        mSizeInput.setId(id + '-size-input')
+        mScaleInput.setId(id + '-scale-input')
         return this;
     }
 
@@ -99,8 +99,8 @@ export function ComponentInput(container) {
         return this;
     }
 
-    function setSize(size) {
-        mSizeInput.setText(size);
+    function setScale(scale) {
+        mScaleInput.setText(scale);
         return this;
     }
 
@@ -117,6 +117,6 @@ export function ComponentInput(container) {
     this.setId = setId;
     this.setPosition = setPosition;
     this.setOrientation = setOrientation;
-    this.setSize = setSize;
+    this.setScale = setScale;
     this.setName = setName;
 }

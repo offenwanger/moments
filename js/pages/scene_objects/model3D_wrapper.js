@@ -16,11 +16,8 @@ export function Model3DWrapper(parent) {
     let mModelGroup = new THREE.Group();
     mParent.add(mModelGroup);
 
-    const mHighlightMaterial = new THREE.MeshBasicMaterial({
-        color: 0xff0000
-    })
     const BoneMaterial = new THREE.LineBasicMaterial({
-        color: new THREE.Color(0xff0000),
+        color: new THREE.Color(0x0000ff),
         depthTest: false,
         depthWrite: false,
         transparent: true
@@ -51,7 +48,8 @@ export function Model3DWrapper(parent) {
                         let pose = mPoses.find(p => p.name == target.name);
                         if (!pose) { console.error("Mismatched Model3D and asset!"); return; }
                         target.userData.poseId = pose.id;
-                        target.userData.originalMaterial = target.material;
+                        if (!target.material) { target.material = new THREE.MeshBasicMaterial() }
+                        target.userData.originalColor = target.material.color.getHex();
 
                         mTargets.push(target)
                     } else if (target.type == "Bone") {
@@ -74,7 +72,7 @@ export function Model3DWrapper(parent) {
             if (!object) { console.error("Invalid pose!", pose); return; }
             object.setRotationFromQuaternion(new THREE.Quaternion().fromArray(pose.orientation));
             object.position.set(pose.x, pose.y, pose.z);
-            // object.scale.set(model3D.size / mModelSize, model3D.size / mModelSize, model3D.size / mModelSize);
+            object.scale.set(pose.scale, pose.scale, pose.scale);
         })
     }
 
@@ -109,7 +107,7 @@ export function Model3DWrapper(parent) {
         return mPoses.map(pose => {
             let interactionTarget = new InteractionTargetWrapper();
 
-            interactionTarget.getTargetLocalPosition = () => {
+            interactionTarget.getLocalPosition = () => {
                 let p = new THREE.Vector3();
                 if (mGLTF) {
                     let obj = mGLTF.scene.getObjectByName(pose.name);
@@ -118,7 +116,7 @@ export function Model3DWrapper(parent) {
                 return p;
             }
 
-            interactionTarget.getTargetWorldPosition = () => {
+            interactionTarget.getWorldPosition = () => {
                 let worldPos = new THREE.Vector3();
                 if (mGLTF) {
                     let obj = mGLTF.scene.getObjectByName(pose.name);
@@ -127,22 +125,44 @@ export function Model3DWrapper(parent) {
                 return worldPos;
             }
 
-            interactionTarget.setTargetWorldPosition = (worldPos) => {
+            interactionTarget.setWorldPosition = (worldPos) => {
                 if (mGLTF) {
-                    console.log("Something is wrong here...")
                     let obj = mGLTF.scene.getObjectByName(pose.name);
                     let localPosition = obj.parent.worldToLocal(worldPos);
                     obj.position.copy(localPosition)
                 }
             }
 
-            interactionTarget.getTargetLocalOrientation = () => {
+            interactionTarget.getLocalOrientation = () => {
                 let q = new THREE.Quaternion();
                 if (mGLTF) {
                     let obj = mGLTF.scene.getObjectByName(pose.name);
                     q.copy(obj.quaternion);
                 }
                 return q;
+            }
+
+            interactionTarget.setLocalOrientation = (orientation) => {
+                if (mGLTF) {
+                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    obj.quaternion.copy(orientation)
+                }
+            }
+
+            interactionTarget.getScale = () => {
+                let scale = 1;
+                if (mGLTF) {
+                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    scale = obj.scale.x;
+                }
+                return scale;
+            }
+
+            interactionTarget.setScale = (scale) => {
+                if (mGLTF) {
+                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    obj.scale.set(scale, scale, scale);
+                }
             }
 
             interactionTarget.getParent = () => {
@@ -188,7 +208,7 @@ export function Model3DWrapper(parent) {
             interactionTarget.highlight = () => {
                 let obj = interactionTarget.getObject3D();
                 if (obj.isMesh) {
-                    obj.material = mHighlightMaterial;
+                    obj.material.color.set(0x0000ff);
                 } else if (obj.type == "Bone") {
                     let lineGroup = obj.children.find(c => c.userData.boneLines);
                     if (!lineGroup) { console.error("Malformed target", obj) }
@@ -200,7 +220,7 @@ export function Model3DWrapper(parent) {
             interactionTarget.unhighlight = () => {
                 let obj = interactionTarget.getObject3D();
                 if (obj.isMesh) {
-                    obj.material = obj.userData.originalMaterial
+                    obj.material.color.set(obj.userData.originalColor);
                 } else if (obj.type == "Bone") {
                     let lineGroup = obj.children.find(c => c.userData.boneLines);
                     if (!lineGroup) { console.error("Malformed target", obj) }

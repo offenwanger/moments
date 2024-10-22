@@ -166,7 +166,8 @@ export async function moveXRController(left, x, y, z) {
         .find(s => s.handedness == (left ? 'left' : 'right'));
     let v = new THREE.Vector3();
     controller.getWorldPosition(v)
-    let pos = new THREE.Vector3(x, y, z);
+    // set the position with a slight offset for the tip
+    let pos = new THREE.Vector3(x + (left ? - 0.005 : 0.005), y, z + 0.03);
     let moveTransform = pos.sub(v);
     controller.position.add(moveTransform);
     await global.XRRenderer.animationLoop();

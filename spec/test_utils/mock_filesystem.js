@@ -73,6 +73,7 @@ export function mockFileSystemFileHandle(filename, config) {
 }
 
 export function mockFile(filename, text) {
+    this.name = filename;
     this.text = () => text;
     this.write = (text) => { global.fileSystem[filename] = text; }
     this.close = () => { };

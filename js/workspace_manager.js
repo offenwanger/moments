@@ -67,14 +67,13 @@ export function WorkspaceManager(folderHandle) {
         return model;
     }
 
-    async function storeAsset(filehandle) {
-        let oldFilename = filehandle.name;
+    async function storeAsset(file) {
+        let oldFilename = file.name;
         let nameBreakdown = oldFilename.split(".");
-        nameBreakdown.splice(nameBreakdown.length - 1, 0, "" + Date.now());
-        let file = await filehandle.getFile();
+        nameBreakdown[0] += "-" + Date.now();
+        let newName = nameBreakdown.join('.');
         let arrayBuffer = await file.arrayBuffer();
         let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER, { create: true });
-        let newName = nameBreakdown.join('.');
         await FileUtil.writeFile(assetFolder, newName, arrayBuffer);
         return newName;
     }

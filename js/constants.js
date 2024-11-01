@@ -37,6 +37,7 @@ export const ServerMessage = {
     CONNECT_TO_STORY: 'connectingtostory',
     UPDATE_STORY: 'updatestory',
     UPDATE_PARTICIPANT: 'updateparticipant',
+    NEW_ASSET: 'newasset',
     ERROR: 'error',
 }
 

@@ -1,4 +1,5 @@
 import { AssetTypes } from "../../constants.js";
+import { FileUtil } from "../../utils/file_util.js";
 import { Util } from "../../utils/utility.js";
 import { ButtonInput } from "../components/button_input.js";
 import { TextInput } from "../components/text_input.js";
@@ -37,7 +38,7 @@ export function AssetPanel(container) {
         .setId('asset-file-button')
         .setOnClick(1, async () => {
             // TODO: show for the right asset type
-            let fileHandle = await window.showFilePicker();
+            let fileHandle = await FileUtil.showFilePicker();
             if (fileHandle) {
                 // validate the file
                 // transfer the file to file folder

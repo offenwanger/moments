@@ -1,6 +1,5 @@
 import { EventManager } from './event_manager.js';
 import { EditorPage } from './pages/editor_page.js';
-import { ViewerPage } from './pages/viewer_page.js';
 import { ListPage } from './pages/list_page.js';
 import { WelcomePage } from './pages/welcome_page.js';
 import { HandleStorage } from './utils/handle_storage.js';
@@ -92,13 +91,6 @@ export async function main() {
         await mEventManager.setListener(page);
         // handel all the needed async stuff
         await page.show(workspaceManger);
-    }
-
-    async function showViewPage() {
-        let page = new ViewerPage(d3.select('#content'), mWebsocketController);
-        await mEventManager.setListener(page);
-        // handel all the needed async stuff
-        await page.show();
     }
 
     await updatePage();

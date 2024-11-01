@@ -74,7 +74,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
         if (newScale) {
             attrs.scale = newScale;
         }
-        console.log('updating ', id, attrs)
         await mModelController.update(id, attrs);
         await updateModel();
     });
@@ -118,15 +117,18 @@ export function EditorPage(parentContainer, mWebsocketController) {
     })
 
     let mAssetPicker = new AssetPicker(parentContainer);
-    mAssetPicker.onNewAsset(async (fileHandle, type) => {
-        if (!mWorkspace) { console.error("Remote asset upload not implemented."); return; }
-
-        let filename = await mWorkspace.storeAsset(fileHandle);
-        let asset = null;
-        if (type == AssetTypes.MODEL) {
-            asset = await mAssetUtil.loadGLTFModel(filename);
+    mAssetPicker.onNewAsset(async (file, type) => {
+        if (!mWorkspace) {
+            await mWebsocketController.newAsset(file, type)
+        } else {
+            let newFilename = await mWorkspace.storeAsset(file);
+            let asset = null;
+            if (type == AssetTypes.MODEL) {
+                asset = await mAssetUtil.loadGLTFModel(newFilename);
+            }
+            await mModelController.createAsset(file.name, newFilename, type, asset);
         }
-        return await mModelController.createAsset(fileHandle.name, filename, type, asset);
+        await updateModel();
     })
 
     let mTimelineController = new TimelineController(mTimelineContainer);
@@ -138,7 +140,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         if (IdUtil.getClass(parentId) == Data.StoryModel && itemClass == Data.Annotation) {
             await mModelController.create(Data.Annotation);
         } else if (itemClass == Data.Model3D) {
-            let assetId = await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
+            let assetId = await mAssetPicker.showOpenAssetPicker();
             if (assetId) { await mModelController.createModel3D(assetId); }
         } else {
             console.error("Parent + item class not supported", parentId, itemClass);
@@ -155,7 +157,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
     })
     mSidebarController.setSelectAsset(async () => {
-        return await mAssetPicker.showOpenAssetPicker(mModelController.getModel());
+        return await mAssetPicker.showOpenAssetPicker();
     })
     mSidebarController.setEditAnnotationCallback(async (id) => {
         let annotation = mModelController.getModel().find(id);
@@ -182,6 +184,18 @@ export function EditorPage(parentContainer, mWebsocketController) {
         mModelController.removeUpdateCallback(mWebsocketController.updateStory);
         await mModelController.applyUpdates(updates);
         mModelController.addUpdateCallback(mWebsocketController.updateStory);
+        updateModel();
+    })
+
+    mWebsocketController.onNewAsset(async (name, buffer, type) => {
+        let file = new File([buffer], name);
+        let newFilename = await mWorkspace.storeAsset(file);
+        let asset = null;
+        if (type == AssetTypes.MODEL) {
+            asset = await mAssetUtil.loadGLTFModel(newFilename);
+        }
+        await mModelController.createAsset(file.name, newFilename, type, asset);
+        await mWebsocketController.uploadAsset(mModelController.getModel().id, newFilename, mWorkspace);
         updateModel();
     })
 
@@ -215,8 +229,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
                 }
             }
             mAssetUtil = new AssetUtil(workspace);
-
-            mAssetPicker.hideNew();
         } else {
             let story = await mWorkspace.getStory(storyId);
             if (!story) throw Error("Invalid workspace!");
@@ -243,6 +255,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
     async function updateModel() {
         let model = mModelController.getModel();
         await mAssetUtil.updateModel(model);
+        await mAssetPicker.updateModel(model);
 
         await mTimelineController.updateModel(model);
         await mSidebarController.updateModel(model);

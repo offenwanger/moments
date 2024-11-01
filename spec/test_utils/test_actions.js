@@ -1,7 +1,7 @@
 
 import * as THREE from 'three';
 import { Data } from '../../js/data.js';
-import { loadRealFile, mockFileSystemDirectoryHandle, mockFileSystemFileHandle } from './mock_filesystem.js';
+import { loadRealFile, mockFile, mockFileSystemDirectoryHandle, mockFileSystemFileHandle } from './mock_filesystem.js';
 
 export function testmodel() {
     let storyFile = Object.keys(global.fileSystem).find(k => k.startsWith('test/StoryModel_'))
@@ -19,9 +19,12 @@ export async function createAndOpenModel3D() {
     await createAndEditStory();
 
     await loadRealFile('sample.glb')
-    window.files.push(new mockFileSystemFileHandle('sample.glb'));
+    window.files.push(new mockFile('sample.glb', global.fileSystem['sample.glb']));
     let promise = clickButtonInput('#story-model3D-add-button');
     await clickButtonInput('#asset-add-button');
+    expect(d3.select('#assets-container').getChildren().length).toBeGreaterThan(0);
+    d3.select('#assets-container').getChildren()[0].getCallbacks().click();
+
     await promise;
 
     expect(testmodel().model3Ds.length).toBe(1);

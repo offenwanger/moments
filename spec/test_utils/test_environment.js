@@ -31,6 +31,9 @@ export async function setup() {
         querySelector: (query) => { return { checkVisibility: () => false } },
         createElement: (e) => {
             if (e == 'canvas') return createCanvas();
+            if (e == 'input') return {
+                click: function () { this.onchange({ target: { files: [global.window.files.pop()] } }) }
+            };
             else return new HTMLElement(e);
         },
         createElementNS: function (ns, e) { return this.createElement(e) },

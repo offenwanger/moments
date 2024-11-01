@@ -28,6 +28,7 @@ export function WebsocketController() {
     let mSharedStoriesUpdatedCallback = () => { }
     let mStoryConnectCallback = async () => { }
     let mStoryUpdateCallback = async () => { }
+    let mNewAssetCallback = async () => { }
     let mParticipantUpdateCallback = () => { }
 
     const mWebSocket = io();
@@ -62,6 +63,10 @@ export function WebsocketController() {
 
     mWebSocket.on(ServerMessage.UPDATE_STORY, async (updates) => {
         await mStoryUpdateCallback(updates);
+    });
+
+    mWebSocket.on(ServerMessage.NEW_ASSET, async (data) => {
+        await mNewAssetCallback(data.name, data.buffer, data.type);
     });
 
     mWebSocket.on(ServerMessage.UPDATE_PARTICIPANT, (data) => {
@@ -129,6 +134,11 @@ export function WebsocketController() {
         (console).log(filename + " uploaded.");
     }
 
+    async function newAsset(file, type) {
+        let buffer = await file.arrayBuffer();
+        mWebSocket.emit(ServerMessage.NEW_ASSET, { name: file.name, type, buffer })
+    }
+
     function updateParticipant(head, handR = null, handL = null) {
         if (!mConnectedToStory) return;
         mWebSocket.emit(ServerMessage.UPDATE_PARTICIPANT, { head, handR, handL })
@@ -139,8 +149,10 @@ export function WebsocketController() {
     this.connectToStory = connectToStory;
     this.updateStory = updateStory;
     this.updateParticipant = updateParticipant;
+    this.newAsset = newAsset;
     this.onSharedStories = (func) => mSharedStoriesUpdatedCallback = func;
     this.onStoryConnect = (func) => mStoryConnectCallback = func;
     this.onStoryUpdate = (func) => mStoryUpdateCallback = func;
+    this.onNewAsset = (func) => mNewAssetCallback = func;
     this.onParticipantUpdate = (func) => mParticipantUpdateCallback = func;
 }

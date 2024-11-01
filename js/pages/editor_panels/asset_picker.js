@@ -1,4 +1,5 @@
 import { AssetTypes } from "../../constants.js";
+import { FileUtil } from "../../utils/file_util.js";
 import { Util } from "../../utils/utility.js";
 import { ButtonInput } from "../components/button_input.js";
 
@@ -11,9 +12,26 @@ export function AssetPicker(container) {
     let mContent = mDialog.append('div');
     let mNewAssetButton = new ButtonInput(mContent)
         .setId("asset-add-button")
-        .setLabel("New Asset [+]");
-    let mAssetsContainer = mDialog.append('div');
+        .setLabel("New Asset [+]")
+        .setOnClick(async () => {
+            let accept = null;
+            if (mSelectionType == AssetTypes.IMAGE) {
+                accept = "image/*";
+            } else if (mSelectionType == AssetTypes.MODEL) {
+                accept = ".glb,.glTF";
+            }
+
+            let file = await FileUtil.showFilePicker(accept);
+            if (file) await mNewAssetCallback(file, mSelectionType);
+        });
+
+    let mAssetsContainer = mDialog.append('div')
+        .attr('id', 'assets-container');
     let mAssetList = []
+
+    let mSelectedAssetId = null;
+    let mSelectionType = null;
+
     let mCloseButton = new ButtonInput(mContent)
         .setId("dialog-close-button")
         .setLabel("Cancel")
@@ -27,51 +45,30 @@ export function AssetPicker(container) {
         }
     })
 
-    async function showOpenAssetPicker(model, type = AssetTypes.MODEL) {
+    function updateModel(model) {
         let assets = model.assets;
-        Util.setComponentListLength(mAssetList, assets.length, () => new ButtonInput(mAssetsContainer))
+        Util.setComponentListLength(mAssetList, assets.length, () => new ButtonInput(mAssetsContainer));
         for (let i = 0; i < assets.length; i++) {
-            mAssetList[i].setId("asset-button-" + assets[i].id).setLabel(assets[i].name);
+            mAssetList[i].setId("asset-button-" + assets[i].id)
+                .setLabel(assets[i].name);
         }
 
-        // should be a type here which we use to limit the files we take.
-        return new Promise((resolve, reject) => {
-            let assetId = null;
-
-            for (let i = 0; i < assets.length; i++) {
-                mAssetList[i].setOnClick(async () => {
-                    assetId = assets[i].id;
-                    mDialog.node().close();
-                });
-            }
-
-            mNewAssetButton.setOnClick(async () => {
-                let pickerOpts = {
-                    excludeAcceptAllOption: true,
-                    multiple: false,
-                }
-                if (type == AssetTypes.IMAGE) {
-                    pickerOpts.types = [{
-                        description: "Images",
-                        accept: { "image/*": [".png", ".gif", ".jpeg", ".jpg"], },
-                    }];
-                } else if (type == AssetTypes.MODEL) {
-                    pickerOpts.types = [{
-                        description: "3D Model",
-                        accept: { "image/*": [".glb", ".glTF"], },
-                    }];
-                }
-                let fileHandle = await window.showOpenFilePicker(pickerOpts);
-                fileHandle = fileHandle[0];
-                if (fileHandle) {
-                    assetId = await mNewAssetCallback(fileHandle, type);
-                    if (assetId) {
-                        mDialog.node().close();
-                    }
-                }
+        for (let i = 0; i < assets.length; i++) {
+            mAssetList[i].setOnClick(async () => {
+                mSelectedAssetId = assets[i].id;
+                mDialog.node().close();
             });
+        }
+    }
 
+    async function showOpenAssetPicker(type = AssetTypes.MODEL) {
+        mSelectionType = type;
+
+        return new Promise((resolve, reject) => {
             mDialog.on('close', () => {
+                let assetId = mSelectedAssetId;
+                mSelectedAssetId = null;
+                mSelectionType = null;
                 if (assetId) {
                     resolve(assetId);
                 } else {
@@ -83,7 +80,7 @@ export function AssetPicker(container) {
         })
     }
 
+    this.updateModel = updateModel;
     this.showOpenAssetPicker = showOpenAssetPicker;
     this.onNewAsset = (func) => mNewAssetCallback = func;
-    this.hideNew = () => mNewAssetButton.hide();
 }

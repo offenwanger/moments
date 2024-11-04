@@ -55,6 +55,15 @@ export function WorkspaceManager(folderHandle) {
         await updateWorkspaceData();
     }
 
+    async function deleteStory(id) {
+        await initialized;
+
+        if (!id || typeof id != "string") { console.error("invalid id!", id); return; }
+        mWorkspaceData.storyIds = mWorkspaceData.storyIds.filter(storyId => storyId != id);
+        await mFolderHandle.removeEntry(id, { recursive: true })
+        await updateWorkspaceData();
+    }
+
     async function updateStory(model) {
         await initialized;
         await FileUtil.writeFile(await mFolderHandle.getDirectoryHandle(model.id), STORY_JSON_FILE, JSON.stringify(model))
@@ -119,6 +128,7 @@ export function WorkspaceManager(folderHandle) {
     }
     this.getStoryList = getStoryList;
     this.newStory = newStory;
+    this.deleteStory = deleteStory;
     this.updateStory = updateStory;
     this.getStory = getStory;
     this.storeAsset = storeAsset;

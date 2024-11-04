@@ -54,6 +54,19 @@ export function ListPage(parentContainer) {
                 .classed('download-story-button', true)
                 .style('margin-left', '10px')
                 .on('click', async () => await mWorkspace.packageStory(story.id));
+            li.append('button').html('❌')
+                .classed('delete-story-button', true)
+                .style('margin-left', '10px')
+                .on('click', async () => {
+                    if (confirm('Deleting "' + story.name + '", this cannot be undone, are you sure?') == true) {
+                        try {
+                            await mWorkspace.deleteStory(story.id);
+                        } catch (error) {
+                            console.error(error);
+                        }
+                        await show(mWorkspace);
+                    }
+                });
         });
     }
 

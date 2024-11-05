@@ -6,6 +6,7 @@ import { CanvasViewController } from './canvas_view_controller.js';
 import { StorySceneController } from './story_scene_controller.js';
 import { XRSessionController } from './xr_controllers/xr_session_controller.js';
 import { AnnotationEditorController } from "./annotation_editor_controller.js";
+import { MorpherSceneController } from "./morpher_scene_controller.js";
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -14,7 +15,7 @@ import { AnnotationEditorController } from "./annotation_editor_controller.js";
  */
 export function StoryDisplayController(parentContainer, mWebsocketController) {
     let mExitAssetViewCallback = async () => { }
-    let mMoveChainCallback = async () => { }
+    let mTransformManyCallback = async () => { }
     let mTransformCallback = async () => { }
     let mUpdateTimelineCallback = async () => { }
     let mUpdateAnnotationImageCallback = async () => { }
@@ -25,8 +26,9 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
 
     let mAssetSceneController = new AssetSceneController();
     let mStorySceneController = new StorySceneController();
+    let mMorpherSceneController = new MorpherSceneController();
 
-    let mActiveScene = mStorySceneController;
+    let mActiveScene = mMorpherSceneController;
     let mOtherUsers = {};
 
     let mXRSessionController = new XRSessionController(mWebsocketController);
@@ -53,7 +55,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         .style('left', '20px')
         .html('Edit Models')
         .on('click', async () => {
-            await setSceneController(mStorySceneController);
+            await setSceneController(mMorpherSceneController);
             mMode = EditMode.MODEL;
             mActiveController.setMode(mMode);
         });
@@ -64,7 +66,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         .style('left', '20px')
         .html('Edit Timeline')
         .on('click', async () => {
-            await setSceneController(mStorySceneController);
+            await setSceneController(mMorpherSceneController);
             mMode = EditMode.TIMELINE;
             mActiveController.setMode(mMode);
         });
@@ -75,7 +77,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         .style('left', '20px')
         .html('Edit World')
         .on('click', async () => {
-            await setSceneController(mStorySceneController);
+            await setSceneController(mMorpherSceneController);
             mMode = EditMode.WORLD;
             mActiveController.setMode(mMode);
         });
@@ -96,7 +98,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         .html('x')
         .style("display", 'none')
         .on('click', async () => {
-            await setSceneController(mStorySceneController);
+            await setSceneController(mMorpherSceneController);
         });
 
     // this needs to go over the buttons
@@ -106,8 +108,8 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         await mTransformCallback(id, newPosition);
     })
 
-    mCanvasViewController.onMoveChain(async (id, newPosition) => {
-        await mMoveChainCallback(id, newPosition);
+    mCanvasViewController.onTransformMany(async (items) => {
+        await mTransformManyCallback(items);
     })
 
     mCanvasViewController.onUpdateTimeline(async (line) => {
@@ -144,8 +146,8 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         await mTransformCallback(id, newPosition, newOrientation, newScale);
     })
 
-    mXRSessionController.onMoveChain(async (id, newPosition) => {
-        await mMoveChainCallback(id, newPosition);
+    mXRSessionController.onTransformMany(async (items) => {
+        await mTransformManyCallback(items);
     })
 
     mXRSessionController.onUpdateTimeline(async (line) => {
@@ -203,6 +205,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         mModel = model;
         await mAssetSceneController.updateModel(model, assetUtil);
         await mStorySceneController.updateModel(model, assetUtil);
+        await mMorpherSceneController.updateModel(model, assetUtil);
     }
 
     async function showAsset(assetId, assetUtil) {
@@ -233,7 +236,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     this.closeEditAnnotation = async () => await mAnnotationEditorController.hide();
     this.onExitAssetView = (func) => mExitAssetViewCallback = func;
     this.onTransform = (func) => mTransformCallback = func;
-    this.onMoveChain = (func) => mMoveChainCallback = func;
+    this.onTransformMany = (func) => mTransformManyCallback = func;
     this.onUpdateTimeline = (func) => mUpdateTimelineCallback = func;
     this.onUpdateAnnotationImage = (func) => mUpdateAnnotationImageCallback = func;
     this.onStartShare = (func) => mStartShareCallback = func;

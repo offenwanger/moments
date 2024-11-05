@@ -6,14 +6,20 @@ import { Util } from '../../utils/utility.js';
 
 export function ModelController(story = new Data.StoryModel()) {
     let mModel = story;
+    let mModelIndex = story.getIndex();
     let mUpdateCallbacks = [];
 
     async function applyUpdates(updates) {
         for (let update of updates) {
+            if (!update) { console.error('Invalid update, no data'); continue; }
             if (update.action == 'delete') {
                 mModel.delete(update.id);
+                delete mModelIndex[update.id];
             } else if (update.action == 'update') {
-                let item = mModel.find(update.row.id);
+                if (!update.row) { console.error('Invalid update, no row'); continue; }
+                if (!update.row.id || !IdUtil.getClass(update.row.id)) { console.error('Invalid update, invalid id: ' + update.row.id); continue; }
+
+                let item = mModelIndex[update.row.id];
                 if (!item) {
                     let dataClass = IdUtil.getClass(update.row.id);
                     if (!dataClass) console.error("Invalid id: " + update.row.id);
@@ -50,6 +56,7 @@ export function ModelController(story = new Data.StoryModel()) {
             item[key] = attrs[key];
         }
         getTableForClass(dataClass).push(item);
+        mModelIndex = story.getIndex();
         return item.id;
     }
 
@@ -66,7 +73,7 @@ export function ModelController(story = new Data.StoryModel()) {
     }
 
     function _update(id, attrs) {
-        let item = mModel.find(id);
+        let item = mModelIndex[id];
         if (!item) { console.error("Invalid id: " + id); return; };
         for (let key of Object.keys(attrs)) {
             if (!Object.hasOwn(item, key)) { console.error("Invalid attr: " + id + " - " + key); return; }
@@ -93,9 +100,28 @@ export function ModelController(story = new Data.StoryModel()) {
             return mModel.model3Ds;
         } else if (cls == Data.Annotation) {
             return mModel.annotations;
+        } else if (cls == Data.PhotoSpherePoint) {
+            return mModel.photoSpherePoints;
         } else {
             console.error('No array for class: ' + cls);
         }
+    }
+
+    async function createPhotospherePoints(count) {
+        // clear out the old points
+        let updates = mModel.photoSpherePoints.map(p => { return { action: "delete", id: p.id } })
+
+        mModel.photoSpherePoints = new Array(count).fill(0).map((v, i) => {
+            let p = new Data.PhotoSpherePoint();
+            p.index = i;
+
+            updates.push({ action: 'update', row: { id: p.id, index: i } })
+
+            return p;
+        })
+
+        for (let callback of mUpdateCallbacks) await callback(updates, mModel.clone());
+        return mModel.photoSpherePoints.map(p => p.id);
     }
 
     async function createModel3D(assetId = null) {
@@ -103,7 +129,7 @@ export function ModelController(story = new Data.StoryModel()) {
         let updates = [];
 
         if (assetId) {
-            let asset = mModel.find(assetId);
+            let asset = mModelIndex(assetId);
             if (!asset) { console.error('invalid asset id', assetId); return; }
             let poses = mModel.assetPoses.filter(p => asset.poseIds.includes(p.id));
             let poseIds = poses.map(p => {
@@ -169,6 +195,7 @@ export function ModelController(story = new Data.StoryModel()) {
         updateMany,
         delete: deleteOne,
         deleteMany,
+        createPhotospherePoints,
         createModel3D,
         createAsset,
         getModel: () => mModel.clone(),

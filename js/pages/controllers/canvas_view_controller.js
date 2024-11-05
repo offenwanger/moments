@@ -12,7 +12,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     const TIMELINE_DRAW = 'drawingTimeline'
 
     let mTransformCallback = async () => { }
-    let mMoveChainCallback = async () => { }
+    let mTransformManyCallback = async () => { }
     let mUpdateTimelineCallback = async () => { }
 
     let mMode = EditMode.MODEL;
@@ -31,6 +31,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     let mHold = null;
     let mLastPointerDown = { time: 0, pos: { x: 0, y: 0 } }
     const mRaycaster = new THREE.Raycaster();
+    mRaycaster.near = 0.2;
 
     let mTimelineDrawingMode = false;
     let mLastPointerPosition = { x: -10, y: -10 }
@@ -236,10 +237,14 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         mInteraction = false;
         if (interaction) {
             if (interaction.type == DRAGGING) {
-                let localPos = interaction.target.getLocalPosition();
-                await mTransformCallback(interaction.target.getId(), localPos);
+                if (Array.isArray(interaction.target.getId())) {
+                    await mTransformManyCallback(interaction.target.getPointPositions());
+                } else {
+                    let localPos = interaction.target.getLocalPosition();
+                    await mTransformCallback(interaction.target.getId(), localPos);
+                }
             } else if (interaction.type == DRAGGING_KINEMATIC) {
-                await mMoveChainCallback(interaction.affectedTargets.map(t => {
+                await mTransformManyCallback(interaction.affectedTargets.map(t => {
                     return {
                         id: t.getId(),
                         position: t.getLocalPosition(),
@@ -383,6 +388,6 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
 
     this.setSceneController = (sceneContoller) => { mSceneController = sceneContoller }
     this.onTransform = (func) => { mTransformCallback = func }
-    this.onMoveChain = (func) => { mMoveChainCallback = func }
+    this.onTransformMany = (func) => { mTransformManyCallback = func }
     this.onUpdateTimeline = (func) => { mUpdateTimelineCallback = func }
 }

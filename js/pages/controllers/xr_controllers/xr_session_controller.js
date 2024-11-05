@@ -12,7 +12,7 @@ export function XRSessionController(mWebsocketController) {
     let mOnSessionEndCallback = () => { }
 
     let mTransformCallback = async () => { }
-    let mMoveChainCallback = async () => { }
+    let mTransformManyCallback = async () => { }
     let mUpdateTimelineCallback = async () => { }
 
     let mSystemState = {
@@ -251,9 +251,12 @@ export function XRSessionController(mWebsocketController) {
         mSystemState.interactionData = {};
 
         if (type == XRInteraction.ONE_HAND_MOVE) {
-            let newPosition = data.rootTarget.getLocalPosition();
-            await mTransformCallback(data.rootTarget.getId(), newPosition);
-
+            if (Array.isArray(data.rootTarget.getId())) {
+                await mTransformManyCallback(data.rootTarget.getPointPositions());
+            } else {
+                let newPosition = data.rootTarget.getLocalPosition();
+                await mTransformCallback(data.rootTarget.getId(), newPosition);
+            }
         } else if (type == XRInteraction.TWO_HAND_MOVE) {
             let newPostion = data.rootTarget.getLocalPosition();
             let newOrientation = data.rootTarget.getLocalOrientation();
@@ -277,7 +280,7 @@ export function XRSessionController(mWebsocketController) {
                     orientation: root.getLocalOrientation(),
                 })
             }
-            await mMoveChainCallback(moveUpdates);
+            await mTransformManyCallback(moveUpdates);
             mIKSolver = null
         }
 
@@ -290,7 +293,7 @@ export function XRSessionController(mWebsocketController) {
     this.onSessionStart = (func) => mOnSessionStartCallback = func;
     this.onSessionEnd = (func) => mOnSessionEndCallback = func;
     this.onTransform = (func) => { mTransformCallback = func }
-    this.onMoveChain = (func) => { mMoveChainCallback = func }
+    this.onTransformMany = (func) => { mTransformManyCallback = func }
     this.onUpdateTimeline = (func) => { mUpdateTimelineCallback = func }
     this.setUserPositionAndDirection = mXRInputController.setUserPositionAndDirection;
     this.getUserPositionAndDirection = mXRInputController.getUserPositionAndDirection;

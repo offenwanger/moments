@@ -85,6 +85,25 @@ class DataItem {
         }
     }
 
+    getIndex(index = {}) {
+        if (this.id) {
+            index[this.id] = this;
+        } else return index;
+
+        for (let key of Object.keys(this)) {
+            let item = this[key];
+            if (item instanceof DataItem) {
+                item.getIndex(index);
+            } else if (Array.isArray(item)) {
+                item.forEach(i => {
+                    if (i instanceof DataItem) i.getIndex(index)
+                });
+            }
+        }
+
+        return index;
+    }
+
     static fromObject(ob) {
         let c = new this();
         for (let key of Object.keys(ob)) {
@@ -143,6 +162,8 @@ class StoryModel extends DataItem {
     assetPoses = []
     model3Ds = []
     annotations = []
+
+    photoSpherePoints = []
 }
 
 class Asset extends DataItem {
@@ -185,10 +206,18 @@ class Annotation extends DataItem {
     // Right now we default to always face the user. 
 }
 
+class PhotoSpherePoint extends DataItem {
+    index = 0;
+    x = 0;
+    y = 0;
+    z = 0;
+}
+
 export const Data = {
     StoryModel,
     Asset,
     AssetComponentPose,
     Model3D,
     Annotation,
+    PhotoSpherePoint,
 }

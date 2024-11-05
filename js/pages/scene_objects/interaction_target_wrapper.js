@@ -1,6 +1,8 @@
 import * as THREE from "three"
 
 export function InteractionTargetWrapper() {
+    this.getId = () => { return "No ID" };
+
     this.getLocalPosition = () => { return new THREE.Vector3(); }
 
     this.getWorldPosition = () => { return new THREE.Vector3(); }

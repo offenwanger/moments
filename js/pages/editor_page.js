@@ -1,5 +1,5 @@
 
-import { AssetTypes } from '../constants.js';
+import { AssetTypes, SPHERE_POINTS } from '../constants.js';
 import { Data } from '../data.js';
 import { AssetUtil } from '../utils/assets_util.js';
 import { IdUtil } from '../utils/id_util.js';
@@ -78,16 +78,22 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
     });
 
-    mStoryDisplayController.onMoveChain(async (items) => {
-        await mModelController.updateMany(items.map(({ id, position, orientation }) => {
-            return {
-                id, attrs: {
-                    x: position.x,
-                    y: position.y,
-                    z: position.z,
-                    orientation: orientation.toArray()
-                }
+    mStoryDisplayController.onTransformMany(async (items) => {
+        await mModelController.updateMany(items.map(({ id, position, orientation, scale }) => {
+            let attrs = {}
+            if (position) {
+                attrs.x = position.x;
+                attrs.y = position.y;
+                attrs.z = position.z;
             }
+            if (orientation && IdUtil.getClass(id) != Data.Annotation) {
+                attrs.orientation = orientation.toArray();
+            }
+            if (scale) {
+                attrs.scale = scale;
+            }
+
+            return { id, attrs }
         }));
         await updateModel();
     });
@@ -217,6 +223,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
                 })
             })
             let model = Data.StoryModel.fromObject(story);
+
             mModelController = new ModelController(model);
 
             let workspace = {
@@ -236,6 +243,10 @@ export function EditorPage(parentContainer, mWebsocketController) {
             mModelController = new ModelController(story);
             mModelController.addUpdateCallback((updates, model) => mWorkspace.updateStory(model));
             mAssetUtil = new AssetUtil(mWorkspace);
+
+            if (story.photoSpherePoints.length != SPHERE_POINTS) {
+                await mModelController.createPhotospherePoints(SPHERE_POINTS);
+            }
         }
 
         mModelController.addUpdateCallback(mWebsocketController.updateStory);

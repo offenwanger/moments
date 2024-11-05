@@ -47,3 +47,8 @@ export const XRInteraction = {
     TWO_HAND_POSE: 'twoHandPose',
     NONE: 'none'
 }
+
+
+export const RINGS = 32;
+export const SEGMENTS = 64;
+export const SPHERE_POINTS = SEGMENTS * RINGS * 6;;

@@ -42,15 +42,15 @@ export function OtherUserWrapper(parent, id) {
     mHead.add(mEye2)
     mParent.add(mHead);
 
-    const mConeGeometry = new THREE.ConeGeometry(0.01, 0.02, 3);
+    const mHandGeometry = new THREE.SphereGeometry(0.1, 6, 3);
 
     const mHandR = new THREE.Mesh(
-        mConeGeometry,
+        mHandGeometry,
         mMaterial
     );
 
     const mHandL = new THREE.Mesh(
-        mConeGeometry,
+        mHandGeometry,
         mMaterial
     );
 

@@ -155,15 +155,12 @@ function cloneItem(item, newIds) {
 
 class StoryModel extends DataItem {
     name = "A Story in Moments"
-    timeline = [{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: -2 }];
-    backgroundId = null; // Asset
-
+    // An array of the file names 
+    // that have been loaded into this story
     assets = []
-    assetPoses = []
-    model3Ds = []
-    annotations = []
-
-    photoSpherePoints = []
+    // base pose information for loaded 3D models
+    baseAssetPoses = []
+    moments = []
 }
 
 class Asset extends DataItem {
@@ -174,50 +171,77 @@ class Asset extends DataItem {
     poseIds = []
 }
 
-class AssetComponentPose extends DataItem {
+class AssetPose extends DataItem {
     name = "Pose";
-    type = null;
-    x = 0;
-    y = 0;
-    z = 0;
+    parentPoseId = null;
+    x = 0; y = 0; z = 0;
     orientation = [0, 0, 0, 1]; // quaternion
     scale = 1;
-    type = null;
 }
 
-class Model3D extends DataItem {
-    name = "Model"
-    isWorld = false;
+class Moment extends DataItem {
+    // 3D models in the scenes
+    gltfs = []
+    // 2D imagry in the scenes
+    pictures = []
+    // points of spatial audio
+    audios = []
+    teleports = []
+    photosphere = null;
+}
+
+class Photosphere extends DataItem {
+    enabled = true;
+    scale = 1;
+    // the id of the photosphere image asset
+    imageAssetId = null;
+    // the id of the photosphere color annotations asset
+    annotationAssetId = null;
+    // the id of the photosphere blur asset
+    blurMaskAssetId = null;
+    points = [];
+}
+
+class PhotospherePoint extends DataItem {
+    u = 0;
+    v = 0;
+    dist = 1;
+}
+
+class Gltf extends DataItem {
+    name = "3D Model"
     assetId = null;
     poseIds = [];
 }
 
-class Annotation extends DataItem {
-    name = "Annotation"
-    isWorld = false;
-    y = 0;
-    x = 0;
-    z = 0;
+class Picture extends DataItem {
+    name = "Picture"
+    x = 0; y = 0; z = 0;
     scale = 0.3;
-    // default empty fabric canvas
-    json = { version: '3.6.3', objects: [] };
-    image = "";
-    // TODO: Add orientation and always face user toggle. 
-    // Right now we default to always face the user. 
+    assetId = null;
+}
+class Audio extends DataItem {
+    assetId = null;
+    volume = 1;
+    x = 0; y = 0; z = 0;
 }
 
-class PhotoSpherePoint extends DataItem {
-    index = 0;
-    x = 0;
-    y = 0;
-    z = 0;
+class Teleport extends DataItem {
+    x = 0; y = 0; z = 0;
+    sceneId = null;
+    sceneX = 0; sceneY = 0; sceneZ = 0;
+    sceneOrientation = [0, 0, 0, 1];
 }
 
 export const Data = {
     StoryModel,
     Asset,
-    AssetComponentPose,
-    Model3D,
-    Annotation,
-    PhotoSpherePoint,
+    AssetPose,
+    Moment,
+    Photosphere,
+    PhotospherePoint,
+    Gltf,
+    Picture,
+    Audio,
+    Teleport,
 }

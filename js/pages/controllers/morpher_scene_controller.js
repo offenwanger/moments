@@ -45,7 +45,7 @@ export function MorpherSceneController() {
     geometry.setAttribute('normal', new THREE.BufferAttribute(normals, normalNumComponents));
 
     const loader = new THREE.TextureLoader();
-    const texture = loader.load('assets/images/office_pano.jpg');
+    const texture = loader.load('assets/images/photosphere_office_small.jpg');
     texture.colorSpace = THREE.SRGBColorSpace;
 
 

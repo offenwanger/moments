@@ -1,3 +1,30 @@
+2024-11-13
+Objectives: 
+Fanny would like a blur tool for the photospheres
+Also better shaping tools
+- - Lassoo extrude
+- - Lassoo flat
+
+-> 
+
+representation of each point -> Polar coords? 
+Nah, well... x, y, z, should be fine. 
+
+So we need x, y, z + face array. 
+
+I think lassoo should be a magnet point selector... hmm... 
+
+Algorithm located! https://github.com/mapbox/delaunator?tab=readme-ov-file
+
+Ok, so the photosphere will have the datastruct of a set of points u,v,dist, 
+and we delaunate to get the faces. Hoorah. 
+
+3 textures
+image
+unblur map
+color map -> just straight up color applied over the image. 
+
+----------------------------------------------------------------------------
 cache loaded models?
 enable the click thing in the canvas viewer to bring it up in the sidebar
 Next order of buisness will be painting, both for timelines and regular type.

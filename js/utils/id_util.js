@@ -3,12 +3,12 @@ import { Data } from "../data.js";
 export const IdUtil = function () {
     let idCounter = 0;
     let lastGet = Date.now();
-    function getUniqueId(className) {
+    function getUniqueId(dataClass) {
         // reset the counter when we aren't getting all at the same time.
         if (Date.now() > lastGet) { idCounter = 0; }
         lastGet = Date.now();
 
-        return className + "_" + Date.now() + "_" + idCounter++;
+        return dataClass.name + "_" + Date.now() + "_" + idCounter++;
     }
 
     function getClass(id) {

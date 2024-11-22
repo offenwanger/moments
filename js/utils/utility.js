@@ -70,7 +70,7 @@ function setComponentListLength(arr, length, createCallback) {
         arr.push(createCallback());
     }
     for (let i = length; i < arr.length; i++) {
-        if (typeof arr[i].remove == 'function') arr[i].remove();
+        if (typeof arr[i].remove == 'function') { arr[i].remove(); }
         arr.splice(i, 1);
     }
 }

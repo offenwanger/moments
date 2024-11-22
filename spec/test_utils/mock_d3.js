@@ -161,6 +161,7 @@ export function MockElement(type) {
         }
     }
     this.remove = function () {
+        // TODO: This is failing to actually delete things. 
         delete this;
     }
     this.getChildren = () => mChildren;

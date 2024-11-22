@@ -1,5 +1,5 @@
 import { setup, cleanup } from './test_utils/test_environment.js';
-import { createAndOpenModel3D, lookHead, moveHead, moveXRController, pressXRTrigger, pushXRToggle, releaseXRToggle, releaseXRTrigger, startXR, stopXR, testmodel } from './test_utils/test_actions.js';
+import { createAndOpenPoseableAsset, lookHead, moveHead, moveXRController, pressXRTrigger, pushXRToggle, releaseXRToggle, releaseXRTrigger, startXR, stopXR, testmodel } from './test_utils/test_actions.js';
 
 
 
@@ -14,18 +14,18 @@ describe('Test Moment Panel', function () {
 
     describe('session tests', function () {
         it('should start a session', async function () {
-            await createAndOpenModel3D();
+            await createAndOpenPoseableAsset();
             await startXR();
         });
 
         it('should stop a session', async function () {
-            await createAndOpenModel3D();
+            await createAndOpenPoseableAsset();
             await startXR();
             await stopXR();
         });
 
         it('should perform a render pass', async function () {
-            await createAndOpenModel3D();
+            await createAndOpenPoseableAsset();
             await startXR();
             global.XRRenderer.animationLoop();
         });
@@ -33,12 +33,12 @@ describe('Test Moment Panel', function () {
 
     describe('move tests', function () {
         it('should drag', async function () {
-            await createAndOpenModel3D();
+            await createAndOpenPoseableAsset();
             await startXR();
 
-            let model3D = testmodel().model3Ds[0];
+            let poseableAsset = testmodel().find(testmodel().moments[0].poseableAssetIds[0]);
 
-            let cubePos = testmodel().assetPoses.find(p => p.name == "Cube" && model3D.poseIds.includes(p.id));
+            let cubePos = testmodel().assetPoses.find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id));
             expect(cubePos.x).toBeCloseTo(0.6, 3);
             expect(cubePos.y).toBeCloseTo(0, 4);
             expect(cubePos.z).toBeCloseTo(-1, 4);
@@ -49,29 +49,29 @@ describe('Test Moment Panel', function () {
             await moveXRController(true, 1, 0, -1);
             await releaseXRTrigger(true);
 
-            let newcubePos = testmodel().assetPoses.find(p => p.name == "Cube" && model3D.poseIds.includes(p.id));
+            let newcubePos = testmodel().assetPoses.find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id));
             expect(newcubePos.x).toBeCloseTo(1, 3);
             expect(newcubePos.y).toBeCloseTo(0, 4);
             expect(newcubePos.z).toBeCloseTo(-1, 4);
         });
 
         it('should pose with left primary', async function () {
-            await createAndOpenModel3D();
+            await createAndOpenPoseableAsset();
             await startXR();
 
-            let model3D = testmodel().model3Ds[0];
+            let poseableAsset = testmodel().find(testmodel().moments[0].poseableAssetIds[0]);
 
-            let bonePos = testmodel().assetPoses.find(p => p.name == "Bone" && model3D.poseIds.includes(p.id));
+            let bonePos = testmodel().assetPoses.find(p => p.name == "Bone" && poseableAsset.poseIds.includes(p.id));
             expect(bonePos.x).toBeCloseTo(0.0037, 3);
             expect(bonePos.y).toBeCloseTo(-1.38247, 4);
             expect(bonePos.z).toBeCloseTo(0, 4);
 
-            let bone2Pos = testmodel().assetPoses.find(p => p.name == "Bone002" && model3D.poseIds.includes(p.id));
+            let bone2Pos = testmodel().assetPoses.find(p => p.name == "Bone002" && poseableAsset.poseIds.includes(p.id));
             expect(bone2Pos.x).toBeCloseTo(0, 3);
             expect(bone2Pos.y).toBeCloseTo(0.4975, 4);
             expect(bone2Pos.z).toBeCloseTo(0, 4);
 
-            let bone3Pos = testmodel().assetPoses.find(p => p.name == "Bone003" && model3D.poseIds.includes(p.id));
+            let bone3Pos = testmodel().assetPoses.find(p => p.name == "Bone003" && poseableAsset.poseIds.includes(p.id));
             expect(bone3Pos.x).toBeCloseTo(0, 3);
             expect(bone3Pos.y).toBeCloseTo(0.50513, 4);
             expect(bone3Pos.z).toBeCloseTo(0, 4);
@@ -93,20 +93,20 @@ describe('Test Moment Panel', function () {
             await releaseXRTrigger(false);
             await releaseXRTrigger(true);
 
-            let newbonePos = testmodel().assetPoses.find(p => p.name == "Bone" && model3D.poseIds.includes(p.id));
+            let newbonePos = testmodel().assetPoses.find(p => p.name == "Bone" && poseableAsset.poseIds.includes(p.id));
             // Bone 1 should change
             expect(newbonePos.x).toBeCloseTo(1.004, 3);
             expect(newbonePos.y).toBeCloseTo(-0.1324, 3);
             expect(newbonePos.z).toBeCloseTo(0, 4);
 
             // Bone 2 should change
-            let newbone2Pos = testmodel().assetPoses.find(p => p.name == "Bone002" && model3D.poseIds.includes(p.id));
+            let newbone2Pos = testmodel().assetPoses.find(p => p.name == "Bone002" && poseableAsset.poseIds.includes(p.id));
             expect(newbone2Pos.x).toBeCloseTo(0, 3);
             expect(newbone2Pos.y).toBeCloseTo(0.49754, 4);
             expect(newbone2Pos.z).toBeCloseTo(0, 4);
 
             // Bone 3 should not
-            let newbone3Pos = testmodel().assetPoses.find(p => p.name == "Bone003" && model3D.poseIds.includes(p.id));
+            let newbone3Pos = testmodel().assetPoses.find(p => p.name == "Bone003" && poseableAsset.poseIds.includes(p.id));
             expect(newbone3Pos.x).toBeCloseTo(0, 3);
             expect(newbone3Pos.y).toBeCloseTo(0.50513, 4);
             expect(newbone3Pos.z).toBeCloseTo(0, 4);
@@ -114,22 +114,22 @@ describe('Test Moment Panel', function () {
 
 
         it('should pose with right primary', async function () {
-            await createAndOpenModel3D();
+            await createAndOpenPoseableAsset();
             await startXR();
 
-            let model3D = testmodel().model3Ds[0];
+            let poseableAsset = testmodel().find(testmodel().moments[0].poseableAssetIds[0]);
 
-            let bonePos = testmodel().assetPoses.find(p => p.name == "Bone" && model3D.poseIds.includes(p.id));
+            let bonePos = testmodel().assetPoses.find(p => p.name == "Bone" && poseableAsset.poseIds.includes(p.id));
             expect(bonePos.x).toBeCloseTo(0.0037, 3);
             expect(bonePos.y).toBeCloseTo(-1.38247, 4);
             expect(bonePos.z).toBeCloseTo(0, 4);
 
-            let bone2Pos = testmodel().assetPoses.find(p => p.name == "Bone002" && model3D.poseIds.includes(p.id));
+            let bone2Pos = testmodel().assetPoses.find(p => p.name == "Bone002" && poseableAsset.poseIds.includes(p.id));
             expect(bone2Pos.x).toBeCloseTo(0, 3);
             expect(bone2Pos.y).toBeCloseTo(0.4975, 4);
             expect(bone2Pos.z).toBeCloseTo(0, 4);
 
-            let bone3Pos = testmodel().assetPoses.find(p => p.name == "Bone003" && model3D.poseIds.includes(p.id));
+            let bone3Pos = testmodel().assetPoses.find(p => p.name == "Bone003" && poseableAsset.poseIds.includes(p.id));
             expect(bone3Pos.x).toBeCloseTo(0, 3);
             expect(bone3Pos.y).toBeCloseTo(0.50513, 4);
             expect(bone3Pos.z).toBeCloseTo(0, 4);
@@ -151,20 +151,20 @@ describe('Test Moment Panel', function () {
             await releaseXRTrigger(true);
             await releaseXRTrigger(false);
 
-            let newbonePos = testmodel().assetPoses.find(p => p.name == "Bone" && model3D.poseIds.includes(p.id));
+            let newbonePos = testmodel().assetPoses.find(p => p.name == "Bone" && poseableAsset.poseIds.includes(p.id));
             // Bone 1 should change
             expect(newbonePos.x).toBeCloseTo(1.004, 3);
             expect(newbonePos.y).toBeCloseTo(-0.1324, 3);
             expect(newbonePos.z).toBeCloseTo(0, 4);
 
             // Bone 2 should change
-            let newbone2Pos = testmodel().assetPoses.find(p => p.name == "Bone002" && model3D.poseIds.includes(p.id));
+            let newbone2Pos = testmodel().assetPoses.find(p => p.name == "Bone002" && poseableAsset.poseIds.includes(p.id));
             expect(newbone2Pos.x).toBeCloseTo(0, 3);
             expect(newbone2Pos.y).toBeCloseTo(0.49754, 4);
             expect(newbone2Pos.z).toBeCloseTo(0, 4);
 
             // Bone 3 should not
-            let newbone3Pos = testmodel().assetPoses.find(p => p.name == "Bone003" && model3D.poseIds.includes(p.id));
+            let newbone3Pos = testmodel().assetPoses.find(p => p.name == "Bone003" && poseableAsset.poseIds.includes(p.id));
             expect(newbone3Pos.x).toBeCloseTo(0, 3);
             expect(newbone3Pos.y).toBeCloseTo(0.50513, 4);
             expect(newbone3Pos.z).toBeCloseTo(0, 4);
@@ -172,11 +172,11 @@ describe('Test Moment Panel', function () {
 
 
         it('should rotate', async function () {
-            await createAndOpenModel3D();
+            await createAndOpenPoseableAsset();
             await startXR();
 
-            let model3D = testmodel().model3Ds[0];
-            let cubeData = testmodel().assetPoses.find(p => p.name == "Cube" && model3D.poseIds.includes(p.id));
+            let poseableAsset = testmodel().find(testmodel().moments[0].poseableAssetIds[0]);
+            let cubeData = testmodel().assetPoses.find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id));
 
             expect(cubeData.x).toBeCloseTo(0.6, 3);
             expect(cubeData.y).toBeCloseTo(0, 4);
@@ -193,7 +193,7 @@ describe('Test Moment Panel', function () {
             await releaseXRTrigger(true);
             await pressXRTrigger(false);
 
-            let newcubeData = testmodel().assetPoses.find(p => p.name == "Cube" && model3D.poseIds.includes(p.id));
+            let newcubeData = testmodel().assetPoses.find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id));
             expect(newcubeData.x).toBeCloseTo(0.6, 3);
             expect(newcubeData.y).toBeCloseTo(0, 4);
             expect(newcubeData.z).toBeCloseTo(-1, 4);
@@ -201,11 +201,11 @@ describe('Test Moment Panel', function () {
         });
 
         it('should scale and rotate', async function () {
-            await createAndOpenModel3D();
+            await createAndOpenPoseableAsset();
             await startXR();
 
-            let model3D = testmodel().model3Ds[0];
-            let cubeData = testmodel().assetPoses.find(p => p.name == "Cube" && model3D.poseIds.includes(p.id));
+            let poseableAsset = testmodel().find(testmodel().moments[0].poseableAssetIds[0]);
+            let cubeData = testmodel().assetPoses.find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id));
 
             expect(cubeData.x).toBeCloseTo(0.6, 3);
             expect(cubeData.y).toBeCloseTo(0, 4);
@@ -223,7 +223,7 @@ describe('Test Moment Panel', function () {
             await releaseXRTrigger(true);
             await pressXRTrigger(false);
 
-            let newcubeData = testmodel().assetPoses.find(p => p.name == "Cube" && model3D.poseIds.includes(p.id));
+            let newcubeData = testmodel().assetPoses.find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id));
             expect(newcubeData.x).toBeCloseTo(0.6, 3);
             expect(newcubeData.y).toBeCloseTo(0, 4);
             expect(newcubeData.z).toBeCloseTo(-1, 4);
@@ -233,11 +233,13 @@ describe('Test Moment Panel', function () {
 
 
         it('should translate, scale, and rotate', async function () {
-            await createAndOpenModel3D();
+            await createAndOpenPoseableAsset();
             await startXR();
 
-            let model3D = testmodel().model3Ds[0];
-            let cubeData = testmodel().assetPoses.find(p => p.name == "Cube" && model3D.poseIds.includes(p.id));
+            let poseableAsset = testmodel().find(testmodel().moments[0].poseableAssetIds[0]);
+
+            let cubeData = testmodel().assetPoses.find(p => p.name == "Cube" &&
+                poseableAsset.poseIds.includes(p.id));
 
             expect(cubeData.x).toBeCloseTo(0.6, 3);
             expect(cubeData.y).toBeCloseTo(0, 4);
@@ -255,7 +257,7 @@ describe('Test Moment Panel', function () {
             await releaseXRTrigger(true);
             await pressXRTrigger(false);
 
-            let newcubeData = testmodel().assetPoses.find(p => p.name == "Cube" && model3D.poseIds.includes(p.id));
+            let newcubeData = testmodel().assetPoses.find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id));
             expect(newcubeData.x).toBeCloseTo(1.6, 3);
             expect(newcubeData.y).toBeCloseTo(0, 4);
             expect(newcubeData.z).toBeCloseTo(-2, 4);

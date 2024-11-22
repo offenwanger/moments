@@ -8,7 +8,10 @@ export const GLTKUtil = {
 function getInteractionTargetsFromGTLKScene(scene) {
     let targets = []
     scene.traverse(child => {
+        // TODO: This ignored grouped meshes. 
         if (child.type == "Bone" || (child.type == "Mesh" && (!child.parent || child.parent.type != 'Bone'))) {
+            if (child.type == "Mesh") child.isRoot = true;
+            else if (child.type == "Bone" && child.parent.type != 'Bone') child.isRoot = true;
             targets.push(child);
         }
     })

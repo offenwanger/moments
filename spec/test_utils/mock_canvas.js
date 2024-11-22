@@ -21,6 +21,7 @@ export function createCanvas() {
     canvas.addEventListener = function (event, eventListener) {
         canvas.eventListeners[event] = eventListener;
     }
+    canvas.toBlob = function (callback) { callback(canvas); };
 
     canvas.console = {
         log: function () {

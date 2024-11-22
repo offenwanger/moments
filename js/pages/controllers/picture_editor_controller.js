@@ -1,10 +1,10 @@
-export function AnnotationEditorController(parentContainer) {
+export function PictureEditorController(parentContainer) {
     let mSaveCallback = async () => { }
 
-    let mAnnotationId = null;
+    let mPictureId = null;
 
     let mIFrame = parentContainer.append('iframe')
-        .attr('id', 'annotation-editor-iframe')
+        .attr('id', 'picture-editor-iframe')
         .attr('src', 'lib/fabricjs-image-editor-origin/index.html')
         .style('display', 'none')
         .style('position', 'absolute')
@@ -13,14 +13,14 @@ export function AnnotationEditorController(parentContainer) {
         .style('z-index', '1000')
 
     async function show(id, json) {
-        mAnnotationId = id;
+        mPictureId = id;
         mIFrame.style('display', '')
-        mIFrame.node().contentWindow.setAnnotationEditorJson(json);
+        mIFrame.node().contentWindow.setPictureEditorJson(json);
     }
 
     async function hide() {
         mIFrame.style('display', 'none')
-        let event = new CustomEvent('set-annotation', { json: {} })
+        let event = new CustomEvent('set-picture', { json: {} })
         await mIFrame.node().contentDocument.dispatchEvent(event);
     }
 
@@ -29,8 +29,8 @@ export function AnnotationEditorController(parentContainer) {
         mIFrame.attr('height', height);
     }
 
-    window.saveAnnotation = async (json, dataUrl) => {
-        await mSaveCallback(mAnnotationId, json, dataUrl);
+    window.savePicture = async (json, dataUrl) => {
+        await mSaveCallback(mPictureId, json, dataUrl);
     };
 
     this.show = show;

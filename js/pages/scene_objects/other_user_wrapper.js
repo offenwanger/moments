@@ -1,10 +1,8 @@
 import * as THREE from 'three';
-import { EditMode } from "../../constants.js";
 
 export function OtherUserWrapper(parent, id) {
     let mParent = parent;
     let mId = id;
-    let mMode = EditMode.MODEL;
     let mHandRIn = false;
     let mHandLIn = false;
 
@@ -95,13 +93,7 @@ export function OtherUserWrapper(parent, id) {
         mHandL.quaternion.set(...orientation);
     }
 
-
-    function setMode(mode) {
-        mMode = mode;
-    }
-
     this.getTargets = () => [];
-    this.setMode = setMode;
     this.update = update;
     this.getId = () => mId;
     this.remove = remove;

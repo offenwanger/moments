@@ -1,8 +1,5 @@
-import { AssetTypes } from "../../constants.js";
 import { Data } from "../../data.js";
-import { GLTKUtil } from "../../utils/gltk_util.js";
 import { IdUtil } from "../../utils/id_util.js";
-import { Util } from '../../utils/utility.js';
 
 export function ModelController(story = new Data.StoryModel()) {
     let mModel = story;
@@ -15,7 +12,7 @@ export function ModelController(story = new Data.StoryModel()) {
             if (update.action == 'delete') {
                 mModel.delete(update.id);
                 delete mModelIndex[update.id];
-            } else if (update.action == 'update') {
+            } else if (update.action == 'createOrUpdate') {
                 if (!update.row) { console.error('Invalid update, no row'); continue; }
                 if (!update.row.id || !IdUtil.getClass(update.row.id)) { console.error('Invalid update, invalid id: ' + update.row.id); continue; }
 
@@ -35,16 +32,27 @@ export function ModelController(story = new Data.StoryModel()) {
         for (let callback of mUpdateCallbacks) await callback(updates, mModel);
     }
 
+    /**
+     * A function to create a new instance of an object. 
+     * @param {Class} dataClass The class to be created. 
+     * @param {Object} attrs The attributes and their names. Can include an id. 
+     * @returns The new id, either a generated one or the one provided in attrs.
+     */
     async function create(dataClass, attrs = {}) {
         let id = _create(dataClass, attrs)
-        for (let callback of mUpdateCallbacks) await callback([{ action: 'update', row: { ...attrs, id } }], mModel);
+        for (let callback of mUpdateCallbacks) await callback([{ action: 'createOrUpdate', row: { ...attrs, id } }], mModel);
         return id;
     }
 
+    /**
+     * 
+     * @param {[{dataClass: Class, attrs: Object}]]} items 
+     * @returns An array of the ids, either generated or the ones provided in attrs.
+     */
     async function createMany(items) {
         let ids = items.map(({ dataClass, attrs = {} }) => _create(dataClass, attrs))
         for (let callback of mUpdateCallbacks) await callback(items.map((item, index) => {
-            return { action: 'update', row: { ...item.attrs, id: ids[index] } }
+            return { action: 'createOrUpdate', row: { ...item.attrs, id: ids[index] } }
         }), mModel);
         return ids;
     }
@@ -55,20 +63,20 @@ export function ModelController(story = new Data.StoryModel()) {
             if (!Object.hasOwn(item, key)) { console.error("Invalid attr: " + key); continue; }
             item[key] = attrs[key];
         }
-        getTableForClass(dataClass).push(item);
-        mModelIndex = story.getIndex();
+        getTable(dataClass).push(item);
+        mModelIndex[item.id] = item;
         return item.id;
     }
 
     async function update(id, attrs) {
         _update(id, attrs);
-        for (let callback of mUpdateCallbacks) await callback([{ action: 'update', row: { ...attrs, id } }], mModel);
+        for (let callback of mUpdateCallbacks) await callback([{ action: 'createOrUpdate', row: { ...attrs, id } }], mModel);
     }
 
     async function updateMany(items) {
         for (let { id, attrs } of items) { _update(id, attrs); }
         for (let callback of mUpdateCallbacks) await callback(items.map(({ id, attrs }) => {
-            return { action: 'update', row: { ...attrs, id } }
+            return { action: 'createOrUpdate', row: { ...attrs, id } }
         }), mModel);
     }
 
@@ -91,113 +99,37 @@ export function ModelController(story = new Data.StoryModel()) {
         for (let callback of mUpdateCallbacks) await callback(ids.map(id => { return { action: "delete", id } }), mModel);
     }
 
-    function getTableForClass(cls) {
+    function getTable(cls) {
         if (cls == Data.Asset) {
             return mModel.assets;
-        } else if (cls == Data.AssetComponentPose) {
+        } else if (cls == Data.AssetPose) {
             return mModel.assetPoses;
-        } else if (cls == Data.Model3D) {
-            return mModel.model3Ds;
-        } else if (cls == Data.Annotation) {
-            return mModel.annotations;
-        } else if (cls == Data.PhotoSpherePoint) {
-            return mModel.photoSpherePoints;
+        } else if (cls == Data.Moment) {
+            return mModel.moments;
+        } else if (cls == Data.Photosphere) {
+            return mModel.photospheres;
+        } else if (cls == Data.PhotospherePoint) {
+            return mModel.photospherePoints;
+        } else if (cls == Data.PoseableAsset) {
+            return mModel.poseableAssets;
+        } else if (cls == Data.Picture) {
+            return mModel.pictures;
+        } else if (cls == Data.Audio) {
+            return mModel.audios;
+        } else if (cls == Data.Teleport) {
+            return mModel.teleports;
         } else {
             console.error('No array for class: ' + cls);
+            return [];
         }
-    }
-
-    async function createPhotospherePoints(count) {
-        // clear out the old points
-        let updates = mModel.photoSpherePoints.map(p => { return { action: "delete", id: p.id } })
-
-        mModel.photoSpherePoints = new Array(count).fill(0).map((v, i) => {
-            let p = new Data.PhotoSpherePoint();
-            p.index = i;
-
-            updates.push({ action: 'update', row: { id: p.id, index: i } })
-
-            return p;
-        })
-
-        for (let callback of mUpdateCallbacks) await callback(updates, mModel.clone());
-        return mModel.photoSpherePoints.map(p => p.id);
-    }
-
-    async function createModel3D(assetId = null) {
-        let attrs = {};
-        let updates = [];
-
-        if (assetId) {
-            let asset = mModelIndex(assetId);
-            if (!asset) { console.error('invalid asset id', assetId); return; }
-            let poses = mModel.assetPoses.filter(p => asset.poseIds.includes(p.id));
-            let poseIds = poses.map(p => {
-                let poseAttrs = p.clone(true);
-                let poseId = _create(Data.AssetComponentPose, poseAttrs)
-                updates.push({ action: 'update', row: { ...poseAttrs, id: poseId } })
-                return poseId;
-            });
-
-            attrs.assetId = assetId;
-            attrs.name = asset.name;
-            attrs.poseIds = poseIds;
-        }
-
-        let modelId = _create(Data.Model3D, attrs);
-        updates.push({ action: 'update', row: { ...attrs, id: modelId } })
-
-        for (let callback of mUpdateCallbacks) await callback(updates, mModel.clone());
-        return modelId;
-    }
-
-    async function createAsset(name, filename, type, asset = null) {
-        let updates = [];
-
-        let attrs = { name, filename, type }
-        if (type == AssetTypes.MODEL) {
-            let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(asset.scene);
-
-            if (Util.unique(targets.map(t => t.name)).length < targets.length) {
-                console.error("Invalid asset, assets components must have unique names.");
-                return null;
-            }
-
-            attrs.poseIds = targets.map(child => {
-                let poseAttrs = {
-                    type: child.type,
-                    name: child.name,
-                    x: child.position.x,
-                    y: child.position.y,
-                    z: child.position.z,
-                    orientation: child.quaternion.toArray(),
-                    scale: child.scale.x,
-                };
-                let poseId = _create(Data.AssetComponentPose, poseAttrs)
-                updates.push({ action: 'update', row: { ...poseAttrs, id: poseId } });
-                return poseId;
-            });
-
-        }
-
-        let assetId = _create(Data.Asset, attrs);
-        updates.push({ action: 'update', row: { ...attrs, id: assetId } })
-
-        for (let callback of mUpdateCallbacks) await callback(updates, mModel.clone());
-        return assetId;
     }
 
     return {
         applyUpdates,
-        create,
-        createMany,
         update,
         updateMany,
         delete: deleteOne,
         deleteMany,
-        createPhotospherePoints,
-        createModel3D,
-        createAsset,
         getModel: () => mModel.clone(),
         addUpdateCallback: (callback) => mUpdateCallbacks.push(callback),
         removeUpdateCallback: (callback) => mUpdateCallbacks = mUpdateCallbacks.filter(c => c != callback),

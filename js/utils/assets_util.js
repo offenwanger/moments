@@ -42,10 +42,11 @@ export function AssetUtil(workspace) {
     }
 
     async function loadImage(assetId) {
-        let asset = mModel.getAsset(assetId);
-        if (!asset || asset.type != AssetTypes.IMAGE) { console.error("Invalid image asset!", assetId, asset); return; }
+        let asset = mModel.find(assetId);
+        if (!asset) { console.error("Invalid image asset: " + assetId, asset); throw new Error("Invalid model asset: " + assetId); }
         const imageLoader = new THREE.ImageLoader();
-        let image = await imageLoader.loadAsync('assets/images/' + file, null, null, function (error) { console.error('Error loading image', error); });
+        let uri = await mWorkspace.getAssetAsDataURI(asset.filename);
+        let image = await imageLoader.loadAsync(uri, null, null, function (error) { console.error('Error loading image', error); });
         return image;
     }
 

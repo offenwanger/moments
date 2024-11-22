@@ -1,7 +1,7 @@
 import { IdUtil } from "./utils/id_util.js";
 
 class DataItem {
-    id = IdUtil.getUniqueId(this.constructor.name);
+    id = IdUtil.getUniqueId(this.constructor);
 
     find(childId) {
         if (childId == this.id) return this;
@@ -153,14 +153,22 @@ function cloneItem(item, newIds) {
     }
 }
 
+// Story model is the database, which stores the tables
+// All other objects have arrays of pointers.
 class StoryModel extends DataItem {
     name = "A Story in Moments"
     // An array of the file names 
     // that have been loaded into this story
-    assets = []
+    assets = [];
     // base pose information for loaded 3D models
-    baseAssetPoses = []
-    moments = []
+    assetPoses = [];
+    moments = [];
+    photospheres = [];
+    photospherePoints = [];
+    poseableAssets = [];
+    pictures = [];
+    audios = [];
+    teleports = [];
 }
 
 class Asset extends DataItem {
@@ -173,33 +181,39 @@ class Asset extends DataItem {
 
 class AssetPose extends DataItem {
     name = "Pose";
-    parentPoseId = null;
+    // indicates if this pose is relative, i.e. part of a chain,
+    // or a root item
+    isRoot = true;
     x = 0; y = 0; z = 0;
     orientation = [0, 0, 0, 1]; // quaternion
     scale = 1;
 }
 
 class Moment extends DataItem {
+    name = "Moment"
     // 3D models in the scenes
-    gltfs = []
+    poseableAssetIds = []
     // 2D imagry in the scenes
-    pictures = []
+    pictureIds = []
     // points of spatial audio
-    audios = []
-    teleports = []
-    photosphere = null;
+    audioIds = []
+    teleportIds = []
+    photosphereId = null;
 }
 
 class Photosphere extends DataItem {
     enabled = true;
     scale = 1;
-    // the id of the photosphere image asset
+    // the id of the original photosphere image asset
     imageAssetId = null;
-    // the id of the photosphere color annotations asset
-    annotationAssetId = null;
-    // the id of the photosphere blur asset
-    blurMaskAssetId = null;
-    points = [];
+    // the id of the photosphere blur asset, which is 
+    // a mask specifying what of the image should be blurred
+    colorAssetId = null;
+    // the id of the photosphere color image asset, which is 
+    // an image with the coloring that gets drawn on top of 
+    // everything.
+    blurAssetId = null;
+    pointIds = [];
 }
 
 class PhotospherePoint extends DataItem {
@@ -208,7 +222,7 @@ class PhotospherePoint extends DataItem {
     dist = 1;
 }
 
-class Gltf extends DataItem {
+class PoseableAsset extends DataItem {
     name = "3D Model"
     assetId = null;
     poseIds = [];
@@ -240,7 +254,7 @@ export const Data = {
     Moment,
     Photosphere,
     PhotospherePoint,
-    Gltf,
+    PoseableAsset,
     Picture,
     Audio,
     Teleport,

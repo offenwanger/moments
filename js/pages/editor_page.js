@@ -1,13 +1,13 @@
 
-import { AssetTypes, SPHERE_POINTS } from '../constants.js';
+import { AssetTypes } from '../constants.js';
 import { Data } from '../data.js';
 import { AssetUtil } from '../utils/assets_util.js';
+import { DataUtil } from '../utils/data_util.js';
 import { IdUtil } from '../utils/id_util.js';
 import { Util } from '../utils/utility.js';
 import { ModelController } from './controllers/model_controller.js';
 import { SidebarController } from './controllers/sidebar_controller.js';
 import { StoryDisplayController } from './controllers/story_display_controller.js';
-import { TimelineController } from './controllers/timeline_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 
 export function EditorPage(parentContainer, mWebsocketController) {
@@ -17,7 +17,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
     let mAssetUtil;
 
     let mSidebarDivider = 0.8;
-    let mTimelineDivider = 0.8;
+    let mBottomDivider = 0.8;
     let mWidth = 100;
     let mHeight = 100;
 
@@ -36,11 +36,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
 
     let mViewContainer = mStoryDisplay.append('div')
         .attr('id', 'canvas-view-container')
-        .style('display', 'block')
-        .style('border', '1px solid black')
-
-    let mTimelineContainer = mStoryDisplay.append('div')
-        .attr('id', 'timeline')
         .style('display', 'block')
         .style('border', '1px solid black')
 
@@ -68,7 +63,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
             attrs.y = newPosition.y;
             attrs.z = newPosition.z;
         }
-        if (newOrientation && IdUtil.getClass(id) != Data.Annotation) {
+        if (newOrientation && IdUtil.getClass(id) != Data.Picture) {
             attrs.orientation = newOrientation.toArray();
         }
         if (newScale) {
@@ -86,7 +81,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
                 attrs.y = position.y;
                 attrs.z = position.z;
             }
-            if (orientation && IdUtil.getClass(id) != Data.Annotation) {
+            if (orientation && IdUtil.getClass(id) != Data.Picture) {
                 attrs.orientation = orientation.toArray();
             }
             if (scale) {
@@ -98,21 +93,9 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
     });
 
-    mStoryDisplayController.onUpdateTimeline(async (line) => {
-        line = line.filter(p => {
-            if (typeof p.x != 'number' || typeof p.y != 'number' || typeof p.z != 'number') {
-                console.error("invalid point", p);
-                return false;
-            }
-            return true;
-        }).map(p => { return { x: p.x, y: p.y, z: p.z } })
-        await mModelController.update(mModelController.getModel().id, { timeline: line });
-        await updateModel();
-    })
-
-    mStoryDisplayController.onUpdateAnnotationImage(async (annotationId, json, dataUrl) => {
-        await mModelController.update(annotationId, { json });
-        await mModelController.update(annotationId, { image: dataUrl });
+    mStoryDisplayController.onUpdatePictureImage(async (pictureId, json, dataUrl) => {
+        await mModelController.update(pictureId, { json });
+        await mModelController.update(pictureId, { image: dataUrl });
         await updateModel();
     })
 
@@ -132,22 +115,42 @@ export function EditorPage(parentContainer, mWebsocketController) {
             if (type == AssetTypes.MODEL) {
                 asset = await mAssetUtil.loadGLTFModel(newFilename);
             }
-            await mModelController.createAsset(file.name, newFilename, type, asset);
+            let updates = await DataUtil.getAssetCreationUpdates(file.name, newFilename, type, asset);
+            await mModelController.applyUpdates(updates);
         }
         await updateModel();
     })
 
-    let mTimelineController = new TimelineController(mTimelineContainer);
-
     let mSidebarController = new SidebarController(mSidebarContainer);
-    mSidebarController.setAddCallback(async (parentId, itemClass, config) => {
+    mSidebarController.onAdd(async (parentId, itemClass, config) => {
         // should be undo/redo stuff here.
 
-        if (IdUtil.getClass(parentId) == Data.StoryModel && itemClass == Data.Annotation) {
-            await mModelController.create(Data.Annotation);
-        } else if (itemClass == Data.Model3D) {
+        if (itemClass == Data.Picture) {
+            let id = IdUtil.getUniqueId(itemClass);
+            let parent = mModelController.getModel().find(parentId);
+            if (!parent) { console.error('invalid parent id: ' + parentId); return; }
+            parent.pictureIds.push(id);
+            let updates = [
+                { action: 'createOrUpdate', row: { id } },
+                { action: 'createOrUpdate', row: { id: parentId, pictureIds: parent.pictureIds } }
+            ];
+            await mModelController.applyUpdates(updates);
+        } else if (itemClass == Data.Audio) {
+            let id = IdUtil.getUniqueId(itemClass);
+            let parent = mModelController.getModel().find(parentId);
+            if (!parent) { console.error('invalid parent id: ' + parentId); return; }
+            parent.audioIds.push(id);
+            let updates = [
+                { action: 'createOrUpdate', row: { id } },
+                { action: 'createOrUpdate', row: { id: parentId, audioIds: parent.audioIds } }
+            ];
+            await mModelController.applyUpdates(updates);
+        } else if (itemClass == Data.PoseableAsset) {
             let assetId = await mAssetPicker.showOpenAssetPicker();
-            if (assetId) { await mModelController.createModel3D(assetId); }
+            if (assetId) {
+                let updates = await DataUtil.getPoseableAssetCreationUpdates(mModelController.getModel(), parentId, assetId);
+                await mModelController.applyUpdates(updates);
+            }
         } else {
             console.error("Parent + item class not supported", parentId, itemClass);
             return;
@@ -165,25 +168,18 @@ export function EditorPage(parentContainer, mWebsocketController) {
     mSidebarController.setSelectAsset(async () => {
         return await mAssetPicker.showOpenAssetPicker();
     })
-    mSidebarController.setEditAnnotationCallback(async (id) => {
-        let annotation = mModelController.getModel().find(id);
-        if (!annotation) { console.error("Invalid id:" + id); return; }
-        await mStoryDisplayController.editAnnotation(id, annotation.json);
+    mSidebarController.setEditPictureCallback(async (id) => {
+        let picture = mModelController.getModel().find(id);
+        if (!picture) { console.error("Invalid id:" + id); return; }
+        await mStoryDisplayController.editPicture(id, picture.json);
     })
-    mSidebarController.setCloseEditAnnotationCallback(async () => {
-        await mStoryDisplayController.closeEditAnnotation();
+    mSidebarController.setCloseEditPictureCallback(async () => {
+        await mStoryDisplayController.closeEditPicture();
     })
-
-    mSidebarController.setViewAssetCallback(async (assetId) => {
-        const url = new URL(window.location)
-        url.searchParams.set("assetViewId", assetId)
-        history.replaceState(null, '', url);
-        await mStoryDisplayController.showAsset(assetId, mAssetUtil);
-    })
-    mStoryDisplayController.onExitAssetView(async (assetId) => {
-        const url = new URL(window.location)
-        url.searchParams.delete("assetViewId")
-        history.replaceState(null, '', url);
+    mSidebarController.onNavigate(async id => {
+        if (IdUtil.getClass(id) == Data.Moment) {
+            await mStoryDisplayController.setCurrentMoment(id);
+        }
     })
 
     mWebsocketController.onStoryUpdate(async updates => {
@@ -200,7 +196,9 @@ export function EditorPage(parentContainer, mWebsocketController) {
         if (type == AssetTypes.MODEL) {
             asset = await mAssetUtil.loadGLTFModel(newFilename);
         }
-        await mModelController.createAsset(file.name, newFilename, type, asset);
+        let updates = await DataUtil.getAssetCreationUpdates(file.name, newFilename, type, asset);
+        await mModelController.applyUpdates(updates);
+
         await mWebsocketController.uploadAsset(mModelController.getModel().id, newFilename, mWorkspace);
         updateModel();
     })
@@ -244,8 +242,14 @@ export function EditorPage(parentContainer, mWebsocketController) {
             mModelController.addUpdateCallback((updates, model) => mWorkspace.updateStory(model));
             mAssetUtil = new AssetUtil(mWorkspace);
 
-            if (story.photoSpherePoints.length != SPHERE_POINTS) {
-                await mModelController.createPhotospherePoints(SPHERE_POINTS);
+            if (story.moments.length == 0) {
+                let canvas = document.createElement('canvas');
+                canvas.height = 256;
+                canvas.width = 512;
+                let blurFileName = await mWorkspace.storeCanvas('sphereblur', canvas);
+                let colorFileName = await mWorkspace.storeCanvas('spherecolor', canvas);
+                let updates = await DataUtil.getMomentCreationUpdates(blurFileName, colorFileName);
+                await mModelController.applyUpdates(updates);
             }
         }
 
@@ -268,7 +272,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await mAssetUtil.updateModel(model);
         await mAssetPicker.updateModel(model);
 
-        await mTimelineController.updateModel(model);
         await mSidebarController.updateModel(model);
         await mStoryDisplayController.updateModel(model, mAssetUtil);
     }
@@ -277,11 +280,10 @@ export function EditorPage(parentContainer, mWebsocketController) {
         mWidth = width;
         mHeight = height;
 
-        mTimelineController.resize(Math.round(mWidth * mSidebarDivider), Math.round(mHeight * (1 - mTimelineDivider)));
         mSidebarController.resize(mWidth - Math.round(mWidth * mSidebarDivider), mHeight);
 
         let viewCanvasWidth = Math.round(mWidth * mSidebarDivider)
-        let viewCanvasHeight = Math.round(mHeight * mTimelineDivider)
+        let viewCanvasHeight = Math.round(mHeight /* * mBottomDivider*/)
 
         mResizeTarget.style('left', (viewCanvasWidth - RESIZE_TARGET_SIZE / 2) + "px")
         mResizeTarget.style('top', (viewCanvasHeight - RESIZE_TARGET_SIZE / 2) + "px")
@@ -292,7 +294,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
     async function pointerMove(screenCoords) {
         if (mResizingWindows) {
             mSidebarDivider = Util.limit(screenCoords.x / mWidth, 0.01, 0.99);
-            mTimelineDivider = Util.limit(screenCoords.y / mHeight, 0.01, 0.99);
+            mBottomDivider = Util.limit(screenCoords.y / mHeight, 0.01, 0.99);
             resize(mWidth, mHeight);
         }
 

@@ -13,22 +13,26 @@ export async function createAndEditStory() {
     await d3.select('#choose-folder-button').getCallbacks().click();
     await d3.select('#new-story-button').getCallbacks().click();
     await d3.select('.edit-story-button').getCallbacks().click();
+    expect(testmodel().moments.length).toBe(1);
+    await clickButtonInput('#moment-button-' + testmodel().moments[0].id);
+
 }
 
-export async function createAndOpenModel3D() {
+export async function createAndOpenPoseableAsset() {
     await createAndEditStory();
 
     await loadRealFile('sample.glb')
     window.files.push(new mockFile('sample.glb', global.fileSystem['sample.glb']));
-    let promise = clickButtonInput('#story-model3D-add-button');
+    let promise = clickButtonInput('#moment-poseable-asset-add-button');
     await clickButtonInput('#asset-add-button');
+
     expect(d3.select('#assets-container').getChildren().length).toBeGreaterThan(0);
     d3.select('#assets-container').getChildren()[0].getCallbacks().click();
 
     await promise;
 
-    expect(testmodel().model3Ds.length).toBe(1);
-    await clickButtonInput('#model3D-button-' + testmodel().model3Ds[0].id);
+    expect(testmodel().moments[0].poseableAssetIds.length).toBe(1);
+    await clickButtonInput('#poseable-asset-button-' + testmodel().moments[0].poseableAssetIds[0]);
 }
 
 export function getInputValue(id) {
@@ -94,47 +98,48 @@ export async function clickButtonInput2(id) {
 export function createStoryModel() {
     let model = new Data.StoryModel();
     model.name = "TestStory"
-    model.timeline = [{ x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 1 }, { x: 1, y: -1, z: -2 }];
 
-    let modelAsset1 = new Data.Asset()
-    let pose1 = new Data.AssetComponentPose()
-    let pose2 = new Data.AssetComponentPose()
-    let pose3 = new Data.AssetComponentPose()
-    modelAsset1.poseIds = [pose1.id, pose2.id, pose3.id];
-    let modelAsset2 = new Data.Asset()
-    let pose4 = new Data.AssetComponentPose()
-    let pose5 = new Data.AssetComponentPose()
-    modelAsset2.poseIds = [pose4.id, pose5.id];
+    let asset1 = new Data.Asset()
+    let pose1 = new Data.AssetPose()
+    let pose2 = new Data.AssetPose()
+    let pose3 = new Data.AssetPose()
+    asset1.poseIds = [pose1.id, pose2.id, pose3.id];
+    let asset2 = new Data.Asset()
+    let pose4 = new Data.AssetPose()
+    let pose5 = new Data.AssetPose()
+    asset2.poseIds = [pose4.id, pose5.id];
 
     let imageAsset = new Data.Asset()
-    let boxAsset = new Data.Asset()
 
-    let model3D1 = new Data.Model3D()
-    model3D1.assetId = modelAsset1.id;
-    let model3D2 = new Data.Model3D()
-    model3D2.assetId = modelAsset1.id;
-    let model3D3 = new Data.Model3D()
-    model3D3.assetId = modelAsset1.id;
+    let poseableAsset1 = new Data.PoseableAsset()
+    poseableAsset1.assetId = asset1.id;
+    let poseableAsset2 = new Data.PoseableAsset()
+    poseableAsset2.assetId = asset1.id;
+    let poseableAsset3 = new Data.PoseableAsset()
+    poseableAsset3.assetId = asset1.id;
+    model.poseableAssets.push(poseableAsset1);
+    model.poseableAssets.push(poseableAsset2);
+    model.poseableAssets.push(poseableAsset3);
 
-    let annotation = new Data.Annotation();
+    let picture = new Data.Picture();
+    model.pictures.push(picture);
 
-    model.backgroundId = boxAsset.id;
+    model.assets.push(asset1);
+    model.assets.push(asset2);
+    model.assetPoses.push(pose1);
+    model.assetPoses.push(pose2);
+    model.assetPoses.push(pose3);
+    model.assetPoses.push(pose4);
+    model.assetPoses.push(pose5);
+    model.assets.push(imageAsset);
 
-    model.assets.push(modelAsset1)
-    model.assets.push(modelAsset2)
-    model.assetPoses.push(pose1)
-    model.assetPoses.push(pose2)
-    model.assetPoses.push(pose3)
-    model.assetPoses.push(pose4)
-    model.assetPoses.push(pose5)
-    model.assets.push(imageAsset)
-    model.assets.push(boxAsset)
+    model.moments.push(new Data.Moment());
 
-    model.model3Ds.push(model3D1)
-    model.model3Ds.push(model3D2)
-    model.model3Ds.push(model3D3)
+    model.moments[0].pictureIds.push(picture.id);
 
-    model.annotations.push(annotation)
+    model.moments[0].poseableAssetIds.push(poseableAsset1.id);
+    model.moments[0].poseableAssetIds.push(poseableAsset2.id);
+    model.moments[0].poseableAssetIds.push(poseableAsset3.id);
 
     return model;
 }

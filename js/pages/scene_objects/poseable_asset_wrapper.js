@@ -1,16 +1,14 @@
 import * as THREE from 'three';
-import { EditMode } from '../../constants.js';
 import { Data } from "../../data.js";
 import { GLTKUtil } from '../../utils/gltk_util.js';
-import { InteractionTargetWrapper } from './interaction_target_wrapper.js';
+import { InteractionTargetWrapper } from './interaction_target_interface.js';
 
-export function Model3DWrapper(parent) {
+export function PoseableAssetWrapper(parent) {
     let mModel = new Data.StoryModel();
     let mParent = parent;
-    let mModel3D = new Data.Model3D();
+    let mPoseableAsset = new Data.PoseableAsset();
     let mPoses = [];
     let mGLTF = null;
-    let mMode = EditMode.MODEL;
     let mTargets = [];
     let mInteractionTargets = [];
     let mModelGroup = new THREE.Group();
@@ -23,22 +21,22 @@ export function Model3DWrapper(parent) {
         transparent: true
     });
 
-    async function update(model3D, model, assetUtil) {
+    async function update(poseableAsset, model, assetUtil) {
         mModel = model;
 
-        mPoses = mModel.assetPoses.filter(p => model3D.poseIds.includes(p.id));
+        mPoses = mModel.assetPoses.filter(p => poseableAsset.poseIds.includes(p.id));
 
-        let oldModel = mModel3D;
-        mModel3D = model3D;
+        let oldModel = mPoseableAsset;
+        mPoseableAsset = poseableAsset;
 
         // ensure the interaction targets exist because we're going
         // to add things to them.
         mInteractionTargets = makeInteractionTargets();
 
-        if (mModel3D.assetId != oldModel.assetId) {
+        if (mPoseableAsset.assetId != oldModel.assetId) {
             if (mGLTF) remove();
             try {
-                mGLTF = await assetUtil.loadAssetModel(mModel3D.assetId)
+                mGLTF = await assetUtil.loadAssetModel(mPoseableAsset.assetId)
                 mModelGroup.add(mGLTF.scene);
 
                 mTargets = []
@@ -46,7 +44,7 @@ export function Model3DWrapper(parent) {
                 targets.forEach(target => {
                     if (target.isMesh) {
                         let pose = mPoses.find(p => p.name == target.name);
-                        if (!pose) { console.error("Mismatched Model3D and asset!"); return; }
+                        if (!pose) { console.error("Mismatched PoseableAsset and asset!"); return; }
                         target.userData.poseId = pose.id;
                         if (!target.material) { target.material = new THREE.MeshBasicMaterial() }
                         target.userData.originalColor = target.material.color.getHex();
@@ -54,7 +52,7 @@ export function Model3DWrapper(parent) {
                         mTargets.push(target)
                     } else if (target.type == "Bone") {
                         let pose = mPoses.find(p => p.name == target.name);
-                        if (!pose) { console.error("Mismatched Model3D and asset!"); return; }
+                        if (!pose) { console.error("Mismatched PoseableAsset and asset!"); return; }
                         let targetGroup = attachBoneTarget(target, pose.id);
                         mTargets.push(targetGroup);
                     } else {
@@ -77,7 +75,7 @@ export function Model3DWrapper(parent) {
     }
 
     function getId() {
-        return mModel3D.id;
+        return mPoseableAsset.id;
     }
 
     function remove() {
@@ -85,9 +83,6 @@ export function Model3DWrapper(parent) {
     }
 
     function getTargets(ray) {
-        if (mModel3D.isWorld && mMode != EditMode.WORLD) return [];
-        if (!mModel3D.isWorld && mMode != EditMode.MODEL) return [];
-
         if (!mGLTF) return [];
         const intersects = ray.intersectObjects(mTargets);
         let targets = intersects.map(i => {
@@ -268,13 +263,8 @@ export function Model3DWrapper(parent) {
         return group;
     }
 
-    function setMode(mode) {
-        mMode = mode;
-    }
-
     this.update = update;
     this.getId = getId;
     this.remove = remove;
     this.getTargets = getTargets;
-    this.setMode = setMode;
 }

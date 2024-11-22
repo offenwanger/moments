@@ -46,18 +46,18 @@ describe('Test Data', function () {
             expect(assetPose).toBe(model.assetPoses[0]);
         })
 
-        it('should find model3D', function () {
+        it('should find poseableAsset', function () {
             let model = createStoryModel();
-            let model3DId = model.model3Ds[0].id;
-            let model3D = model.find(model3DId);
-            expect(model3D).toBe(model.model3Ds[0]);
+            let poseableAssetId = model.moments[0].poseableAssetIds[0];
+            let poseableAsset = model.find(poseableAssetId);
+            expect(poseableAsset.id).toBe(model.moments[0].poseableAssetIds[0]);
         })
 
-        it('should find annotation', function () {
+        it('should find picture', function () {
             let model = createStoryModel();
-            let annotationId = model.annotations[0].id;
-            let annotation = model.find(annotationId);
-            expect(annotation).toBe(model.annotations[0]);
+            let pictureId = model.moments[0].pictureIds[0];
+            let picture = model.find(pictureId);
+            expect(picture.id).toBe(model.moments[0].pictureIds[0]);
         })
 
         it('should not find invalid id', function () {
@@ -68,16 +68,15 @@ describe('Test Data', function () {
     })
 
     describe('delete tests', function () {
-        it('should delete model3D', function () {
+        it('should delete poseableAsset', function () {
             let model = createStoryModel();
-            let id = model.model3Ds[0].id;
-            let model3D = model.find(id);
-            expect(model3D).not.toBeNull()
-                ;
+            let id = model.moments[0].poseableAssetIds[0];
+            let poseableAsset = model.find(id);
+            expect(poseableAsset).not.toBeNull();
             model.delete(id);
 
-            model3D = model.find(id);
-            expect(model3D).toBeNull()
+            poseableAsset = model.find(id);
+            expect(poseableAsset).toBeNull()
         });
 
         it('should delete ids from arrays', function () {

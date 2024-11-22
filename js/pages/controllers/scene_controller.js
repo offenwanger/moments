@@ -1,22 +1,26 @@
 import * as THREE from 'three';
-import { EditMode } from '../../constants.js';
 import { Data } from '../../data.js';
-import { StoryWrapper } from '../scene_objects/story_wrapper.js';
 import { OtherUserWrapper } from '../scene_objects/other_user_wrapper.js';
+import { MomentWrapper } from '../scene_objects/moment_wrapper.js';
 
-export function StorySceneController() {
+export function SceneController() {
     let mScene = new THREE.Scene();
     let mContent = new THREE.Group();
     mScene.add(mContent);
-    let mStoryWrapper = new StoryWrapper(mContent);
+    let mCurrentMomentId = null;
+    let mMomentWrapper = new MomentWrapper(mContent);
     let mModel = new Data.StoryModel();
+    let mAssetUtil = null;
 
     let mOtherUsers = [];
+
+    mScene.add(new THREE.AmbientLight(0xffffff));
+    mScene.add(new THREE.DirectionalLight(0xffffff, 0.9));
 
     let mEnvironmentBox;
 
     function userMove(globalPosition) {
-        mStoryWrapper.userMove(globalPosition)
+        mMomentWrapper.userMove(globalPosition)
     }
 
     function updateOtherUser(id, head, handR, handL) {
@@ -39,26 +43,27 @@ export function StorySceneController() {
 
 
     async function updateModel(model, assetUtil) {
-        let oldModel = mModel;
-        mModel = model;
-
-        let story = mModel;
-        let oldStory = oldModel;
-
-        if (story.background != oldStory.background || !mScene.background) {
-            if (story.background) {
-                mEnvironmentBox = await assetUtil.loadEnvironmentCube(story.background);
-            } else {
-                mEnvironmentBox = await assetUtil.loadDefaultEnvironmentCube();
-            }
+        if (!mEnvironmentBox) {
+            mEnvironmentBox = await assetUtil.loadDefaultEnvironmentCube();
             mScene.background = mEnvironmentBox;
         }
+        mModel = model;
+        mAssetUtil = assetUtil;
 
-        await mStoryWrapper.updateModel(model, assetUtil);
+        if (!mCurrentMomentId || !mModel.find(mCurrentMomentId)) {
+            mCurrentMomentId = null;
+        }
+
+        await mMomentWrapper.update(mCurrentMomentId, model, assetUtil);
+    }
+
+    async function setCurrentMoment(momentId) {
+        mCurrentMomentId = momentId;
+        if (mAssetUtil) await updateModel(mModel, mAssetUtil);
     }
 
     function getTargets(ray) {
-        return [...mStoryWrapper.getTargets(ray)]
+        return [...mMomentWrapper.getTargets(ray)]
     }
 
     function toSceneCoordinates(v) {
@@ -67,27 +72,15 @@ export function StorySceneController() {
         return local;
     }
 
-    function setMode(mode) {
-        if (mode == EditMode.MODEL) {
-            setScale(1);
-        } else if (mode == EditMode.WORLD) {
-            setScale(0.5);
-        } else if (mode == EditMode.TIMELINE) {
-            setScale(0.1);
-        }
-
-        mStoryWrapper.setMode(mode);
-    }
-
     function setScale(scale) {
         mContent.scale.set(scale, scale, scale);
     }
 
     this.updateModel = updateModel;
+    this.setCurrentMoment = setCurrentMoment;
     this.getTargets = getTargets;
     this.userMove = userMove;
     this.toSceneCoordinates = toSceneCoordinates;
-    this.setMode = setMode;
     this.setScale = setScale;
     this.updateOtherUser = updateOtherUser;
     this.removeOtherUser = removeOtherUser;

@@ -1,30 +1,28 @@
 import * as THREE from 'three';
-import { EditMode } from "../../constants.js";
 import { Data } from "../../data.js";
-import { InteractionTargetWrapper } from "./interaction_target_wrapper.js";
+import { InteractionTargetWrapper } from "./interaction_target_interface.js";
 
-export function AnnotationWrapper(parent) {
+export function PictureWrapper(parent) {
     let mParent = parent;
-    let mAnnotation = new Data.Annotation();
-    let mMode = EditMode.MODEL;
+    let mPicture = new Data.Picture();
     let mInteractionTarget = createInteractionTarget();
 
     const mMaterial = new THREE.SpriteMaterial({ transparent: true });
     const mPlane = new THREE.Sprite(mMaterial);
     parent.add(mPlane);
 
-    async function update(annotation, model, assetUtil) {
-        new THREE.TextureLoader().load(annotation.image, (texture) => {
+    async function update(picture, model, assetUtil) {
+        new THREE.TextureLoader().load(picture.image, (texture) => {
             mMaterial.map = texture;
             mMaterial.needsUpdate = true;
         })
-        mPlane.position.set(annotation.x, annotation.y, annotation.z);
-        mPlane.scale.set(annotation.scale, annotation.scale, annotation.scale)
-        mAnnotation = annotation;
+        mPlane.position.set(picture.x, picture.y, picture.z);
+        mPlane.scale.set(picture.scale, picture.scale, picture.scale)
+        mPicture = picture;
     }
 
     function getId() {
-        return mAnnotation.id;
+        return mPicture.id;
     }
 
     function remove() {
@@ -32,17 +30,11 @@ export function AnnotationWrapper(parent) {
     }
 
     function getTargets(ray) {
-        if (mAnnotation.isWorld && mMode != EditMode.WORLD) return [];
-        if (!mAnnotation.isWorld && mMode != EditMode.MODEL) return [];
         const intersect = ray.intersectObject(mPlane);
         if (intersect.length > 0) {
             mInteractionTarget.getIntersection = () => { return intersect[0]; }
             return [mInteractionTarget];
         } else return [];
-    }
-
-    function setMode(mode) {
-        mMode = mode;
     }
 
     function createInteractionTarget() {
@@ -88,12 +80,11 @@ export function AnnotationWrapper(parent) {
             mMaterial.color.set(0xffffff);
             mMaterial.needsUpdate = true;
         }
-        target.getId = () => mAnnotation.id;
+        target.getId = () => mPicture.id;
         return target;
     }
 
     this.getTargets = getTargets;
-    this.setMode = setMode;
     this.update = update;
     this.getId = getId;
     this.remove = remove;

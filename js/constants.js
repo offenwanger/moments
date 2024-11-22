@@ -12,13 +12,10 @@ export const CAST_ONLY_LAYER = 4;
 export const AssetTypes = {
     MODEL: 'model',
     IMAGE: 'image',
+    AUDIO: 'audio',
     BOX: 'box',
-}
-
-export const EditMode = {
-    TIMELINE: 'timeline',
-    WORLD: 'world',
-    MODEL: 'model',
+    PHOTOSPHERE_BLUR: 'blur',
+    PHOTOSPHERE_COLOR: 'color',
 }
 
 export const AssetExtensions = {};

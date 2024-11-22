@@ -9,6 +9,12 @@ import * as mockFileSystem from './mock_filesystem.js';
 import { HTMLElement } from './mock_html_element.js';
 import { mockIndexedDB } from './mock_indexedDB.js';
 
+import fs from 'fs';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+eval(fs.readFileSync(__dirname + '../../../lib/delaunator.min.js', 'utf-8'))
+
 // Trap error and trigger a failure. 
 let consoleError = console.error;
 console.error = function (message) {

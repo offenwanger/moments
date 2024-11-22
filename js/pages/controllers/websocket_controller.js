@@ -84,7 +84,12 @@ export function WebsocketController() {
 
     async function shareStory(model, workspace) {
         try {
-            let usedAssets = model.model3Ds.map(m => m.assetId);
+            let usedAssets = []
+            usedAssets.push(...model.poseableAssets.map(o => o.assetId))
+            usedAssets.push(...model.pictures.map(o => o.assetId))
+            usedAssets.push(...model.audio.map(o => o.assetId))
+            usedAssets.push(...model.photospheres.map(o => [o.imageAssetId, o.colorAssetId, o.blurAssetId])
+                .flat().filter(o => o))
             let filenames = model.assets.filter(a => usedAssets
                 .includes(a.id))
                 .map(a => a.filename);

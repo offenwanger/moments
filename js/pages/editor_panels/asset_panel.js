@@ -49,12 +49,12 @@ export function AssetPanel(container) {
             await mViewAssetCallback(mAssetId);
         })
 
-    let mUsedByContainer = mPanelContainer.append('div').attr('id', 'model3Ds');
+    let mUsedByContainer = mPanelContainer.append('div').attr('id', 'poseableAssets');
     mUsedByContainer.append('div').html('Position');
     let mUsedByList = [];
 
     let mDeleteButton = new ButtonInput(mPanelContainer)
-        .setId('model3D-delete-button')
+        .setId('asset-delete-button')
         .setLabel('Delete')
         .setOnClick(async () => {
             await mDeleteCallback(mAssetId);
@@ -87,7 +87,7 @@ export function AssetPanel(container) {
 
     this.show = show;
     this.hide = hide;
-    this.setAddCallback = (func) => mAddCallback = func;
+    this.onAdd = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
     this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;

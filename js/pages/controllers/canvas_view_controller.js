@@ -1,21 +1,16 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { DOUBLE_CLICK_SPEED, EditMode, USER_HEIGHT } from '../../constants.js';
+import { DOUBLE_CLICK_SPEED, USER_HEIGHT } from '../../constants.js';
 import { GLTKUtil } from '../../utils/gltk_util.js';
-import { Util } from '../../utils/utility.js';
 
 export function CanvasViewController(parentContainer, mWebsocketController) {
     const DRAGGING = 'dragging'
     const DRAGGING_KINEMATIC = 'draggingKinematic'
     const NAVIGATING = 'navigating'
-    const TIMELINE_DRAW = 'drawingTimeline'
 
     let mTransformCallback = async () => { }
     let mTransformManyCallback = async () => { }
-    let mUpdateTimelineCallback = async () => { }
-
-    let mMode = EditMode.MODEL;
 
     let mWidth = 10;
     let mHeight = 10;
@@ -33,7 +28,6 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     const mRaycaster = new THREE.Raycaster();
     mRaycaster.near = 0.2;
 
-    let mTimelineDrawingMode = false;
     let mLastPointerPosition = { x: -10, y: -10 }
 
     let mIKSolver
@@ -112,83 +106,62 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         mLastPointerDown.time = Date.now();
         mLastPointerDown.pos = screenCoords;
 
-        if (mMode == EditMode.MODEL || mMode == EditMode.WORLD) {
-            let nonfrozenTargets = mHovered.filter(h => !mFreeze.find(f => f.getId() == h.getId()));
+        let nonfrozenTargets = mHovered.filter(h => !mFreeze.find(f => f.getId() == h.getId()));
 
-            if (nonfrozenTargets.length > 0) {
-                let target = getClosestTarget(nonfrozenTargets, screenCoords);
-                let rootTarget = target.getRoot();
-                if (mFreezeRoots.find(f => f.getId() == rootTarget.getId())) {
-                    let freezeTarget = mFreeze.find(f => f.getRoot().getId() == rootTarget.getId());
+        if (nonfrozenTargets.length > 0) {
+            let target = getClosestTarget(nonfrozenTargets, screenCoords);
+            let rootTarget = target.getRoot();
+            if (mFreezeRoots.find(f => f.getId() == rootTarget.getId())) {
+                let freezeTarget = mFreeze.find(f => f.getRoot().getId() == rootTarget.getId());
 
-                    let { mesh, iks, affectedTargets, controlBone } = GLTKUtil.createIK(freezeTarget, target);
-                    mIKSolver = new CCDIKSolver(mesh, iks);
-                    mCCDIKHelper = new CCDIKHelper(mesh, iks, 0.01);
-                    mSceneController.getContent().add(mCCDIKHelper);
+                let { mesh, iks, affectedTargets, controlBone } = GLTKUtil.createIK(freezeTarget, target);
+                mIKSolver = new CCDIKSolver(mesh, iks);
+                mCCDIKHelper = new CCDIKHelper(mesh, iks, 0.01);
+                mSceneController.getContent().add(mCCDIKHelper);
 
-                    let intersection = target.getIntersection();
-                    let rootBone = rootTarget.getObject3D();
-                    mInteraction = {
-                        type: DRAGGING_KINEMATIC,
-                        controlBone,
-                        rootBone,
-                        affectedTargets,
-                        start: screenCoords,
-                        distance: intersection.distance,
-                    }
-                } else {
-                    let intersection = target.getIntersection();
-                    let rootTarget = target.getRoot();
-                    let targetToPos = new THREE.Vector3().subVectors(rootTarget.getWorldPosition(), intersection.point)
-
-                    mInteraction = {
-                        type: DRAGGING,
-                        start: screenCoords,
-                        target: rootTarget,
-                        targetToPos,
-                        distance: intersection.distance,
-                    }
+                let intersection = target.getIntersection();
+                let rootBone = rootTarget.getObject3D();
+                mInteraction = {
+                    type: DRAGGING_KINEMATIC,
+                    controlBone,
+                    rootBone,
+                    affectedTargets,
+                    start: screenCoords,
+                    distance: intersection.distance,
                 }
             } else {
-                mInteraction = { type: NAVIGATING }
-            }
-        } else if (mMode == EditMode.TIMELINE) {
-            if (mTimelineDrawingMode) {
-                mInteraction = {
-                    type: TIMELINE_DRAW,
-                    points: [screenCoords]
-                }
+                let intersection = target.getIntersection();
+                let rootTarget = target.getRoot();
+                let targetToPos = new THREE.Vector3().subVectors(rootTarget.getWorldPosition(), intersection.point)
 
-                drawTimelineDrawingLine();
+                mInteraction = {
+                    type: DRAGGING,
+                    start: screenCoords,
+                    target: rootTarget,
+                    targetToPos,
+                    distance: intersection.distance,
+                }
             }
         } else {
-            console.error("Invalid mode!")
+            mInteraction = { type: NAVIGATING }
         }
+
     }
 
     function onDoubleDown(screenCoords) {
-        if (mMode == EditMode.MODEL || mMode == EditMode.WORLD) {
-            if (mHovered.length > 0) {
-                let target = getClosestTarget(mHovered, screenCoords);
-                if (mFreeze.find(f => f.getId() == target.getId())) {
-                    mFreeze.splice(mFreeze.findIndex(f => f.getId() == target.getId()), 1);
-                } else {
-                    mFreeze.push(target);
-                    mFreezeRoots.push(target.getRoot())
-                }
+        if (mHovered.length > 0) {
+            let target = getClosestTarget(mHovered, screenCoords);
+            if (mFreeze.find(f => f.getId() == target.getId())) {
+                mFreeze.splice(mFreeze.findIndex(f => f.getId() == target.getId()), 1);
             } else {
-                mFreeze = []
+                mFreeze.push(target);
+                mFreezeRoots.push(target.getRoot())
             }
-            mFreezeRoots = mFreezeRoots.filter(r => mFreeze.find(f => f.getRoot().getId() == r.getId()));
-        } else if (mMode == EditMode.TIMELINE) {
-            if (mTimelineDrawingMode) {
-                mInterfaceCanvas.style('display', 'none')
-                mTimelineDrawingMode = false;
-            } else {
-                mInterfaceCanvas.style('display', 'block')
-                mTimelineDrawingMode = true;
-            }
+        } else {
+            mFreeze = []
         }
+        mFreezeRoots = mFreezeRoots.filter(r => mFreeze.find(f => f.getRoot().getId() == r.getId()));
+
     }
 
     async function pointerMove(screenCoords) {
@@ -223,11 +196,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
             let position = mRaycaster.ray.at(mInteraction.distance, new THREE.Vector3());
             let localPosition = mInteraction.rootBone.worldToLocal(position);
             mInteraction.controlBone.position.copy(localPosition);
-        } else if (mInteraction.type == TIMELINE_DRAW) {
-            mInteraction.points.push(screenCoords);
         }
-
-        drawTimelineDrawingLine();
     }
 
     async function pointerUp(screenCoords) {
@@ -251,38 +220,6 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
                         orientation: t.getLocalOrientation(),
                     }
                 }))
-            } else if (interaction.type == TIMELINE_DRAW) {
-                if (interaction.points.length > 3) {
-                    let bb = new THREE.Box3().setFromObject(mSceneController.getScene());
-                    let midpoint = new THREE.Vector3();
-                    bb.getCenter(midpoint);
-
-                    let cameraPos = new THREE.Vector3()
-                    mPageCamera.getWorldPosition(cameraPos);
-
-                    let normal = new THREE.Vector3();
-                    mPageCamera.getWorldDirection(normal)
-
-                    let directionToMidpoint = new THREE.Vector3().subVectors(midpoint, cameraPos);
-                    if (directionToMidpoint.angleTo(normal) > Math.PI / 3) return;
-
-                    normal.multiplyScalar(-1);
-                    let theta = midpoint.angleTo(normal)
-                    let hypot = midpoint.length();
-                    let dist = hypot * Math.cos(theta);
-                    let plane = new THREE.Plane(normal, dist);
-                    let line = interaction.points.map(p => {
-                        let pointer = screenToNomralizedCoords(p);
-                        mRaycaster.setFromCamera(pointer, mPageCamera);
-                        let intersect = new THREE.Vector3()
-                        mRaycaster.ray.intersectPlane(plane, intersect);
-                        intersect = mSceneController.toSceneCoordinates(intersect);
-                        return intersect;
-                    });
-                    line = Util.simplify3DLine(line, 0.05);
-
-                    await mUpdateTimelineCallback(line);
-                }
             }
         }
     }
@@ -334,32 +271,6 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         return { x, y }
     }
 
-    function setMode(mode) {
-        mSceneController.setMode(mode)
-        mMode = mode;
-    }
-
-    function drawTimelineDrawingLine() {
-        mInterfaceCanvasContext.clearRect(0, 0, mInterfaceCanvas.attr('width'), mInterfaceCanvas.attr('height'));
-        mInterfaceCanvasContext.strokeStyle = 'black'
-        mInterfaceCanvasContext.fillStyle = 'black'
-        mInterfaceCanvasContext.lineWidth = 3
-
-        let bb = mInterfaceCanvas.node().getBoundingClientRect();
-
-        mInterfaceCanvasContext.beginPath();
-        mInterfaceCanvasContext.arc(mLastPointerPosition.x - bb.x, mLastPointerPosition.y - bb.y, 5, 0, 2 * Math.PI);
-        mInterfaceCanvasContext.fill();
-
-        if (!mInteraction || mInteraction.type != TIMELINE_DRAW) return;
-        mInterfaceCanvasContext.beginPath();
-        mInterfaceCanvasContext.moveTo(mInteraction.points[0].x - bb.x, mInteraction.points[0].y - bb.y);
-        for (let p of mInteraction.points) {
-            mInterfaceCanvasContext.lineTo(p.x - bb.x, p.y - bb.y);
-        }
-        mInterfaceCanvasContext.stroke();
-    }
-
     function setUserPositionAndDirection(worldPosition, unitDirection) {
         mPageCamera.position.subVectors(worldPosition, unitDirection);
         mOrbitControls.target.copy(worldPosition);
@@ -382,12 +293,10 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     this.pointerUp = pointerUp;
     this.startRendering = startRendering;
     this.stopRendering = stopRendering;
-    this.setMode = setMode;
     this.setUserPositionAndDirection = setUserPositionAndDirection;
     this.getUserPositionAndDirection = getUserPositionAndDirection;
 
     this.setSceneController = (sceneContoller) => { mSceneController = sceneContoller }
     this.onTransform = (func) => { mTransformCallback = func }
     this.onTransformMany = (func) => { mTransformManyCallback = func }
-    this.onUpdateTimeline = (func) => { mUpdateTimelineCallback = func }
 }

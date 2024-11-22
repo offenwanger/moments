@@ -6,6 +6,8 @@ import { ButtonInput } from "../components/button_input.js";
 export function AssetPicker(container) {
     let mNewAssetCallback = async (filename) => { }
 
+    let mAssets = [];
+
     let mDialog = container.append('dialog')
         .style('position', 'absolute')
         .style('top', '20px');
@@ -46,23 +48,13 @@ export function AssetPicker(container) {
     })
 
     function updateModel(model) {
-        let assets = model.assets;
-        Util.setComponentListLength(mAssetList, assets.length, () => new ButtonInput(mAssetsContainer));
-        for (let i = 0; i < assets.length; i++) {
-            mAssetList[i].setId("asset-button-" + assets[i].id)
-                .setLabel(assets[i].name);
-        }
-
-        for (let i = 0; i < assets.length; i++) {
-            mAssetList[i].setOnClick(async () => {
-                mSelectedAssetId = assets[i].id;
-                mDialog.node().close();
-            });
-        }
+        mAssets = model.assets;
+        refreshList();
     }
 
     async function showOpenAssetPicker(type = AssetTypes.MODEL) {
         mSelectionType = type;
+        refreshList();
 
         return new Promise((resolve, reject) => {
             mDialog.on('close', () => {
@@ -78,6 +70,19 @@ export function AssetPicker(container) {
 
             mDialog.node().show();
         })
+    }
+
+    function refreshList() {
+        let typeAssets = mAssets.filter(a => a.type == mSelectionType);
+        Util.setComponentListLength(mAssetList, typeAssets.length, () => new ButtonInput(mAssetsContainer));
+        for (let i = 0; i < typeAssets.length; i++) {
+            mAssetList[i].setId("asset-button-" + typeAssets[i].id)
+                .setLabel(typeAssets[i].name)
+                .setOnClick(async () => {
+                    mSelectedAssetId = typeAssets[i].id;
+                    mDialog.node().close();
+                });
+        }
     }
 
     this.updateModel = updateModel;

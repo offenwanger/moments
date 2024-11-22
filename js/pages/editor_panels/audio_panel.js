@@ -2,23 +2,23 @@ import { Data } from "../../data.js";
 import { ButtonInput } from "../components/button_input.js";
 import { TextInput } from "../components/text_input.js";
 
-export function AnnotationPanel(container) {
+export function AudioPanel(container) {
     let mAddCallback = async (parentId, itemClass, config) => { };
     let mUpdateAttributeCallback = async (id, attrs) => { };
     let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
-    let mEditAnnotationCallback = async (id) => { };
-    let mCloseEditAnnotationCallback = async (id) => { };
+    let mEditPictureCallback = async (id) => { };
+    let mCloseEditPictureCallback = async (id) => { };
 
     let mModel = new Data.StoryModel();
-    let mAnnoatation = new Data.Annotation();
-    let mAnnotationId = null;
+    let mAudio = new Data.Picture();
+    let mPictureId = null;
     let mShowingEditor = false;
 
     let mPanelContainer = container.append("div"); hide();
 
     let mBackButton = new ButtonInput(mPanelContainer)
-        .setId('annotation-back-button')
+        .setId('picture-back-button')
         .setLabel("<- Story")
         .setOnClick(async () => {
             if (mShowingEditor) await hideEditor();
@@ -26,14 +26,14 @@ export function AnnotationPanel(container) {
         });
 
     let mNameInput = new TextInput(mPanelContainer)
-        .setId('annotation-name-input')
+        .setId('picture-name-input')
         .setLabel("Name")
         .setOnChange(async (newText) => {
-            await mUpdateAttributeCallback(mAnnotationId, { name: newText });
+            await mUpdateAttributeCallback(mPictureId, { name: newText });
         });
 
     let mEditButton = new ButtonInput(mPanelContainer)
-        .setId('annotation-edit-button')
+        .setId('picture-edit-button')
         .setLabel('Edit')
         .setOnClick(async () => {
             if (mShowingEditor) {
@@ -61,35 +61,35 @@ export function AnnotationPanel(container) {
         });
 
     let mDeleteButton = new ButtonInput(mPanelContainer)
-        .setId('annotation-delete-button')
+        .setId('picture-delete-button')
         .setLabel('Delete')
         .setOnClick(async () => {
-            await mDeleteCallback(mAnnotationId);
+            await mDeleteCallback(mPictureId);
             await mNavigationCallback(mModel.id);
         })
 
     async function showEditor() {
         mShowingEditor = true;
         mEditButton.setLabel('Close');
-        await mEditAnnotationCallback(mAnnotationId);
+        await mEditPictureCallback(mPictureId);
     }
 
     async function hideEditor() {
         mShowingEditor = false;
         mEditButton.setLabel('Edit');
-        await mCloseEditAnnotationCallback();
+        await mCloseEditPictureCallback();
     }
 
-    function show(model, annotationId) {
+    function show(model, pictureId) {
         mModel = model;
-        mAnnotationId = annotationId;
-        mAnnoatation = mModel.find(annotationId);
+        mPictureId = pictureId;
+        mAudio = mModel.find(pictureId);
 
-        mNameInput.setText(mAnnoatation.name);
+        mNameInput.setText(mAudio.name);
 
-        mPositionXInput.setText(Math.round(mAnnoatation.x * 1000) / 1000);
-        mPositionYInput.setText(Math.round(mAnnoatation.y * 1000) / 1000);
-        mPositionZInput.setText(Math.round(mAnnoatation.z * 1000) / 1000);
+        mPositionXInput.setText(Math.round(mAudio.x * 1000) / 1000);
+        mPositionYInput.setText(Math.round(mAudio.y * 1000) / 1000);
+        mPositionZInput.setText(Math.round(mAudio.z * 1000) / 1000);
 
         mPanelContainer.style('display', '');
     }
@@ -101,10 +101,10 @@ export function AnnotationPanel(container) {
 
     this.show = show;
     this.hide = hide;
-    this.setAddCallback = (func) => mAddCallback = func;
+    this.onAdd = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
     this.setDeleteCallback = (func) => mDeleteCallback = func;
-    this.setEditAnnotationCallback = (func) => mEditAnnotationCallback = func;
-    this.setCloseEditAnnotationCallback = (func) => mCloseEditAnnotationCallback = func;
+    this.setEditPictureCallback = (func) => mEditPictureCallback = func;
+    this.setCloseEditPictureCallback = (func) => mCloseEditPictureCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
 }

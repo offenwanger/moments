@@ -1,21 +1,28 @@
 import { Data } from '../../data.js';
-import { AnnotationPanel } from '../editor_panels/annotation_panel.js';
 import { AssetPanel } from '../editor_panels/asset_panel.js';
-import { Model3DPanel } from '../editor_panels/model3D_panel.js';
+import { AudioPanel } from '../editor_panels/audio_panel.js';
+import { MomentPanel } from '../editor_panels/moments_panel.js';
+import { PicturePanel } from '../editor_panels/picture_panel.js';
+import { PoseableAssetPanel } from '../editor_panels/poseable_asset_panel.js';
 import { StoryPanel } from '../editor_panels/story_panel.js';
 
 export function SidebarController(container) {
+    let mNavigateCallback = async (id) => { }
+
     let mShownItem = null;
     let mModel = null;
 
-    const mStoryPanel = new StoryPanel(container);
-    const mModel3DPanel = new Model3DPanel(container);
-    const mAnnotationPanel = new AnnotationPanel(container);
     const mAssetPanel = new AssetPanel(container);
+    const mAudioPanel = new AudioPanel(container);
+    const mMomentPanel = new MomentPanel(container);
+    const mPicturePanel = new PicturePanel(container);
+    const mPoseableAssetPanel = new PoseableAssetPanel(container);
+    const mStoryPanel = new StoryPanel(container);
 
     mStoryPanel.setNavigationCallback(navigate);
-    mModel3DPanel.setNavigationCallback(navigate);
-    mAnnotationPanel.setNavigationCallback(navigate);
+    mPoseableAssetPanel.setNavigationCallback(navigate);
+    mMomentPanel.setNavigationCallback(navigate);
+    mPicturePanel.setNavigationCallback(navigate);
     mAssetPanel.setNavigationCallback(navigate);
 
     async function updateModel(model) {
@@ -34,15 +41,21 @@ export function SidebarController(container) {
 
         if (item instanceof Data.StoryModel) {
             mStoryPanel.show(mModel, id);
-        } else if (item instanceof Data.Model3D) {
-            mModel3DPanel.show(mModel, id);
-        } else if (item instanceof Data.Annotation) {
-            mAnnotationPanel.show(mModel, id);
+        } else if (item instanceof Data.PoseableAsset) {
+            mPoseableAssetPanel.show(mModel, id);
+        } else if (item instanceof Data.Audio) {
+            mAudioPanel.show(mModel, id);
+        } else if (item instanceof Data.Moment) {
+            mMomentPanel.show(mModel, id);
+        } else if (item instanceof Data.Picture) {
+            mPicturePanel.show(mModel, id);
         } else if (item instanceof Data.Asset) {
             mAssetPanel.show(mModel, id);
         } else {
             console.error('Invalid navigation!', itemClass, id);
         }
+
+        await mNavigateCallback(id);
     }
 
     function resize(width, height) {
@@ -51,39 +64,47 @@ export function SidebarController(container) {
     }
 
     function hideAll() {
-        mStoryPanel.hide();
-        mModel3DPanel.hide();
-        mAnnotationPanel.hide();
         mAssetPanel.hide();
+        mAudioPanel.hide();
+        mMomentPanel.hide();
+        mPicturePanel.hide();
+        mPoseableAssetPanel.hide();
+        mStoryPanel.hide();
     }
 
-    function setAddCallback(func) {
-        mStoryPanel.setAddCallback(func);
-        mAnnotationPanel.setAddCallback(func);
-        mAssetPanel.setAddCallback(func);
+    function onAdd(func) {
+        mAssetPanel.onAdd(func);
+        mAudioPanel.onAdd(func);
+        mMomentPanel.onAdd(func);
+        mPicturePanel.onAdd(func);
+        mStoryPanel.onAdd(func);
     }
 
     function setUpdateAttributeCallback(func) {
-        mStoryPanel.setUpdateAttributeCallback(func);
-        mModel3DPanel.setUpdateAttributeCallback(func);
-        mAnnotationPanel.setUpdateAttributeCallback(func);
         mAssetPanel.setUpdateAttributeCallback(func);
+        mAudioPanel.setUpdateAttributeCallback(func);
+        mMomentPanel.setUpdateAttributeCallback(func);
+        mPicturePanel.setUpdateAttributeCallback(func);
+        mPoseableAssetPanel.setUpdateAttributeCallback(func);
+        mStoryPanel.setUpdateAttributeCallback(func);
     }
 
     function setDeleteCallback(func) {
-        mModel3DPanel.setDeleteCallback(func);
-        mAnnotationPanel.setDeleteCallback(func);
         mAssetPanel.setDeleteCallback(func);
+        mAudioPanel.setDeleteCallback(func);
+        mMomentPanel.setDeleteCallback(func);
+        mPicturePanel.setDeleteCallback(func);
+        mPoseableAssetPanel.setDeleteCallback(func);
     }
 
     this.updateModel = updateModel;
     this.navigate = navigate;
     this.resize = resize;
-    this.setAddCallback = setAddCallback;
+    this.onAdd = onAdd;
     this.setUpdateAttributeCallback = setUpdateAttributeCallback;
     this.setDeleteCallback = setDeleteCallback;
-    this.setEditAnnotationCallback = (func) => mAnnotationPanel.setEditAnnotationCallback(func);
-    this.setCloseEditAnnotationCallback = (func) => mAnnotationPanel.setCloseEditAnnotationCallback(func);
-    this.setSelectAsset = (func) => mModel3DPanel.setSelectAsset(func);
-    this.setViewAssetCallback = (func) => mAssetPanel.setViewAssetCallback(func);
+    this.setEditPictureCallback = (func) => mPicturePanel.setEditPictureCallback(func);
+    this.setCloseEditPictureCallback = (func) => mPicturePanel.setCloseEditPictureCallback(func);
+    this.setSelectAsset = (func) => mPoseableAssetPanel.setSelectAsset(func);
+    this.onNavigate = (func) => mNavigateCallback = func;
 }

@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
-import { EditMode, XRInteraction } from '../../../constants.js';
+import { XRInteraction } from '../../../constants.js';
 import { GLTKUtil } from '../../../utils/gltk_util.js';
+import { Util } from '../../../utils/utility.js';
 import { XRInputController } from './xr_input_controller.js';
 import { XRPageInterfaceController } from './xr_page_interface_controller.js';
-import { Util } from '../../../utils/utility.js';
 
 export function XRSessionController(mWebsocketController) {
     let mOnSessionStartCallback = () => { }
@@ -13,7 +13,6 @@ export function XRSessionController(mWebsocketController) {
 
     let mTransformCallback = async () => { }
     let mTransformManyCallback = async () => { }
-    let mUpdateTimelineCallback = async () => { }
 
     let mSystemState = {
         interactionType: XRInteraction.NONE,
@@ -26,8 +25,6 @@ export function XRSessionController(mWebsocketController) {
     let mSceneController;
     let mXRPageInterfaceController = new XRPageInterfaceController();
     let mXRInputController = new XRInputController();
-
-    let mMode = EditMode.MODEL;
 
     let mIKSolver
     let mCCDIKHelper
@@ -63,11 +60,6 @@ export function XRSessionController(mWebsocketController) {
         mSceneController = scene;
         mXRInputController.setSceneController(scene)
         mXRPageInterfaceController.setSceneController(scene)
-    }
-
-    function setMode(mode) {
-        mSceneController?.setMode(mode);
-        mMode = mode;
     }
 
     function setupListeners() {
@@ -294,13 +286,11 @@ export function XRSessionController(mWebsocketController) {
     this.onSessionEnd = (func) => mOnSessionEndCallback = func;
     this.onTransform = (func) => { mTransformCallback = func }
     this.onTransformMany = (func) => { mTransformManyCallback = func }
-    this.onUpdateTimeline = (func) => { mUpdateTimelineCallback = func }
     this.setUserPositionAndDirection = mXRInputController.setUserPositionAndDirection;
     this.getUserPositionAndDirection = mXRInputController.getUserPositionAndDirection;
 
     this.startRendering = function () { mXRRenderer.setAnimationLoop(xrRender); }
     this.stopRendering = function () { mXRRenderer.setAnimationLoop(null); }
     this.setSceneController = setSceneController;
-    this.setMode = setMode;
     this.getVRButton = () => vrButton;
 }

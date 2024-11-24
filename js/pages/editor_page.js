@@ -181,6 +181,9 @@ export function EditorPage(parentContainer, mWebsocketController) {
             await mStoryDisplayController.setCurrentMoment(id);
         }
     })
+    mSidebarController.onSessionStarted(session => {
+        mStoryDisplayController.sessionStarted(session);
+    })
 
     mWebsocketController.onStoryUpdate(async updates => {
         mModelController.removeUpdateCallback(mWebsocketController.updateStory);

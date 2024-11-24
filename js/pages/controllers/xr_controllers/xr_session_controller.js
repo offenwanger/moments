@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
-import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRInteraction } from '../../../constants.js';
 import { GLTKUtil } from '../../../utils/gltk_util.js';
 import { Util } from '../../../utils/utility.js';
@@ -35,13 +34,15 @@ export function XRSessionController(mWebsocketController) {
 
     let mXRRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mXRCanvas });
     mXRRenderer.xr.enabled = true;
-    mXRRenderer.xr.addEventListener('sessionstart', async () => {
-        mSystemState.session = mXRRenderer.xr.getSession();
+    async function sessionStart() {
+        await mXRRenderer.xr.setSession(session);
+
+        mSystemState.session = session;
         setupListeners();
         mOnSessionStartCallback();
 
         await mXRPageInterfaceController.renderWebpage();
-    })
+    }
     mXRRenderer.xr.addEventListener('sessionend', () => {
         mSystemState.session = null;
         mOnSessionEndCallback();
@@ -51,8 +52,6 @@ export function XRSessionController(mWebsocketController) {
         (console).log("Terminating the failed session");
         mXRRenderer.xr.getSession().end();
     }, false);
-
-    let vrButton = VRButton.createButton(mXRRenderer);
 
     mXRInputController.setupControllers(mXRRenderer.xr);
 
@@ -282,7 +281,7 @@ export function XRSessionController(mWebsocketController) {
         }
     })
 
-    this.onSessionStart = (func) => mOnSessionStartCallback = func;
+    this.sessionStart = sessionStart;
     this.onSessionEnd = (func) => mOnSessionEndCallback = func;
     this.onTransform = (func) => { mTransformCallback = func }
     this.onTransformMany = (func) => { mTransformManyCallback = func }
@@ -292,5 +291,4 @@ export function XRSessionController(mWebsocketController) {
     this.startRendering = function () { mXRRenderer.setAnimationLoop(xrRender); }
     this.stopRendering = function () { mXRRenderer.setAnimationLoop(null); }
     this.setSceneController = setSceneController;
-    this.getVRButton = () => vrButton;
 }

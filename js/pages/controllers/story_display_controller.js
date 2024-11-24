@@ -29,13 +29,6 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
 
     let mModel = new Data.StoryModel();
 
-    let vrButtonDiv = parentContainer.append("div")
-        .style('position', 'absolute')
-        .style('top', '40px')
-        .style('left', '20px')
-    vrButtonDiv.node().appendChild(mXRSessionController.getVRButton());
-    d3.select(mXRSessionController.getVRButton()).style("position", "relative")
-
     let mShareButton = parentContainer.append("button")
         .style('position', 'absolute')
         .style('top', '20px')
@@ -56,16 +49,15 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         await mTransformManyCallback(items);
     })
 
-    mXRSessionController.onSessionStart(() => {
-        if (!isVR) {
-            isVR = true;
-            mCanvasViewController.stopRendering();
-            mXRSessionController.startRendering();
+    async function sessionStart(session) {
+        await mXRSessionController.sessionStart(session);
+        isVR = true;
+        mCanvasViewController.stopRendering();
+        mXRSessionController.startRendering();
 
-            let { pos, dir } = mCanvasViewController.getUserPositionAndDirection();
-            mXRSessionController.setUserPositionAndDirection(pos, dir);
-        }
-    })
+        let { pos, dir } = mCanvasViewController.getUserPositionAndDirection();
+        mXRSessionController.setUserPositionAndDirection(pos, dir);
+    }
 
     mXRSessionController.onSessionEnd(() => {
         if (isVR) {
@@ -139,6 +131,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     this.resize = resize;
     this.pointerMove = pointerMove;
     this.pointerUp = pointerUp;
+    this.sessionStart = sessionStart;
     this.editPicture = async (id, json) => await mPictureEditorController.show(id, json);
     this.closeEditPicture = async () => await mPictureEditorController.hide();
     this.onTransform = (func) => mTransformCallback = func;

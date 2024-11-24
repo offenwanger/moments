@@ -1,4 +1,5 @@
 import { Data } from '../../data.js';
+import { VRButton } from '../components/vr_button.js';
 import { AssetPanel } from '../editor_panels/asset_panel.js';
 import { AudioPanel } from '../editor_panels/audio_panel.js';
 import { MomentPanel } from '../editor_panels/moments_panel.js';
@@ -12,6 +13,7 @@ export function SidebarController(container) {
     let mShownItem = null;
     let mModel = null;
 
+    const mVRButton = new VRButton(container);
     const mAssetPanel = new AssetPanel(container);
     const mAudioPanel = new AudioPanel(container);
     const mMomentPanel = new MomentPanel(container);
@@ -107,4 +109,5 @@ export function SidebarController(container) {
     this.setCloseEditPictureCallback = (func) => mPicturePanel.setCloseEditPictureCallback(func);
     this.setSelectAsset = (func) => mPoseableAssetPanel.setSelectAsset(func);
     this.onNavigate = (func) => mNavigateCallback = func;
+    this.onSessionStarted = (func) => mVRButton.onSessionStarted(func);
 }

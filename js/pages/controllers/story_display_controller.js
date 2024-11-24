@@ -29,8 +29,6 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
 
     let mModel = new Data.StoryModel();
 
-    let mActiveController = mCanvasViewController;
-
     let vrButtonDiv = parentContainer.append("div")
         .style('position', 'absolute')
         .style('top', '40px')
@@ -63,10 +61,9 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
             isVR = true;
             mCanvasViewController.stopRendering();
             mXRSessionController.startRendering();
-            let { pos, dir } = mActiveController.getUserPositionAndDirection();
-            mActiveController = mXRSessionController;
-            mActiveController.setSceneController(mSceneController);
-            mActiveController.setUserPositionAndDirection(pos, dir);
+
+            let { pos, dir } = mCanvasViewController.getUserPositionAndDirection();
+            mXRSessionController.setUserPositionAndDirection(pos, dir);
         }
     })
 
@@ -75,10 +72,9 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
             isVR = false;
             mCanvasViewController.startRendering();
             mXRSessionController.stopRendering();
-            let { pos, dir } = mActiveController.getUserPositionAndDirection();
-            mActiveController = mCanvasViewController;
-            mActiveController.setSceneController(mSceneController);
-            mActiveController.setUserPositionAndDirection(pos, dir);
+
+            let { pos, dir } = mXRSessionController.getUserPositionAndDirection();
+            mCanvasViewController.setUserPositionAndDirection(pos, dir);
         }
     })
 
@@ -117,7 +113,8 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         if (mModel.id != model.id) {
             let dir = new THREE.Vector3(0, 0, -1);
             let pos = new THREE.Vector3(0, 0, 0);
-            mActiveController.setUserPositionAndDirection(pos, dir)
+            if (isVR) mXRSessionController.setUserPositionAndDirection(pos, dir)
+            else mCanvasViewController.setUserPositionAndDirection(pos, dir)
         }
 
         mModel = model;

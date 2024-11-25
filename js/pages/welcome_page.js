@@ -8,11 +8,11 @@ export function WelcomePage(parentContainer, lastFolder = false, mWebsocketContr
     parentContainer.appendChild(div)
 
     div.appendChild(Object.assign(document.createElement('h1'),
-        { innerHtml: '<h1>Welcome to Moments</h1>' }));
+        { innerHTML: '<h1>Welcome to Moments</h1>' }));
     div.appendChild(Object.assign(document.createElement('p'),
-        { innerHtml: 'This is an in development application for exploring the possibilities for and of immersive webcomics.' }));
+        { innerHTML: 'This is an in development application for exploring the possibilities for and of immersive webcomics.' }));
     div.appendChild(Object.assign(document.createElement('p'),
-        { innerHtml: 'Please choose a folder where the application can store comics that you can then view.' }));
+        { innerHTML: 'Please choose a folder where the application can store comics that you can then view.' }));
 
     let button = document.createElement('button');
     button.setAttribute('id', 'choose-folder-button');
@@ -38,7 +38,7 @@ export function WelcomePage(parentContainer, lastFolder = false, mWebsocketContr
     }
 
     div.appendChild(Object.assign(document.createElement('h2'),
-        { innerHtml: 'Shared Stories' }));
+        { innerHTML: 'Shared Stories' }));
 
     let sharedList = document.createElement('div');
     div.appendChild(sharedList);

@@ -18,6 +18,6 @@
     "devDependencies": {
         "c8": "^10.1.2",
         "jasmine": "^5.2.0",
-        "node-canvas-webgl": "^0.3.0"
+        "canvas": "^2.11.2"
     }
 }

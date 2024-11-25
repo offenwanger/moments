@@ -1,8 +1,8 @@
+import * as fr from 'file-api';
 import * as fs from 'fs';
 import { dirname } from 'path';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { fileURLToPath } from 'url';
-import * as fr from 'file-api'
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_FOLDER = __dirname + '/testoutput/'
@@ -26,7 +26,7 @@ export function mockFileReader() {
     this.readAsDataURL = async function (file) {
         // wait for load functions to get set. Dumb requirement for GLTF exporter to work. 
         await new Promise(resolve => setTimeout(() => resolve(), 0))
-        this.result = file.text();
+        this.result = await file.text();
         if (this.callbacks.load) {
             this.callbacks.load(this.result)
         }
@@ -75,7 +75,13 @@ export function mockFileSystemFileHandle(filename, config) {
 export function mockFile(filename, text) {
     this.name = filename;
     this.text = () => text;
-    this.write = (text) => { global.fileSystem[filename] = text; }
+    this.write = (text) => {
+        if (typeof text == 'object') {
+            // assume it's a canvas
+            text = text.toDataURL();
+        }
+        global.fileSystem[filename] = text;
+    }
     this.close = () => { };
     this.arrayBuffer = () => text;
 }

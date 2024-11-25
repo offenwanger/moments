@@ -9,10 +9,20 @@ export function MomentPanel(container) {
     let mNavigationCallback = async (id) => { };
     let mDeleteCallback = async (id) => { };
 
+    let mModel = new Data.StoryModel();
     let mMoment = null;
     let mScrollHeight = 0;
 
-    let mPanelContainer = container.append("div"); hide();
+    let mPanelContainer = document.createElement("div");
+    container.appendChild(mPanelContainer); hide();
+
+    let mBackButton = new ButtonInput(mPanelContainer)
+        .setId('picture-back-button')
+        .setLabel("<- Story")
+        .setOnClick(async () => {
+            await mNavigationCallback(mModel.id);
+        });
+
     let mNameInput = new TextInput(mPanelContainer)
         .setId('moment-name-input')
         .setLabel("Name")
@@ -20,8 +30,9 @@ export function MomentPanel(container) {
             await mUpdateAttributeCallback(mMoment.id, { name: newText });
         });
 
-    let mPoseableAssetsContainer = mPanelContainer.append('div')
-        .attr('id', 'moment-poseable-assets');
+    let mPoseableAssetsContainer = document.createElement('div');
+    mPoseableAssetsContainer.setAttribute('id', 'moment-poseable-assets');
+    mPanelContainer.appendChild(mPoseableAssetsContainer)
     let mPoseableAssetsAddButton = new ButtonInput(mPoseableAssetsContainer)
         .setId('moment-poseable-asset-add-button')
         .setLabel('PoseableAssets [+]')
@@ -30,8 +41,9 @@ export function MomentPanel(container) {
         })
     let mPoseableAssetsList = [];
 
-    let mPicturesContainer = mPanelContainer.append('div')
-        .attr('id', 'moment-pictures');
+    let mPicturesContainer = document.createElement('div');
+    mPicturesContainer.setAttribute('id', 'moment-pictures');
+    mPanelContainer.appendChild(mPicturesContainer)
     let mPicturesAddButton = new ButtonInput(mPicturesContainer)
         .setId('moment-pictures-add-button')
         .setLabel('Pictures [+]')
@@ -41,8 +53,9 @@ export function MomentPanel(container) {
     let mPicturesList = [];
 
 
-    let mAudiosContainer = mPanelContainer.append('div')
-        .attr('id', 'moment-audios');
+    let mAudiosContainer = document.createElement('div');
+    mAudiosContainer.setAttribute('id', 'moment-audios');
+    mPanelContainer.appendChild(mAudiosContainer)
     let mAudiosAddButton = new ButtonInput(mAudiosContainer)
         .setId('moment-audios-add-button')
         .setLabel('Audios [+]')
@@ -60,6 +73,7 @@ export function MomentPanel(container) {
         })
 
     function show(model, momentId) {
+        mModel = model;
         mMoment = model.find(momentId);
         if (!mMoment) console.error("Invalid id: " + momentId);
         mNameInput.setText(mMoment.name)
@@ -86,11 +100,11 @@ export function MomentPanel(container) {
                 .setOnClick(async () => await mNavigationCallback(audios[i].id));
         }
 
-        mPanelContainer.style('display', '');
+        mPanelContainer.style['display'] = '';
     }
 
     function hide() {
-        mPanelContainer.style('display', 'none');
+        mPanelContainer.style['display'] = 'none';
     }
 
     this.show = show;

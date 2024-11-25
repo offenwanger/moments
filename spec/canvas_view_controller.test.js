@@ -1,5 +1,5 @@
 
-import { setup, cleanup } from './test_utils/test_environment.js';
+import { cleanup, setup } from './test_utils/test_environment.js';
 
 import { createAndOpenPoseableAsset, testmodel } from './test_utils/test_actions.js';
 
@@ -37,7 +37,7 @@ describe('Test Moment Panel', function () {
                 clientY: window.innerHeight / 2
             });
 
-            await d3.select("#main-canvas").getCallbacks().pointerdown({
+            await document.querySelector("#main-canvas").eventListeners.pointerdown({
                 clientX: window.innerWidth,
                 clientY: window.innerHeight / 2
             });
@@ -76,7 +76,7 @@ describe('Test Moment Panel', function () {
                 clientY: window.innerHeight / 2
             });
 
-            await d3.select("#main-canvas").getCallbacks().pointerdown({
+            await document.querySelector("#main-canvas").eventListeners.pointerdown({
                 clientX: window.innerWidth / 2,
                 clientY: window.innerHeight / 2
             });

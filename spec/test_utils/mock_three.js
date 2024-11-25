@@ -2,7 +2,7 @@
 import * as td from 'testdouble';
 import * as THREE from 'three';
 import { createCanvas } from './mock_canvas.js';
-import { mockXR, mockXRControllerModelFactory } from './mock_xr.js';
+import { mockXRControllerModelFactory } from './mock_xr.js';
 
 export async function mockThreeSetup() {
     await td.replaceEsm('three', {
@@ -11,16 +11,20 @@ export async function mockThreeSetup() {
             this.animationLoop = null;
             this.lastRender = { scene: null, camera: null }
             this.setSize = () => { }
-            this.setAnimationLoop = (func) => { this.animationLoop = func }
-            this.xr = new mockXR()
-            this.render = function (scene, camera) { this.lastRender = { scene, camera }; }
+            this.setAnimationLoop = (func) => {
+                this.animationLoop = func
+                global.xrAccess.animationLoop = func;
+            }
+            this.xr = global.navigator.xr;
+            this.render = function (scene, camera) {
+                global.xrAccess.lastRender = { scene, camera };
+            }
         },
         ImageLoader: function () {
             this.loadAsync = () => { return createCanvas() }
         },
     });
 
-    await td.replaceEsm('three/addons/webxr/VRButton.js', { VRButton: mockVRButton });
     await td.replaceEsm('three/addons/loaders/DRACOLoader.js', { DRACOLoader: mockDRACOLoader });
     await td.replaceEsm('three/addons/controls/OrbitControls.js', { OrbitControls: mockOrbitControls });
     await td.replaceEsm('three/addons/webxr/XRControllerModelFactory.js', { XRControllerModelFactory: mockXRControllerModelFactory });
@@ -35,13 +39,6 @@ export function mockOrbitControls(camera) {
     this.update = function () { };
     this.addEventListener = function () { };
     this.enabled = false;
-}
-
-export const mockVRButton = {
-    createButton: function (XRRenderer) {
-        global.XRRenderer = XRRenderer;
-        return d3.root.append('div').attr("id", "VRButton");
-    }
 }
 
 export function mockDRACOLoader() {

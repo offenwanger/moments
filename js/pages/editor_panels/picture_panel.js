@@ -15,7 +15,8 @@ export function PicturePanel(container) {
     let mPictureId = null;
     let mShowingEditor = false;
 
-    let mPanelContainer = container.append("div"); hide();
+    let mPanelContainer = document.createElement('div');
+    container.appendChild(mPanelContainer); hide();
 
     let mBackButton = new ButtonInput(mPanelContainer)
         .setId('picture-back-button')
@@ -43,7 +44,9 @@ export function PicturePanel(container) {
             }
         })
 
-    let mPositionHeader = mPanelContainer.append('div').html('Position');
+    let mPositionHeader = document.createElement('div');
+    mPositionHeader.textContent = 'Position'
+    mPanelContainer.appendChild(mPositionHeader);
     let mPositionXInput = new TextInput(mPanelContainer, 'number')
         .setLabel("x")
         .setOnChange(async (newNum) => {
@@ -91,11 +94,11 @@ export function PicturePanel(container) {
         mPositionYInput.setText(Math.round(mPicture.y * 1000) / 1000);
         mPositionZInput.setText(Math.round(mPicture.z * 1000) / 1000);
 
-        mPanelContainer.style('display', '');
+        mPanelContainer.style['display'] = '';
     }
 
     function hide() {
-        mPanelContainer.style('display', 'none');
+        mPanelContainer.style['display'] = 'none';
     }
 
 

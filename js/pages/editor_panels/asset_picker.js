@@ -8,10 +8,13 @@ export function AssetPicker(container) {
 
     let mAssets = [];
 
-    let mDialog = container.append('dialog')
-        .style('position', 'absolute')
-        .style('top', '20px');
-    let mContent = mDialog.append('div');
+    let mDialog = document.createElement('dialog');
+    mDialog.style['position'] = 'absolute';
+    mDialog.style['top'] = '20px';
+    container.appendChild(mDialog);
+    let mContent = document.createElement('div');
+    mDialog.appendChild(mContent);
+
     let mNewAssetButton = new ButtonInput(mContent)
         .setId("asset-add-button")
         .setLabel("New Asset [+]")
@@ -27,8 +30,9 @@ export function AssetPicker(container) {
             if (file) await mNewAssetCallback(file, mSelectionType);
         });
 
-    let mAssetsContainer = mDialog.append('div')
-        .attr('id', 'assets-container');
+    let mAssetsContainer = document.createElement('div');
+    mAssetsContainer.setAttribute('id', 'assets-container');
+    mDialog.appendChild(mAssetsContainer)
     let mAssetList = []
 
     let mSelectedAssetId = null;
@@ -38,12 +42,12 @@ export function AssetPicker(container) {
         .setId("dialog-close-button")
         .setLabel("Cancel")
         .setOnClick(async () => {
-            mDialog.node().close()
+            mDialog.close()
         });
 
-    d3.select(window).on('pointerdown', (event) => {
-        if (mDialog.node().open && !mDialog.node().contains(event.target)) {
-            mDialog.node().close();
+    window.addEventListener('pointerdown', (event) => {
+        if (mDialog.open && !mDialog.contains(event.target)) {
+            mDialog.close();
         }
     })
 
@@ -57,7 +61,7 @@ export function AssetPicker(container) {
         refreshList();
 
         return new Promise((resolve, reject) => {
-            mDialog.on('close', () => {
+            mDialog.addEventListener('close', () => {
                 let assetId = mSelectedAssetId;
                 mSelectedAssetId = null;
                 mSelectionType = null;
@@ -68,7 +72,7 @@ export function AssetPicker(container) {
                 }
             });
 
-            mDialog.node().show();
+            mDialog.show();
         })
     }
 
@@ -80,7 +84,7 @@ export function AssetPicker(container) {
                 .setLabel(typeAssets[i].name)
                 .setOnClick(async () => {
                     mSelectedAssetId = typeAssets[i].id;
-                    mDialog.node().close();
+                    mDialog.close();
                 });
         }
     }

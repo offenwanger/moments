@@ -11,7 +11,8 @@ export function StoryPanel(container) {
     let mStory = null;
     let mScrollHeight = 0;
 
-    let mPanelContainer = container.append("div"); hide();
+    let mPanelContainer = document.createElement("div");
+    container.appendChild(mPanelContainer); hide();
     let mNameInput = new TextInput(mPanelContainer)
         .setId('story-name-input')
         .setLabel("Name")
@@ -19,8 +20,9 @@ export function StoryPanel(container) {
             await mUpdateAttributeCallback(mStory.id, { name: newText });
         });
 
-    let mMomentsContainer = mPanelContainer.append('div')
-        .attr('id', 'story-moments');
+    let mMomentsContainer = document.createElement('div')
+    mMomentsContainer.setAttribute('id', 'story-moments');
+    mPanelContainer.appendChild(mMomentsContainer)
     let mMomentsAddButton = new ButtonInput(mMomentsContainer)
         .setId('story-moment-add-button')
         .setLabel('Moments [+]')
@@ -39,11 +41,11 @@ export function StoryPanel(container) {
                 .setOnClick(async () => await mNavigationCallback(mStory.moments[i].id));
         }
 
-        mPanelContainer.style('display', '');
+        mPanelContainer.style['display'] = '';
     }
 
     function hide() {
-        mPanelContainer.style('display', 'none');
+        mPanelContainer.style['display'] = 'none';
     }
 
     this.show = show;

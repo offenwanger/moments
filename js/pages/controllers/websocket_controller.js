@@ -1,4 +1,5 @@
 import { ServerMessage } from "../../constants.js";
+import { logInfo } from "../../utils/log_util.js";
 
 export function WebsocketController() {
     /**
@@ -39,7 +40,7 @@ export function WebsocketController() {
     });
 
     mWebSocket.on("disconnect", (reason) => {
-        (console).log("Disconnecting because: " + reason);
+        logInfo("Disconnecting because: " + reason);
     });
 
     mWebSocket.on("error", (error) => {
@@ -47,7 +48,7 @@ export function WebsocketController() {
     });
 
     mWebSocket.on(ServerMessage.CONNECTION_ID, id => {
-        (console).log("Received new id: " + id);
+        logInfo("Received new id: " + id);
         mSocketId = id;
     })
 
@@ -79,7 +80,7 @@ export function WebsocketController() {
 
     mWebSocket.on(ServerMessage.START_SHARE, () => {
         mConnectedToStory = true;
-        (console).log("Sharing started successfully.")
+        logInfo("Sharing started successfully.")
     })
 
     async function shareStory(model, workspace) {
@@ -87,7 +88,7 @@ export function WebsocketController() {
             let usedAssets = []
             usedAssets.push(...model.poseableAssets.map(o => o.assetId))
             usedAssets.push(...model.pictures.map(o => o.assetId))
-            usedAssets.push(...model.audio.map(o => o.assetId))
+            usedAssets.push(...model.audios.map(o => o.assetId))
             usedAssets.push(...model.photospheres.map(o => [o.imageAssetId, o.colorAssetId, o.blurAssetId])
                 .flat().filter(o => o))
             let filenames = model.assets.filter(a => usedAssets
@@ -96,7 +97,7 @@ export function WebsocketController() {
             for (let filename of filenames) {
                 await uploadAsset(model.id, filename, workspace)
             }
-            (console).log("Files uploaded.")
+            logInfo("Files uploaded.")
             mWebSocket.emit(ServerMessage.START_SHARE, model);
         } catch (error) {
             console.error(error);
@@ -123,7 +124,7 @@ export function WebsocketController() {
 
     async function uploadAsset(storyId, filename, workspace) {
         let url = await workspace.getAssetAsDataURI(filename);
-        (console).log("Uploading " + filename);
+        logInfo("Uploading " + filename);
         await fetch('/upload', {
             method: "POST",
             headers: {
@@ -136,7 +137,7 @@ export function WebsocketController() {
                 url,
             })
         });
-        (console).log(filename + " uploaded.");
+        logInfo(filename + " uploaded.");
     }
 
     async function newAsset(file, type) {

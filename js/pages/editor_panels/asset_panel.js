@@ -1,16 +1,13 @@
-import { AssetTypes } from "../../constants.js";
 import { FileUtil } from "../../utils/file_util.js";
 import { Util } from "../../utils/utility.js";
 import { ButtonInput } from "../components/button_input.js";
 import { TextInput } from "../components/text_input.js";
-import { TwoButtonInput } from "../components/two_button_input.js";
 
 export function AssetPanel(container) {
     let mAddCallback = async (parentId, itemClass, config) => { };
     let mUpdateAttributeCallback = async (id, attr, value) => { };
     let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
-    let mViewAssetCallback = async (assetId) => { }
 
     let mScrollHeight = 0;
 
@@ -18,7 +15,9 @@ export function AssetPanel(container) {
     let mAssetId;
     let mModel;
 
-    let mPanelContainer = container.append("div"); hide();
+    let mPanelContainer = document.createElement('div');
+    container.appendChild(mPanelContainer);
+    hide();
 
     let mBackToStoryButton = new ButtonInput(mPanelContainer)
         .setId('back-button')
@@ -34,9 +33,9 @@ export function AssetPanel(container) {
             await mUpdateAttributeCallback(mAsset, { name: newText });
         });
 
-    let mFileButton = new TwoButtonInput(mPanelContainer)
+    let mFileButton = new ButtonInput(mPanelContainer)
         .setId('asset-file-button')
-        .setOnClick(1, async () => {
+        .setOnClick(async () => {
             // TODO: show for the right asset type
             let fileHandle = await FileUtil.showFilePicker();
             if (fileHandle) {
@@ -44,13 +43,12 @@ export function AssetPanel(container) {
                 // transfer the file to file folder
             }
         })
-        .setLabel(2, "👀")
-        .setOnClick(2, async () => {
-            await mViewAssetCallback(mAssetId);
-        })
 
-    let mUsedByContainer = mPanelContainer.append('div').attr('id', 'poseableAssets');
-    mUsedByContainer.append('div').html('Position');
+    let mUsedByContainer = document.createElement('div')
+    mUsedByContainer.setAttribute('id', 'poseableAssets');
+    mPanelContainer.appendChild(mUsedByContainer)
+    mUsedByContainer.appendChild(Object.assign(document.createElement('div'),
+        { innerHTML: 'Position' }));
     let mUsedByList = [];
 
     let mDeleteButton = new ButtonInput(mPanelContainer)
@@ -68,7 +66,7 @@ export function AssetPanel(container) {
 
         mNameInput.setText(mAsset.name);
 
-        mFileButton.setLabel(1, mAsset.filename);
+        mFileButton.setLabel(mAsset.filename);
 
         let usedByItems = model.getItemsForAsset(mAssetId);
         Util.setComponentListLength(mUsedByList, usedByItems.length, () => new ButtonInput(mUsedByContainer))
@@ -78,11 +76,11 @@ export function AssetPanel(container) {
                 .setOnClick(async () => await mNavigationCallback(usedByItems[i].id));
         }
 
-        mPanelContainer.style('display', '');
+        mPanelContainer.style['display'] = '';
     }
 
     function hide() {
-        mPanelContainer.style('display', 'none');
+        mPanelContainer.style['display'] = 'none';
     }
 
     this.show = show;
@@ -91,5 +89,4 @@ export function AssetPanel(container) {
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
     this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
-    this.setViewAssetCallback = (func) => mViewAssetCallback = func;
 }

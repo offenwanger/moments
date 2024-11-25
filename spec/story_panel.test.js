@@ -40,9 +40,9 @@ describe('Test ListPage', function () {
             // add an asset (auto selects the primed file)
             await clickButtonInput('#asset-add-button');
             // should now have a menu item
-            expect(d3.select('#assets-container').getChildren().length).toBe(1);
+            expect(document.querySelector('#assets-container').children.length).toBe(1);
             // click it
-            d3.select('#assets-container').getChildren()[0].getCallbacks().click();
+            document.querySelector('#assets-container').children[0].eventListeners.click();
             // wait for everything to finish.
             await promise;
             // check that we now have a model. 
@@ -51,12 +51,12 @@ describe('Test ListPage', function () {
             window.files.push(new mockFile('sample.glb', global.fileSystem['sample.glb']));
             promise = clickButtonInput('#moment-poseable-asset-add-button');
             await clickButtonInput('#asset-add-button');
-            d3.select('#assets-container').getChildren()[1].getCallbacks().click();
+            document.querySelector('#assets-container').children[1].eventListeners.click();
             await promise;
             window.files.push(new mockFile('sample.glb', global.fileSystem['sample.glb']));
             promise = clickButtonInput('#moment-poseable-asset-add-button');
             await clickButtonInput('#asset-add-button');
-            d3.select('#assets-container').getChildren()[2].getCallbacks().click();
+            document.querySelector('#assets-container').children[2].eventListeners.click();
             await promise;
             expect(testmodel().moments[0].poseableAssetIds.length).toBe(3);
         });

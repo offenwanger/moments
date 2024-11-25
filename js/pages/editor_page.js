@@ -23,37 +23,43 @@ export function EditorPage(parentContainer, mWebsocketController) {
 
     let mResizingWindows = false;
 
-    let mMainContainer = parentContainer.append('div')
-        .style('width', '100%')
-        .style('height', '100%')
-        .style('display', 'flex')
-        .style('flex-direction', 'row');
+    let mMainContainer = document.createElement('div');
+    mMainContainer.setAttribute('id', 'story-display-main-container')
+    mMainContainer.style['width'] = '100%';
+    mMainContainer.style['height'] = '100%';
+    mMainContainer.style['display'] = 'flex';
+    mMainContainer.style['flex-direction'] = 'row';
+    parentContainer.appendChild(mMainContainer);
 
-    let mStoryDisplay = mMainContainer.append('div')
-        .attr('id', 'story-display')
-        .style('display', 'flex')
-        .style('flex-direction', 'column');
+    let mStoryDisplay = document.createElement('div');
+    mStoryDisplay.setAttribute('id', 'story-display')
+    mStoryDisplay.style['display'] = 'flex';
+    mStoryDisplay.style['flex-direction'] = 'column';
+    mMainContainer.appendChild(mStoryDisplay);
 
-    let mViewContainer = mStoryDisplay.append('div')
-        .attr('id', 'canvas-view-container')
-        .style('display', 'block')
-        .style('border', '1px solid black')
+    let mViewContainer = document.createElement('div');
+    mViewContainer.setAttribute('id', 'canvas-view-container')
+    mViewContainer.style['display'] = 'block'
+    mViewContainer.style['border'] = '1px solid black'
+    mStoryDisplay.appendChild(mViewContainer);
 
-    let mSidebarContainer = mMainContainer.append('div')
-        .attr('id', 'sidebar')
-        .style('height', '100%')
-        .style('display', 'block')
-        .style('border', '1px solid black')
-        .style('overflow-y', 'scroll')
+    let mSidebarContainer = document.createElement('div');
+    mSidebarContainer.setAttribute('id', 'sidebar')
+    mSidebarContainer.style['height'] = '100%'
+    mSidebarContainer.style['display'] = 'block'
+    mSidebarContainer.style['border'] = '1px solid black'
+    mSidebarContainer.style['overflow-y'] = 'scroll'
+    mMainContainer.appendChild(mSidebarContainer);
 
-    let mResizeTarget = parentContainer.append('img')
-        .attr('id', 'resize-control')
-        .attr('src', 'assets/images/buttons/panning_button.png')
-        .style('position', 'absolute')
-        .style('width', RESIZE_TARGET_SIZE + 'px')
-        .style('height', RESIZE_TARGET_SIZE + 'px')
-        .on('dragstart', (event) => event.preventDefault())
-        .on('pointerdown', () => { mResizingWindows = true; });
+    let mResizeTarget = document.createElement('img');
+    mResizeTarget.setAttribute('id', 'resize-control')
+    mResizeTarget.setAttribute('src', 'assets/images/buttons/panning_button.png')
+    mResizeTarget.style['position'] = 'absolute'
+    mResizeTarget.style['width'] = RESIZE_TARGET_SIZE + 'px'
+    mResizeTarget.style['height'] = RESIZE_TARGET_SIZE + 'px'
+    mResizeTarget.addEventListener('dragstart', (event) => event.preventDefault())
+    mResizeTarget.addEventListener('pointerdown', () => { mResizingWindows = true; });
+    parentContainer.appendChild(mResizeTarget);
 
     let mStoryDisplayController = new StoryDisplayController(mViewContainer, mWebsocketController);
     mStoryDisplayController.onTransform(async (id, newPosition = null, newOrientation = null, newScale = null) => {
@@ -97,12 +103,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await mModelController.update(pictureId, { json });
         await mModelController.update(pictureId, { image: dataUrl });
         await updateModel();
-    })
-
-    mStoryDisplayController.onStartShare(async () => {
-        if (!mWorkspace) { console.error("Invalid state, should not share unless running local worksapce."); }
-
-        mWebsocketController.shareStory(mModelController.getModel(), mWorkspace);
     })
 
     let mAssetPicker = new AssetPicker(parentContainer);
@@ -181,8 +181,12 @@ export function EditorPage(parentContainer, mWebsocketController) {
             await mStoryDisplayController.setCurrentMoment(id);
         }
     })
-    mSidebarController.onSessionStarted(session => {
-        mStoryDisplayController.sessionStarted(session);
+    mSidebarController.onSessionStart(async session => {
+        await mStoryDisplayController.sessionStart(session);
+    })
+    mSidebarController.onStartShare(async () => {
+        if (!mWorkspace) { console.error("Invalid state, should not share unless running local worksapce."); }
+        await mWebsocketController.shareStory(mModelController.getModel(), mWorkspace);
     })
 
     mWebsocketController.onStoryUpdate(async updates => {
@@ -216,7 +220,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         const remote = searchParams.get("remote") == 'true';
 
         if (remote) {
-            mStoryDisplayController.hideShare();
+            mSidebarController.hideShare();
             let story = await new Promise((resolve, reject) => {
                 mWebsocketController.connectToStory(storyId);
                 mWebsocketController.onStoryConnect(async (story) => {
@@ -288,8 +292,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
         let viewCanvasWidth = Math.round(mWidth * mSidebarDivider)
         let viewCanvasHeight = Math.round(mHeight /* * mBottomDivider*/)
 
-        mResizeTarget.style('left', (viewCanvasWidth - RESIZE_TARGET_SIZE / 2) + "px")
-        mResizeTarget.style('top', (viewCanvasHeight - RESIZE_TARGET_SIZE / 2) + "px")
+        mResizeTarget.style['left'] = (viewCanvasWidth - RESIZE_TARGET_SIZE / 2) + "px"
+        mResizeTarget.style['top'] = (viewCanvasHeight - RESIZE_TARGET_SIZE / 2) + "px"
 
         mStoryDisplayController.resize(viewCanvasWidth, viewCanvasHeight);
     }

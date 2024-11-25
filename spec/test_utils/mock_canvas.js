@@ -1,10 +1,14 @@
+import { createCanvas as createCan } from 'canvas';
 import fs from 'fs';
-import { createCanvas as createCan } from 'node-canvas-webgl';
+import { logInfo } from '../../js/utils/log_util.js';
 const RUN = Math.random();
 let fileCount = 0;
 
 export function createCanvas() {
     let canvas = createCan(1, 1);
+    canvas.screenx = 1;
+    canvas.screeny = 1;
+
     canvas.internalGetContext = canvas.getContext;
 
     canvas.getContext = function (type) {
@@ -21,7 +25,19 @@ export function createCanvas() {
     canvas.addEventListener = function (event, eventListener) {
         canvas.eventListeners[event] = eventListener;
     }
+    canvas.attrs = {}
+    canvas.style = {}
+    canvas.setAttribute = function (attr, val) { canvas.attrs[attr] = val }
+    canvas.getAttribute = function (attr) { return canvas.attrs[attr] }
     canvas.toBlob = function (callback) { callback(canvas); };
+    canvas.getBoundingClientRect = () => {
+        return {
+            x: canvas.screenx,
+            y: canvas.screeny,
+            height: canvas.height,
+            width: canvas.width,
+        }
+    };
 
     canvas.console = {
         log: function () {
@@ -29,7 +45,7 @@ export function createCanvas() {
                 fs.mkdirSync(__dirname + '/dump');
             }
             let filename = __dirname + '/dump/debug' + RUN + "_" + (fileCount++) + '.png';
-            (console).log("writing: " + filename);
+            logInfo("writing: " + filename);
             const out = fs.createWriteStream(filename);
             const stream = canvas.createPNGStream();
             let data;

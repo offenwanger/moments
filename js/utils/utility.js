@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
+import { logInfo } from './log_util.js';
 
 function getSphereIntersection(fromPoint, toPoint, spherePos, sphereRadius) {
     let closestPoint = Util.closestPointOnLine(fromPoint, toPoint, spherePos);
@@ -198,6 +199,6 @@ function onchange(id, obj) {
         console.error("Not supported!")
     }
     if (different) {
-        (console).log(id, obj);
+        logInfo(id, obj);
     }
 }

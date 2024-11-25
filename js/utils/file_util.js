@@ -125,8 +125,8 @@ async function showFilePicker(accept = null) {
         let input = document.createElement('input');
         input.type = 'file';
         if (accept) input.accept = accept;
-        input.onchange = e => { resolve(e.target.files[0]); };
-        input.oncancel = e => { reject("User Cancelled."); }
+        input.addEventListener('change', e => { resolve(e.target.files[0]); });
+        input.addEventListener('cancel', e => { reject("User Cancelled."); });
         input.click();
     })
     if (!file) return null;

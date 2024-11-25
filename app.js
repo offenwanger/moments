@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { ServerMessage } from './js/constants.js';
 import { Data } from './js/data.js';
 import { ModelController } from './js/pages/controllers/model_controller.js';
+import { logInfo } from './js/utils/log_util.js';
 import { TOKEN } from './token.js';
 
 const LOCAL_IMPORT = ` 
@@ -39,7 +40,7 @@ app.use('/', express.static(__dirname + '/'));
 app.post('/upload', async (req, res) => {
     try {
         let data = req.body;
-        (console).log("Received upload: " + data.filename);
+        logInfo("Received upload: " + data.filename);
 
         if (data.json) {
             data.filename = "story.json"
@@ -59,7 +60,7 @@ app.post('/upload', async (req, res) => {
     }
 });
 
-(console).log("************* Starting the server *************");
+logInfo("************* Starting the server *************");
 const port = 8000;
 // Start the application
 const server = http.createServer(app);
@@ -67,10 +68,10 @@ server.listen(port);
 
 //////////////// ngrok /////////////////
 try {
-    (console).log('Spawning ngrok. Public URL: https://careful-loosely-moose.ngrok-free.app')
+    logInfo('Spawning ngrok. Public URL: https://careful-loosely-moose.ngrok-free.app')
     spawnSync(`ngrok config add-authtoken ${TOKEN}`);
     const ngrok = spawn("ngrok", ["http", "--domain", "careful-loosely-moose.ngrok-free.app", port]);
-    ngrok.stdout.on('data', function (data) { (console).log(data.toString()); });
+    ngrok.stdout.on('data', function (data) { logInfo(data.toString()); });
     ngrok.stderr.on('data', function (data) { console.error(data.toString()) })
     ngrok.on("error", function (error) { console.error(error) })
 } catch (e) { console.error(e); }
@@ -82,10 +83,10 @@ const clientMap = {};
 let sharedStories = [];
 let nextClientId = 1;
 
-(console).log("Socket Server ready.")
+logInfo("Socket Server ready.")
 
 sockserver.on('connection', client => {
-    (console).log('Incoming connection!', client.recovered, client.id)
+    logInfo('Incoming connection!', client.recovered, client.id)
 
     client.emit(ServerMessage.SHARED_STORIES, getSharedStoryData());
 
@@ -95,11 +96,11 @@ sockserver.on('connection', client => {
         if (!id) {
             client.clientId = Date.now() + "_" + nextClientId++;
             client.emit(ServerMessage.CONNECTION_ID, client.clientId);
-            (console).log(client.clientId + ' connected!')
+            logInfo(client.clientId + ' connected!')
         } else {
             // client is reconnecting, possibly after a server reboot.
             client.clientId = id;
-            (console).log(client.clientId + ' reconnected!');
+            logInfo(client.clientId + ' reconnected!');
         }
         clientMap[client.clientId] = client;
     })
@@ -116,7 +117,7 @@ sockserver.on('connection', client => {
             sockserver.emit(ServerMessage.SHARED_STORIES, getSharedStoryData());
             client.emit(ServerMessage.START_SHARE, { shared: true });
 
-            (console).log('New Story shared: ' + story.id);
+            logInfo('New Story shared: ' + story.id);
         } catch (error) {
             console.error(error);
         }
@@ -141,7 +142,7 @@ sockserver.on('connection', client => {
         // sending story update
         let story = sharedStories.find(s => s.participants.includes(client.clientId));
         if (!story) { console.error("No story found to send asset to!"); return; }
-        (console).log("Received file " + data.name + " from " + client.id);
+        logInfo("Received file " + data.name + " from " + client.id);
         emitToId(story.host, ServerMessage.NEW_ASSET, data)
     });
 
@@ -167,7 +168,7 @@ sockserver.on('connection', client => {
 
         client.emit(ServerMessage.CONNECT_TO_STORY, share.storyController.getModel());
         share.participants.push(client.clientId);
-        (console).log("Client " + client.clientId + " connected to " + storyId);
+        logInfo("Client " + client.clientId + " connected to " + storyId);
     });
 })
 
@@ -188,7 +189,7 @@ function disconnect(client, reason) {
     if (!client) { console.error("Bad client: " + client); }
     if (!client.clientId) { console.error('Invalid init state!'); return; }
     try {
-        (console).log('Client ' + client.clientId + " disconnected because " + reason)
+        logInfo('Client ' + client.clientId + " disconnected because " + reason)
         clientMap[client.clientId] = null;
 
         let story = sharedStories.find(s => s.participants.includes(client.clientId));

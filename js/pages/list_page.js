@@ -1,72 +1,88 @@
 import { Data } from "../data.js";
 
 export function ListPage(parentContainer) {
-    let mViewCallback = async () => { };
     let mEditCallback = async () => { };
-    let mPackageCallback = async () => { };
 
     let mWorkspace;
 
-    parentContainer.append('h3').html("Stories")
-        .style('margin', '10px');
-    let mList = parentContainer.append('ul');
 
-    parentContainer.append('button')
-        .attr('id', 'new-story-button')
-        .style('margin-left', "40px")
-        .html("New Story")
-        .on('click', async () => {
-            let newStory = new Data.StoryModel();
-            await mWorkspace.newStory(newStory.id)
-            await mWorkspace.updateStory(newStory);
+    let h3 = document.createElement('h3');
+    h3.textContent = "Stories";
+    h3.style['margin'] = '10px';
+    parentContainer.appendChild(h3);
+
+    let mList = document.createElement('ul');
+    parentContainer.appendChild(mList)
+
+    let mNewStoryButton = document.createElement('button')
+    mNewStoryButton.setAttribute('id', 'new-story-button')
+    mNewStoryButton.style['margin-left'] = "40px";
+    mNewStoryButton.textContent = "New Story";
+    mNewStoryButton.addEventListener('click', async () => {
+        let newStory = new Data.StoryModel();
+        await mWorkspace.newStory(newStory.id)
+        await mWorkspace.updateStory(newStory);
+        await show(mWorkspace);
+    });
+    parentContainer.appendChild(mNewStoryButton)
+
+    let mImportStoryButton = document.createElement('button')
+    mImportStoryButton.setAttribute('id', 'import-story-button')
+    mImportStoryButton.style['margin-left'] = "40px";
+    mImportStoryButton.textContent = "Import Story"
+    mImportStoryButton.addEventListener('click', async () => {
+        try {
+            let fileHandles = await window.showOpenFilePicker();
+            let file = await fileHandles[0].getFile();
+            await mWorkspace.loadStory(file);
             await show(mWorkspace);
-        });
-
-    parentContainer.append('button')
-        .attr('id', 'import-story-button')
-        .style('margin-left', "40px")
-        .html("Import Story")
-        .on('click', async () => {
-            try {
-                let fileHandles = await window.showOpenFilePicker();
-                let file = await fileHandles[0].getFile();
-                await mWorkspace.loadStory(file);
-                await show(mWorkspace);
-            } catch (error) {
-                console.error(error);
-            }
-        });
+        } catch (error) {
+            console.error(error);
+        }
+    });
+    parentContainer.appendChild(mImportStoryButton)
 
     async function show(workspace) {
         mWorkspace = workspace;
 
         let stories = await mWorkspace.getStoryList();
-        mList.selectAll('*').remove();
+        mList.replaceChildren();
         stories.forEach(story => {
-            let li = mList.append('li')
-                .attr('id', story.id);
-            li.append('span').html(story.name);
-            li.append('button').html('✏️')
-                .classed('edit-story-button', true)
-                .style('margin-left', '10px')
-                .on('click', async () => await mEditCallback(story.id));
-            li.append('button').html('🔽')
-                .classed('download-story-button', true)
-                .style('margin-left', '10px')
-                .on('click', async () => await mWorkspace.packageStory(story.id));
-            li.append('button').html('❌')
-                .classed('delete-story-button', true)
-                .style('margin-left', '10px')
-                .on('click', async () => {
-                    if (confirm('Deleting "' + story.name + '", this cannot be undone, are you sure?') == true) {
-                        try {
-                            await mWorkspace.deleteStory(story.id);
-                        } catch (error) {
-                            console.error(error);
-                        }
-                        await show(mWorkspace);
+            let li = document.createElement('li');
+            li.setAttribute('id', story.id)
+            mList.appendChild(li);
+
+            li.appendChild(Object.assign(document.createElement('span'), { innerHTML: story.name }));
+
+            let button = document.createElement('button')
+            button.setAttribute('id', 'edit-' + story.id)
+            button.style['margin-left'] = '10px'
+            button.textContent = '✏️';
+            button.addEventListener('click', async () => await mEditCallback(story.id));
+            li.appendChild(button)
+
+            button = document.createElement('button')
+            button.textContent = '🔽'
+            button.setAttribute('id', 'download-' + story.id)
+            button.style['margin-left'] = '10px';
+            button.addEventListener('click', async () => await mWorkspace.packageStory(story.id));
+            li.appendChild(button)
+
+            button = document.createElement('button')
+            button.textContent = '❌'
+            button.setAttribute('id', 'delete-' + story.id);
+            button.style['margin-left'] = '10px';
+            button.addEventListener('click', async () => {
+                if (confirm('Deleting "' + story.name + '", this cannot be undone, are you sure?') == true) {
+                    try {
+                        await mWorkspace.deleteStory(story.id);
+                    } catch (error) {
+                        console.error(error);
                     }
-                });
+                    await show(mWorkspace);
+                }
+            });
+            li.appendChild(button)
         });
     }
 

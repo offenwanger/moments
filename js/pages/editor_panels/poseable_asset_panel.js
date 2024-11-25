@@ -13,7 +13,9 @@ export function PoseableAssetPanel(container) {
     let mPoseableAssetId = null;
     let mPoseableAsset = null;
 
-    let mPanelContainer = container.append("div"); hide();
+    let mPanelContainer = document.createElement("div")
+    container.appendChild(mPanelContainer);
+    hide();
 
     let mBackButton = new ButtonInput(mPanelContainer)
         .setId('poseableAsset-back-button')
@@ -37,9 +39,13 @@ export function PoseableAssetPanel(container) {
         })
 
 
-    mPanelContainer.append('div').html("Component Values")
-    let mAssetComponentContainer = mPanelContainer.append('div')
-        .attr('id', 'component-list');
+    let mLabel = document.createElement('div');
+    mLabel.textContent = "Component Values";
+    mPanelContainer.appendChild(mLabel);
+
+    let mAssetComponentContainer = document.createElement('div');
+    mAssetComponentContainer.setAttribute('id', 'component-list');
+    mPanelContainer.appendChild(mAssetComponentContainer)
     let mAssetComponentList = [];
 
     let mDeleteButton = new ButtonInput(mPanelContainer)
@@ -80,11 +86,11 @@ export function PoseableAssetPanel(container) {
                 .setComponentId(pose.id);
         }
 
-        mPanelContainer.style('display', '');
+        mPanelContainer.style['display'] = '';
     }
 
     function hide() {
-        mPanelContainer.style('display', 'none');
+        mPanelContainer.style['display'] = 'none';
     }
 
     this.show = show;

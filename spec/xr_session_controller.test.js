@@ -1,5 +1,5 @@
-import { setup, cleanup } from './test_utils/test_environment.js';
-import { createAndOpenPoseableAsset, lookHead, moveHead, moveXRController, pressXRTrigger, pushXRToggle, releaseXRToggle, releaseXRTrigger, startXR, stopXR, testmodel } from './test_utils/test_actions.js';
+import { createAndOpenPoseableAsset, lookHead, moveXRController, pressXRTrigger, releaseXRTrigger, startXR, stopXR, testmodel } from './test_utils/test_actions.js';
+import { cleanup, setup } from './test_utils/test_environment.js';
 
 
 
@@ -27,7 +27,7 @@ describe('Test Moment Panel', function () {
         it('should perform a render pass', async function () {
             await createAndOpenPoseableAsset();
             await startXR();
-            global.XRRenderer.animationLoop();
+            global.xrAccess.animationLoop();
         });
     });
 

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 import { XRInteraction } from '../../../constants.js';
 import { GLTKUtil } from '../../../utils/gltk_util.js';
+import { logInfo } from '../../../utils/log_util.js';
 import { Util } from '../../../utils/utility.js';
 import { XRInputController } from './xr_input_controller.js';
 import { XRPageInterfaceController } from './xr_page_interface_controller.js';
@@ -34,7 +35,7 @@ export function XRSessionController(mWebsocketController) {
 
     let mXRRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mXRCanvas });
     mXRRenderer.xr.enabled = true;
-    async function sessionStart() {
+    async function sessionStart(session) {
         await mXRRenderer.xr.setSession(session);
 
         mSystemState.session = session;
@@ -49,7 +50,7 @@ export function XRSessionController(mWebsocketController) {
     })
     // Dumb bug workaround, makes it more convinient to enter XR
     mXRCanvas.addEventListener("webglcontextlost", async function (event) {
-        (console).log("Terminating the failed session");
+        logInfo("Terminating the failed session");
         mXRRenderer.xr.getSession().end();
     }, false);
 

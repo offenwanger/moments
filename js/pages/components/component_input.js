@@ -5,10 +5,14 @@ export function ComponentInput(container) {
     let mUpdateAttributeCallback = async () => { }
     let mComponentId = null;
 
-    let mContainer = container.append('div');
-    let mName = mContainer.append("p");
+    let mContainer = document.createElement('div');
+    container.appendChild(mContainer);
+    let mName = document.createElement('p');
+    mContainer.appendChild(mName);
 
-    let mPositionHeader = mContainer.append('div').html('Position');
+    let mPositionHeader = Object.assign(document.createElement('div'), { innerHTML: 'Position' })
+    mContainer.appendChild(mPositionHeader);
+
     let mPositionXInput = new TextInput(mContainer, 'number')
         .setLabel("x")
         .setOnChange(async (newNum) => {
@@ -25,7 +29,7 @@ export function ComponentInput(container) {
             await mUpdateAttributeCallback(mComponentId, { z: newNum });
         });
 
-    mContainer.append('div').html('Orientation');
+    mContainer.appendChild(Object.assign(document.createElement('div'), { innerHTML: 'Orientation' }));
     let mOrientationXInput = new TextInput(mContainer, 'number')
         .setLabel("x")
         .setOnChange(async (newNum) => {
@@ -61,7 +65,7 @@ export function ComponentInput(container) {
         });
 
     function setId(id) {
-        mContainer.attr("id", id);
+        mContainer.setAttribute("id", id);
         mPositionXInput.setId(id + '-position-x-input')
         mPositionYInput.setId(id + '-position-y-input')
         mPositionZInput.setId(id + '-position-z-input')
@@ -74,12 +78,12 @@ export function ComponentInput(container) {
 
     function setPosition(position) {
         if (!position) {
-            mPositionHeader.style('display', 'none')
+            mPositionHeader.style['display'] = 'none';
             mPositionXInput.hide();
             mPositionYInput.hide();
             mPositionZInput.hide();
         } else {
-            mPositionHeader.style('display', '')
+            mPositionHeader.style['display'] = '';
             mPositionXInput.show();
             mPositionYInput.show();
             mPositionZInput.show();
@@ -105,12 +109,12 @@ export function ComponentInput(container) {
     }
 
     function setName(name) {
-        mName.html(name);
+        mName.textContent = name;
         return this;
     }
 
-    this.show = () => mContainer.style('display', '')
-    this.hide = () => mContainer.style('display', 'none')
+    this.show = () => mContainer.style['display'] = '';
+    this.hide = () => mContainer.style['display'] = 'none';
     this.remove = () => { mContainer.remove() }
     this.onUpdateAttribute = (func) => mUpdateAttributeCallback = func;
     this.setComponentId = (id) => mComponentId = id;

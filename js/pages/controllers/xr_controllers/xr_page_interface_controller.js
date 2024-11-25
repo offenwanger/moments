@@ -178,8 +178,8 @@ export function XRPageInterfaceController() {
                 }
                 img.onerror = reject;
                 img.src = base64;
-            })
-            let iframe = document.querySelector('iframe');
+            });
+            let iframe = document.querySelector('#picture-editor-iframe');
             if (iframe.checkVisibility()) {
                 let iframeBase64 = await domtoimage.toPng(iframe.contentWindow.document.body)
                 await new Promise((resove, reject) => {

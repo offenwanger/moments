@@ -1,4 +1,5 @@
 import { Data } from '../../data.js';
+import { ButtonInput } from '../components/button_input.js';
 import { VRButton } from '../components/vr_button.js';
 import { AssetPanel } from '../editor_panels/asset_panel.js';
 import { AudioPanel } from '../editor_panels/audio_panel.js';
@@ -9,11 +10,20 @@ import { StoryPanel } from '../editor_panels/story_panel.js';
 
 export function SidebarController(container) {
     let mNavigateCallback = async (id) => { }
+    let mStartShareCallback = async () => { }
 
     let mShownItem = null;
     let mModel = null;
 
     const mVRButton = new VRButton(container);
+    let mShareButton = new ButtonInput(container)
+        .setId('share-button')
+        .setLabel('Share')
+        .setOnClick(async () => {
+            mShareButton.setLabel('Uploading...')
+            await mStartShareCallback();
+            mShareButton.setLabel('Sharing!')
+        });
     const mAssetPanel = new AssetPanel(container);
     const mAudioPanel = new AudioPanel(container);
     const mMomentPanel = new MomentPanel(container);
@@ -61,8 +71,8 @@ export function SidebarController(container) {
     }
 
     function resize(width, height) {
-        container.style('width', width + "px")
-        container.style('height', height + "px")
+        container.style['width'] = width + "px";
+        container.style['height'] = height + "px";
     }
 
     function hideAll() {
@@ -109,5 +119,7 @@ export function SidebarController(container) {
     this.setCloseEditPictureCallback = (func) => mPicturePanel.setCloseEditPictureCallback(func);
     this.setSelectAsset = (func) => mPoseableAssetPanel.setSelectAsset(func);
     this.onNavigate = (func) => mNavigateCallback = func;
-    this.onSessionStarted = (func) => mVRButton.onSessionStarted(func);
+    this.onSessionStart = (func) => mVRButton.onSessionStart(func);
+    this.onStartShare = (func) => mStartShareCallback = func;
+    this.hideShare = () => mShareButton.hide();
 }

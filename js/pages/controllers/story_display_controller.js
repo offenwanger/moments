@@ -14,7 +14,6 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     let mTransformManyCallback = async () => { }
     let mTransformCallback = async () => { }
     let mUpdatePictureImageCallback = async () => { }
-    let mStartShareCallback = async () => { }
 
     let isVR = false;
 
@@ -28,15 +27,6 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     mCanvasViewController.startRendering();
 
     let mModel = new Data.StoryModel();
-
-    let mShareButton = parentContainer.append("button")
-        .style('position', 'absolute')
-        .style('top', '20px')
-        .style('left', '190px')
-        .html('Share')
-        .on('click', async () => {
-            await mStartShareCallback();
-        });
 
     // this needs to go over the buttons
     let mPictureEditorController = new PictureEditorController(parentContainer);
@@ -137,7 +127,5 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     this.onTransform = (func) => mTransformCallback = func;
     this.onTransformMany = (func) => mTransformManyCallback = func;
     this.onUpdatePictureImage = (func) => mUpdatePictureImageCallback = func;
-    this.onStartShare = (func) => mStartShareCallback = func;
-    this.hideShare = () => mShareButton.style("display", 'none');
 }
 

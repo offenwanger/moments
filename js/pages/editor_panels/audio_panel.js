@@ -7,43 +7,38 @@ export function AudioPanel(container) {
     let mUpdateAttributeCallback = async (id, attrs) => { };
     let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
-    let mEditPictureCallback = async (id) => { };
-    let mCloseEditPictureCallback = async (id) => { };
+    let mCloseEditAudioCallback = async (id) => { };
 
     let mModel = new Data.StoryModel();
-    let mAudio = new Data.Picture();
-    let mPictureId = null;
-    let mShowingEditor = false;
+    let mAudio = new Data.Audio();
+    let mAudioId = null;
 
-    let mPanelContainer = container.append("div"); hide();
+    let mPanelContainer = document.createElement('div');
+    container.appendChild(mPanelContainer);
+    hide();
 
     let mBackButton = new ButtonInput(mPanelContainer)
-        .setId('picture-back-button')
-        .setLabel("<- Story")
+        .setId('audio-back-button')
+        .setLabel("<- Moment")
         .setOnClick(async () => {
-            if (mShowingEditor) await hideEditor();
-            await mNavigationCallback(mModel.id);
+            let moment = mModel.moments.find(m => m.audioIds.includes(mAudioId));
+            if (!moment) {
+                console.error("Moment not found!");
+                await mNavigationCallback(mModel.id);
+            }
+            await mNavigationCallback(moment.id);
         });
 
     let mNameInput = new TextInput(mPanelContainer)
-        .setId('picture-name-input')
+        .setId('audio-name-input')
         .setLabel("Name")
         .setOnChange(async (newText) => {
-            await mUpdateAttributeCallback(mPictureId, { name: newText });
+            await mUpdateAttributeCallback(mAudioId, { name: newText });
         });
 
-    let mEditButton = new ButtonInput(mPanelContainer)
-        .setId('picture-edit-button')
-        .setLabel('Edit')
-        .setOnClick(async () => {
-            if (mShowingEditor) {
-                await hideEditor();
-            } else {
-                await showEditor();
-            }
-        })
-
-    let mPositionHeader = mPanelContainer.append('div').html('Position');
+    let mPositionHeader = document.createElement('div');
+    mPositionHeader.innerHTML = 'Position'
+    mPanelContainer.appendChild(mPositionHeader)
     let mPositionXInput = new TextInput(mPanelContainer, 'number')
         .setLabel("x")
         .setOnChange(async (newNum) => {
@@ -61,29 +56,17 @@ export function AudioPanel(container) {
         });
 
     let mDeleteButton = new ButtonInput(mPanelContainer)
-        .setId('picture-delete-button')
+        .setId('audio-delete-button')
         .setLabel('Delete')
         .setOnClick(async () => {
-            await mDeleteCallback(mPictureId);
+            await mDeleteCallback(mAudioId);
             await mNavigationCallback(mModel.id);
         })
 
-    async function showEditor() {
-        mShowingEditor = true;
-        mEditButton.setLabel('Close');
-        await mEditPictureCallback(mPictureId);
-    }
-
-    async function hideEditor() {
-        mShowingEditor = false;
-        mEditButton.setLabel('Edit');
-        await mCloseEditPictureCallback();
-    }
-
-    function show(model, pictureId) {
+    function show(model, audioId) {
         mModel = model;
-        mPictureId = pictureId;
-        mAudio = mModel.find(pictureId);
+        mAudioId = audioId;
+        mAudio = mModel.find(audioId);
 
         mNameInput.setText(mAudio.name);
 
@@ -91,11 +74,11 @@ export function AudioPanel(container) {
         mPositionYInput.setText(Math.round(mAudio.y * 1000) / 1000);
         mPositionZInput.setText(Math.round(mAudio.z * 1000) / 1000);
 
-        mPanelContainer.style('display', '');
+        mPanelContainer.style['display'] = '';
     }
 
     function hide() {
-        mPanelContainer.style('display', 'none');
+        mPanelContainer.style['display'] = 'none';
     }
 
 
@@ -104,7 +87,6 @@ export function AudioPanel(container) {
     this.onAdd = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
     this.setDeleteCallback = (func) => mDeleteCallback = func;
-    this.setEditPictureCallback = (func) => mEditPictureCallback = func;
-    this.setCloseEditPictureCallback = (func) => mCloseEditPictureCallback = func;
+    this.setCloseEditAudioCallback = (func) => mCloseEditAudioCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
 }

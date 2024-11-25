@@ -33,22 +33,23 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     let mIKSolver
     let mCCDIKHelper
 
-    let mMainCanvas = parentContainer.append('canvas')
-        .attr('id', 'main-canvas')
-        .style('display', 'block')
-        .on('pointerdown', (e) => onPointerDown({ x: e.clientX, y: e.clientY }))
-        .on('wheel', (e) => onWheel({ x: e.clientX, y: e.clientY, amount: e.wheelDelta }))
+    let mMainCanvas = document.createElement('canvas');
+    mMainCanvas.setAttribute('id', 'main-canvas')
+    mMainCanvas.style['display'] = 'block';
+    mMainCanvas.addEventListener('pointerdown', (e) => onPointerDown({ x: e.clientX, y: e.clientY }))
+    mMainCanvas.addEventListener('wheel', (e) => onWheel({ x: e.clientX, y: e.clientY, amount: e.wheelDelta }))
+    parentContainer.appendChild(mMainCanvas)
 
-    let mInterfaceCanvas = parentContainer.append('canvas')
-        .attr('id', 'interface-canvas')
-        .style('display', 'none')
-        .style('position', 'absolute')
-        .style('top', '0')
-        .style('left', '0')
-        .on('pointerdown', (e) => onPointerDown({ x: e.clientX, y: e.clientY }))
-    let mInterfaceCanvasContext = mInterfaceCanvas.node().getContext('2d');
+    let mInterfaceCanvas = document.createElement('canvas');
+    mInterfaceCanvas.setAttribute('id', 'interface-canvas')
+    mInterfaceCanvas.style['display'] = 'none';
+    mInterfaceCanvas.style['position'] = 'absolute';
+    mInterfaceCanvas.style['top'] = '0';
+    mInterfaceCanvas.style['left'] = '0';
+    mInterfaceCanvas.addEventListener('pointerdown', (e) => onPointerDown({ x: e.clientX, y: e.clientY }))
+    parentContainer.appendChild(mInterfaceCanvas)
 
-    let mPageRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mMainCanvas.node() });
+    let mPageRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mMainCanvas });
 
     const fov = 75, aspect = 2, near = 0.1, far = 200;
     const mPageCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -84,8 +85,8 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         if (!mPageRenderer) return;
         mPageRenderer.setSize(width, height, false);
 
-        mInterfaceCanvas.attr('width', width);
-        mInterfaceCanvas.attr('height', height);
+        mInterfaceCanvas.setAttribute('width', width);
+        mInterfaceCanvas.setAttribute('height', height);
 
         mPageCamera.aspect = width / height;
         mPageCamera.updateProjectionMatrix();
@@ -265,7 +266,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     }
 
     function screenToNomralizedCoords(screenCoords) {
-        let bb = mMainCanvas.node().getBoundingClientRect();
+        let bb = mMainCanvas.getBoundingClientRect();
         let x = ((screenCoords.x - bb.x) / bb.width) * 2 - 1;
         let y = - ((screenCoords.y - bb.y) / bb.height) * 2 + 1;
         return { x, y }

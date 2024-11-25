@@ -4,14 +4,16 @@ import * as td from 'testdouble';
 import { mockThreeSetup } from './mock_three.js';
 // do the rest of the imports
 import { createCanvas } from './mock_canvas.js';
-import { mockD3 } from './mock_d3.js';
 import * as mockFileSystem from './mock_filesystem.js';
-import { HTMLElement } from './mock_html_element.js';
+import { HTMLElement, IFrameElement } from './mock_html_element.js';
 import { mockIndexedDB } from './mock_indexedDB.js';
 
 import fs from 'fs';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { mockServerSetup } from './mock_server.js';
+import { mockXR } from './mock_xr.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 eval(fs.readFileSync(__dirname + '../../../lib/delaunator.min.js', 'utf-8'))
 
@@ -24,28 +26,69 @@ console.error = function (message) {
 }
 
 export async function setup() {
+    let log = [];
+    await td.replaceEsm('../../js/utils/log_util.js', {
+        logInfo: function (...args) {
+            log.push(args);
+        }
+    });
+
     mockFileSystem.setup();
 
-    global.d3 = new mockD3();
     global.indexedDB = new mockIndexedDB();
     //// THREE things /////
     global.HTMLCanvasElement = Object;
     global.ProgressEvent = Event;
-    global.navigator = undefined;
+    global.navigator = {
+        userAgent: 'TestEnv',
+        xr: new mockXR(),
+    };
+    global.xrAccess = {};
     ////
     global.document = {
-        querySelector: (query) => { return { checkVisibility: () => false } },
-        createElement: (e) => {
-            if (e == 'canvas') return createCanvas();
-            if (e == 'input') return {
-                click: function () { this.onchange({ target: { files: [global.window.files.pop()] } }) }
-            };
-            else return new HTMLElement(e);
+        elements: [],
+        querySelector: function (query) {
+            if (query[0] == '#') {
+                return this.elements.find(e => e.getAttribute('id') == query.substring(1));
+            } else {
+                console.error('Query not implimented: ' + query);
+            }
+        },
+        createElement: function (e) {
+            let element;
+            if (e == 'canvas') element = createCanvas();
+            else element = new HTMLElement(e);
+
+            if (e == 'input') {
+                element.click = function () {
+                    element.eventListeners.change({ target: { files: [global.window.files.pop()] } })
+                }
+            }
+
+            if (e == 'dialog') {
+                element.show = function () {
+                    element.open = true;
+                }
+                element.close = function () {
+                    element.open = false;
+                    element.eventListeners.close();
+                }
+            }
+
+            if (e == 'iframe') {
+                element = new IFrameElement(e);
+            }
+
+            this.elements.push(element);
+            return element;
         },
         createElementNS: function (ns, e) { return this.createElement(e) },
         addEventListener: function (event, listener) { },
         body: { appendChild: function (vrbutton) { } }
     }
+    let content = document.createElement('div');
+    content.setAttribute('id', 'content');
+
     global.window = {
         callbacks: {},
         directories: [],
@@ -84,13 +127,15 @@ export async function setup() {
     global.domtoimage = { toPng: () => createCanvas() }
 
     await mockThreeSetup();
+    await mockServerSetup();
 
     let { main } = await import('../../js/main.js')
     await main();
+
+    let app = await import('../../app.js');
 }
 
 export async function cleanup() {
-    delete global.d3;
     delete global.indexedDB;
     delete global.document;
     delete global.navigator;

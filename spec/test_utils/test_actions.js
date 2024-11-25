@@ -1,7 +1,7 @@
 
 import * as THREE from 'three';
 import { Data } from '../../js/data.js';
-import { loadRealFile, mockFile, mockFileSystemDirectoryHandle, mockFileSystemFileHandle } from './mock_filesystem.js';
+import { loadRealFile, mockFile, mockFileSystemDirectoryHandle } from './mock_filesystem.js';
 
 export function testmodel() {
     let storyFile = Object.keys(global.fileSystem).find(k => k.startsWith('test/StoryModel_'))
@@ -10,9 +10,9 @@ export function testmodel() {
 
 export async function createAndEditStory() {
     window.directories.push(new mockFileSystemDirectoryHandle('test'));
-    await d3.select('#choose-folder-button').getCallbacks().click();
-    await d3.select('#new-story-button').getCallbacks().click();
-    await d3.select('.edit-story-button').getCallbacks().click();
+    await document.querySelector('#choose-folder-button').eventListeners.click();
+    await document.querySelector('#new-story-button').eventListeners.click();
+    await document.querySelector('#edit-' + testmodel().id).eventListeners.click();
     expect(testmodel().moments.length).toBe(1);
     await clickButtonInput('#moment-button-' + testmodel().moments[0].id);
 
@@ -26,8 +26,8 @@ export async function createAndOpenPoseableAsset() {
     let promise = clickButtonInput('#moment-poseable-asset-add-button');
     await clickButtonInput('#asset-add-button');
 
-    expect(d3.select('#assets-container').getChildren().length).toBeGreaterThan(0);
-    d3.select('#assets-container').getChildren()[0].getCallbacks().click();
+    expect(document.querySelector('#assets-container').children.length).toBeGreaterThan(0);
+    document.querySelector('#assets-container').children[0].eventListeners.click();
 
     await promise;
 
@@ -36,63 +36,42 @@ export async function createAndOpenPoseableAsset() {
 }
 
 export function getInputValue(id) {
-    let inputContainer = d3.select(id);
-    expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
-    let input = inputContainer.getChildren()[1];
-    if (input.attr('type') == 'text' || input.attr('type') == 'number') {
-        return input.node().value;
-    } else if (input.attr('type') == 'checkbox') {
-        return input.node().checked;
+    let inputContainer = document.querySelector(id);
+    expect(Object.keys(inputContainer.children).length).toBe(2);
+    let input = inputContainer.children[1];
+    if (input.attrs['type'] == 'text' || input.attrs['type'] == 'number') {
+        return input.value;
+    } else if (input.attrs['type'] == 'checkbox') {
+        return input.checked;
     } else {
-        console.error("Not a valid type", input.attr('type'))
+        console.error("Not a valid type", input.attrs['type'])
     }
 }
 
 export async function enterInputValue(id, value) {
-    let inputContainer = d3.select(id);
-    expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
-    let input = inputContainer.getChildren()[1];
-    if (input.attr('type') == 'text' || input.attr('type') == 'number') {
-        input.node().value = value;
-        await input.getCallbacks().blur();
-    } else if (input.attr('type') == 'checkbox') {
-        input.node().checked = value;
-        await input.getCallbacks().change();
+    let inputContainer = document.querySelector(id);
+    expect(Object.keys(inputContainer.children).length).toBe(2);
+    let input = inputContainer.children[1];
+    if (input.attrs['type'] == 'text' || input.attrs['type'] == 'number') {
+        input.value = value;
+        await input.eventListeners.blur();
+    } else if (input.attrs['type'] == 'checkbox') {
+        input.checked = value;
+        await input.eventListeners.change();
     } else {
-        console.error("Not a valid type", input.attr('type'))
+        console.error("Not a valid type", input.attrs['type'])
     }
 }
 
 export async function clickButtonInput(id) {
-    let inputContainer = d3.select(id);
-    expect(Object.keys(inputContainer.getCallbacks())).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
-    await inputContainer.getCallbacks().pointerenter();
-    await inputContainer.getCallbacks().pointerdown();
-    await inputContainer.getCallbacks().pointerup();
-    await inputContainer.getCallbacks().click();
-    await inputContainer.getCallbacks().pointerout();
-}
+    let inputContainer = document.querySelector(id);
+    expect(Object.keys(inputContainer.eventListeners)).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
+    await inputContainer.eventListeners.pointerenter();
+    await inputContainer.eventListeners.pointerdown();
+    await inputContainer.eventListeners.pointerup();
+    await inputContainer.eventListeners.click();
+    await inputContainer.eventListeners.pointerout();
 
-export async function clickButtonInput1(id) {
-    let inputContainer = d3.select(id);
-    expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
-    expect(Object.keys(inputContainer.getChildren()[0].getCallbacks())).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
-    await inputContainer.getChildren()[0].getCallbacks().pointerenter();
-    await inputContainer.getChildren()[0].getCallbacks().pointerdown();
-    await inputContainer.getChildren()[0].getCallbacks().pointerup();
-    await inputContainer.getChildren()[0].getCallbacks().click();
-    await inputContainer.getChildren()[0].getCallbacks().pointerout();
-}
-
-export async function clickButtonInput2(id) {
-    let inputContainer = d3.select(id);
-    expect(Object.keys(inputContainer.getChildren()).length).toBe(2);
-    expect(Object.keys(inputContainer.getChildren()[1].getCallbacks())).toEqual(['click', 'pointerup', 'pointerdown', 'pointerenter', 'pointerout']);
-    await inputContainer.getChildren()[1].getCallbacks().pointerenter();
-    await inputContainer.getChildren()[1].getCallbacks().pointerdown();
-    await inputContainer.getChildren()[1].getCallbacks().pointerup();
-    await inputContainer.getChildren()[1].getCallbacks().click();
-    await inputContainer.getChildren()[1].getCallbacks().pointerout();
 }
 
 export function createStoryModel() {
@@ -145,32 +124,32 @@ export function createStoryModel() {
 }
 
 export async function startXR() {
-    global.XRRenderer.xr.eventListeners.sessionstart();
-    let c0 = global.XRRenderer.xr.getController(0)
+    await document.querySelector('#enter-vr-button').eventListeners.click();
+    let c0 = global.navigator.xr.getController(0)
     c0.eventListeners.connected({ data: { handedness: c0.handedness } });
-    let c1 = global.XRRenderer.xr.getController(1)
+    let c1 = global.navigator.xr.getController(1)
     c1.eventListeners.connected({ data: { handedness: c1.handedness } });
-    await global.XRRenderer.animationLoop();
+    await global.xrAccess.animationLoop();
 }
 
 export async function stopXR() {
-    global.XRRenderer.xr.getController(0).eventListeners.disconnected({ data: { handedness: 'left' } });
-    global.XRRenderer.xr.getController(1).eventListeners.disconnected({ data: { handedness: 'right' } });
-    global.XRRenderer.xr.eventListeners.sessionend();
+    global.navigator.xr.getController(0).eventListeners.disconnected({ data: { handedness: 'left' } });
+    global.navigator.xr.getController(1).eventListeners.disconnected({ data: { handedness: 'right' } });
+    global.navigator.xr.eventListeners.sessionend();
 }
 
 export async function moveHead(x, y, z) {
-    let camera = global.XRRenderer.lastRender.camera;
+    let camera = global.xrAccess.lastRender.camera;
     camera.position.set(x, y, z);
 }
 
 export async function lookHead(x, y, z) {
-    let camera = global.XRRenderer.lastRender.camera;
+    let camera = global.xrAccess.lastRender.camera;
     camera.lookAt(x, y, z);
 }
 
 export async function moveXRController(left, x, y, z) {
-    let controller = global.XRRenderer.xr.getSession().inputSources
+    let controller = global.navigator.xr.getSession().inputSources
         .find(s => s.handedness == (left ? 'left' : 'right'));
     let v = new THREE.Vector3();
     controller.getWorldPosition(v)
@@ -178,35 +157,35 @@ export async function moveXRController(left, x, y, z) {
     let pos = new THREE.Vector3(x + (left ? - 0.005 : 0.005), y, z + 0.03);
     let moveTransform = pos.sub(v);
     controller.position.add(moveTransform);
-    await global.XRRenderer.animationLoop();
+    await global.xrAccess.animationLoop();
 }
 
 export async function pressXRTrigger(left) {
-    let controller = global.XRRenderer.xr.getSession().inputSources
+    let controller = global.navigator.xr.getSession().inputSources
         .find(s => s.handedness == (left ? 'left' : 'right'));
     controller.gamepad.buttons[0].pressed = true;
-    await global.XRRenderer.xr.getSession().eventListeners.selectstart();
-    await global.XRRenderer.animationLoop();
+    await global.navigator.xr.getSession().eventListeners.selectstart();
+    await global.xrAccess.animationLoop();
 }
 
 export async function releaseXRTrigger(left) {
-    let controller = global.XRRenderer.xr.getSession().inputSources
+    let controller = global.navigator.xr.getSession().inputSources
         .find(s => s.handedness == (left ? 'left' : 'right'));
     controller.gamepad.buttons[0].pressed = false;
-    await global.XRRenderer.xr.getSession().eventListeners.selectend();
-    await global.XRRenderer.animationLoop();
+    await global.navigator.xr.getSession().eventListeners.selectend();
+    await global.xrAccess.animationLoop();
 }
 
 export async function pushXRToggle(left, axes) {
-    let controller = global.XRRenderer.xr.getSession().inputSources
+    let controller = global.navigator.xr.getSession().inputSources
         .find(s => s.handedness == (left ? 'left' : 'right'));
     controller.gamepad.axes = axes;
-    await global.XRRenderer.animationLoop();
+    await global.xrAccess.animationLoop();
 }
 
 export async function releaseXRToggle(left) {
-    let controller = global.XRRenderer.xr.getSession().inputSources
+    let controller = global.navigator.xr.getSession().inputSources
         .find(s => s.handedness == (left ? 'left' : 'right'));
     controller.gamepad.axes = [0, 0, 0, 0];
-    await global.XRRenderer.animationLoop();
+    await global.xrAccess.animationLoop();
 }

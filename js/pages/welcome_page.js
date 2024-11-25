@@ -3,44 +3,61 @@ export function WelcomePage(parentContainer, lastFolder = false, mWebsocketContr
     let mLastFolderCallback = async () => { };
     let mOpenRemoteStoryCallback = async () => { };
 
-    let div = parentContainer.append('div')
-        .style('padding', "10px");
-    div.append('h1').html("<h1>Welcome to Moments</h1>");
-    div.append('p').html("This is an in development application for exploring the possibilities for and of immersive webcomics.");
-    div.append('p').html("Please choose a folder where the application can store comics that you can then view.");
-    div.append('button')
-        .attr('id', 'choose-folder-button')
-        .html("Choose Folder")
-        .on('click', async () => {
-            try {
-                let folder = await window.showDirectoryPicker();
-                await mFolderSelectedCallback(folder)
-            } catch (e) {
-                console.error(e);
-            }
-        });
+    let div = document.createElement('div');
+    div.style['padding'] = '10px';
+    parentContainer.appendChild(div)
+
+    div.appendChild(Object.assign(document.createElement('h1'),
+        { innerHtml: '<h1>Welcome to Moments</h1>' }));
+    div.appendChild(Object.assign(document.createElement('p'),
+        { innerHtml: 'This is an in development application for exploring the possibilities for and of immersive webcomics.' }));
+    div.appendChild(Object.assign(document.createElement('p'),
+        { innerHtml: 'Please choose a folder where the application can store comics that you can then view.' }));
+
+    let button = document.createElement('button');
+    button.setAttribute('id', 'choose-folder-button');
+    button.textContent = 'Choose Folder';
+    button.addEventListener('click', async () => {
+        try {
+            let folder = await window.showDirectoryPicker();
+            await mFolderSelectedCallback(folder)
+        } catch (e) {
+            console.error(e);
+        }
+    });
+    div.appendChild(button)
 
     if (lastFolder) {
-        div.append('button')
-            .attr('id', 'use-last-folder-button')
-            .html("Use Last Folder")
-            .on('click', async () => {
-                await mLastFolderCallback();
-            });
+        let button = document.createElement('button');
+        button.setAttribute('id', 'use-last-folder-button');
+        button.textContent = 'Use Last Folder';
+        button.addEventListener('click', async () => {
+            await mLastFolderCallback();
+        });
+        div.appendChild(button)
     }
 
-    div.append("h2").html("Shared Stories")
-    let sharedList = div.append("div");
+    div.appendChild(Object.assign(document.createElement('h2'),
+        { innerHtml: 'Shared Stories' }));
+
+    let sharedList = document.createElement('div');
+    div.appendChild(sharedList);
+
     mWebsocketController.onSharedStories((stories) => {
-        sharedList.selectAll("*").remove();
+        sharedList.replaceChildren();
         for (let story of stories) {
-            let li = sharedList.append('li')
-                .attr('id', story.id);
-            li.append('span').html(story.name);
-            li.append('button').html('👀')
-                .classed('view-story-button', true)
-                .style('margin-left', '10px')
-                .on('click', async () => await mOpenRemoteStoryCallback(story.id));
+            let li = document.createElement('li');
+            li.setAttribute('id', story.id)
+            sharedList.appendChild(li);
+
+            li.appendChild(Object.assign(document.createElement('span'), { innerHTML: story.name }));
+
+            let button = document.createElement('button')
+            button.setAttribute('id', 'join-' + story.id)
+            button.style['margin-left'] = '10px'
+            button.textContent = '👀';
+            button.addEventListener('click', async () => await mOpenRemoteStoryCallback(story.id));
+            li.appendChild(button)
         }
     });
 

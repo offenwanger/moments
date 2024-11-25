@@ -3,6 +3,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AssetTypes, BOX_ASSET_PREFIXES } from '../constants.js';
 import { Data } from "../data.js";
+import { logInfo } from './log_util.js';
 
 export function AssetUtil(workspace) {
     let mWorkspace = workspace;
@@ -78,7 +79,7 @@ export function AssetUtil(workspace) {
         let model = await modelLoader.loadAsync(dataUri, null,
             // called while loading is progressing
             function (xhr) {
-                (console).log(file + " "(xhr.loaded / xhr.total * 100) + '% loaded');
+                logInfo(file + " "(xhr.loaded / xhr.total * 100) + '% loaded');
             },
             // called when loading has errors
             function (error) {

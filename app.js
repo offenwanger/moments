@@ -12,18 +12,6 @@ import { ModelController } from './js/pages/controllers/model_controller.js';
 import { logInfo } from './js/utils/log_util.js';
 import { TOKEN } from './token.js';
 
-const LOCAL_IMPORT = ` 
-<script type="importmap">
-    {
-        "imports": {
-            "three": "/node_modules/three/build/three.module.js",
-            "three-mesh-ui": "/node_modules/three-mesh-ui/build/three-mesh-ui.module.js",
-            "three/addons/": "/node_modules/three/examples/jsm/"
-        }
-    }
-</script>
-`;
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UPLOAD_FOLDER = __dirname + '/uploads/'
 if (!fs.existsSync(UPLOAD_FOLDER)) { fs.mkdirSync(UPLOAD_FOLDER); }
@@ -33,7 +21,7 @@ app.use(bodyParser.json({ limit: '1024mb' }))
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.get('/', function (req, res) {
-    sendFileReplaceImportMap(res, "index.html");
+    res.sendFile(path.join(__dirname, '/index.html'));
 });
 // Everything in the local folder can be accessed via /filename
 app.use('/', express.static(__dirname + '/'));
@@ -175,14 +163,6 @@ sockserver.on('connection', client => {
 function emitToId(id, message, data) {
     if (!clientMap[id]) { console.error("No connection for " + id); return; }
     clientMap[id].emit(message, data);
-}
-
-function sendFileReplaceImportMap(res, filename) {
-    let html = fs.readFileSync(filename, 'utf8');
-    let preStuff = html.split('<script type="importmap">')[0]
-    let endStuff = html.split('</script>').slice(1).join('</script>') // this will be fine since import map has to be the first script.
-    html = preStuff + LOCAL_IMPORT + endStuff;
-    res.end(html);
 }
 
 function disconnect(client, reason) {

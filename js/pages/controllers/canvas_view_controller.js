@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { DOUBLE_CLICK_SPEED, USER_HEIGHT } from '../../constants.js';
+import { DOUBLE_CLICK_SPEED, ItemButtons, MenuButtons, ToolButtons, USER_HEIGHT } from '../../constants.js';
 import { GLTKUtil } from '../../utils/gltk_util.js';
 
 export function CanvasViewController(parentContainer, mWebsocketController) {
     const DRAGGING = 'dragging'
     const DRAGGING_KINEMATIC = 'draggingKinematic'
     const NAVIGATING = 'navigating'
+    const BUTTON_CLICK = 'click'
 
     let mTransformCallback = async () => { }
     let mTransformManyCallback = async () => { }
@@ -16,8 +17,10 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     let mHeight = 10;
 
     let mSceneController;
+    let mMenuController;
     let mRendering = false;
 
+    let mToolMode = MenuButtons.MOVE;
     let mInteraction = false;
     let mHovered = []
     let mFreeze = []
@@ -51,11 +54,18 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
 
     let mPageRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: mMainCanvas });
 
+    const MENU_DIST = 0.3;
+
     const fov = 75, aspect = 2, near = 0.1, far = 200;
     const mPageCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     mPageCamera.position.set(0, USER_HEIGHT, 0);
 
+    const mMenuContainer = new THREE.Group();
+    const mMenuHelper = new THREE.Mesh(new THREE.BoxGeometry(0.0001, 0.0001, 0.0001));
+    mPageCamera.add(mMenuHelper);
+
     const mOrbitControls = new OrbitControls(mPageCamera, mPageRenderer.domElement);
+    mOrbitControls.enableKeys = true;
     mOrbitControls.minDistance = 1;
     mOrbitControls.maxDistance = 1;
     mOrbitControls.enableZoom = false;
@@ -63,6 +73,8 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     mOrbitControls.update();
     mOrbitControls.addEventListener('change', () => {
         if (!mSceneController) return;
+        mPageCamera.updateMatrixWorld()
+
         mSceneController.userMove(mPageCamera.position);
         mWebsocketController.updateParticipant({
             x: mPageCamera.position.x,
@@ -70,12 +82,18 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
             z: mPageCamera.position.z,
             orientation: mPageCamera.quaternion.toArray()
         })
+
+        mRaycaster.setFromCamera(canvasToNomralizedCoords({ x: 0, y: 0 }), mPageCamera)
+        let result = mRaycaster.ray.at(MENU_DIST, new THREE.Vector3());
+        mMenuContainer.position.copy(result);
+        mMenuHelper.getWorldQuaternion(mMenuContainer.quaternion);
     })
 
     function pageRender(time) {
         if (time < 0) return;
         if (!mSceneController) return;
         mPageRenderer.render(mSceneController.getScene(), mPageCamera);
+        mMenuController?.render();
     }
 
     function resize(width, height) {
@@ -90,6 +108,14 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
 
         mPageCamera.aspect = width / height;
         mPageCamera.updateProjectionMatrix();
+
+        mRaycaster.setFromCamera(canvasToNomralizedCoords({ x: 0, y: 0 }), mPageCamera)
+        let p1 = mRaycaster.ray.at(MENU_DIST, new THREE.Vector3());
+        mRaycaster.setFromCamera(canvasToNomralizedCoords({ x: 300, y: 0 }), mPageCamera)
+        let p2 = mRaycaster.ray.at(MENU_DIST, new THREE.Vector3());
+        let menuWidth = p1.distanceTo(p2);
+        let scale = menuWidth / mMenuController.getWidth();
+        mMenuContainer.scale.set(scale, scale, scale)
     }
 
     function onWheel(coords) {
@@ -107,46 +133,70 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         mLastPointerDown.time = Date.now();
         mLastPointerDown.pos = screenCoords;
 
-        let nonfrozenTargets = mHovered.filter(h => !mFreeze.find(f => f.getId() == h.getId()));
+        if (mHovered[0]?.isButton()) {
+            mHovered[0].select();
 
-        if (nonfrozenTargets.length > 0) {
-            let target = getClosestTarget(nonfrozenTargets, screenCoords);
-            let rootTarget = target.getRoot();
-            if (mFreezeRoots.find(f => f.getId() == rootTarget.getId())) {
-                let freezeTarget = mFreeze.find(f => f.getRoot().getId() == rootTarget.getId());
-
-                let { mesh, iks, affectedTargets, controlBone } = GLTKUtil.createIK(freezeTarget, target);
-                mIKSolver = new CCDIKSolver(mesh, iks);
-                mCCDIKHelper = new CCDIKHelper(mesh, iks, 0.01);
-                mSceneController.getContent().add(mCCDIKHelper);
-
-                let intersection = target.getIntersection();
-                let rootBone = rootTarget.getObject3D();
-                mInteraction = {
-                    type: DRAGGING_KINEMATIC,
-                    controlBone,
-                    rootBone,
-                    affectedTargets,
-                    start: screenCoords,
-                    distance: intersection.distance,
+            let buttonId = mHovered[0].getId();
+            if (Object.values(ToolButtons).includes(buttonId)) {
+                if (mToolMode == buttonId && buttonId != ToolButtons.MOVE) {
+                    buttonId = ToolButtons.MOVE;
                 }
+                mToolMode = buttonId;
+                mMenuController.setMode(mToolMode);
+            } else if (Object.values(MenuButtons).includes(buttonId)) {
+                mMenuController.navigate(buttonId);
+            } else if (Object.values(ItemButtons).includes(buttonId)) {
+                console.error("Impliment me!")
             } else {
-                let intersection = target.getIntersection();
-                let rootTarget = target.getRoot();
-                let targetToPos = new THREE.Vector3().subVectors(rootTarget.getWorldPosition(), intersection.point)
+                console.error('Invalid button id: ' + buttonId);
+            }
 
-                mInteraction = {
-                    type: DRAGGING,
-                    start: screenCoords,
-                    target: rootTarget,
-                    targetToPos,
-                    distance: intersection.distance,
-                }
+            mInteraction = {
+                type: BUTTON_CLICK,
+                target: mHovered[0]
             }
         } else {
-            mInteraction = { type: NAVIGATING }
-        }
 
+            let nonfrozenTargets = mHovered.filter(h => !mFreeze.find(f => f.getId() == h.getId()));
+
+            if (nonfrozenTargets.length > 0) {
+                let target = getClosestTarget(nonfrozenTargets, screenCoords);
+                let rootTarget = target.getRoot();
+                if (mFreezeRoots.find(f => f.getId() == rootTarget.getId())) {
+                    let freezeTarget = mFreeze.find(f => f.getRoot().getId() == rootTarget.getId());
+
+                    let { mesh, iks, affectedTargets, controlBone } = GLTKUtil.createIK(freezeTarget, target);
+                    mIKSolver = new CCDIKSolver(mesh, iks);
+                    mCCDIKHelper = new CCDIKHelper(mesh, iks, 0.01);
+                    mSceneController.getContent().add(mCCDIKHelper);
+
+                    let intersection = target.getIntersection();
+                    let rootBone = rootTarget.getObject3D();
+                    mInteraction = {
+                        type: DRAGGING_KINEMATIC,
+                        controlBone,
+                        rootBone,
+                        affectedTargets,
+                        start: screenCoords,
+                        distance: intersection.distance,
+                    }
+                } else {
+                    let intersection = target.getIntersection();
+                    let rootTarget = target.getRoot();
+                    let targetToPos = new THREE.Vector3().subVectors(rootTarget.getWorldPosition(), intersection.point)
+
+                    mInteraction = {
+                        type: DRAGGING,
+                        start: screenCoords,
+                        target: rootTarget,
+                        targetToPos,
+                        distance: intersection.distance,
+                    }
+                }
+            } else {
+                mInteraction = { type: NAVIGATING }
+            }
+        }
     }
 
     function onDoubleDown(screenCoords) {
@@ -160,6 +210,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
             }
         } else {
             mFreeze = []
+            updateHighlight();
         }
         mFreezeRoots = mFreezeRoots.filter(r => mFreeze.find(f => f.getRoot().getId() == r.getId()));
 
@@ -174,7 +225,8 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         if (!mInteraction) {
             mRaycaster.setFromCamera(pointer, mPageCamera);
 
-            let targets = mSceneController.getTargets(mRaycaster);
+            let targets = mMenuController.getTargets(mRaycaster);
+            if (targets.length == 0) targets = mSceneController.getTargets(mRaycaster);
             let closest = getClosestTarget(targets, screenCoords);
             targets = closest ? [closest] : [];
             if (targets.map(i => i.getId()).sort().join() != mHovered.map(i => i.getId()).sort().join()) {
@@ -221,6 +273,8 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
                         orientation: t.getLocalOrientation(),
                     }
                 }))
+            } else if (interaction.type == BUTTON_CLICK) {
+                interaction.target.idle();
             }
         }
     }
@@ -252,12 +306,12 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     }
 
     function updateHighlight() {
-        mHighlight.forEach(item => item.unhighlight());
+        mHighlight.forEach(item => item.idle());
         mHighlight = mHovered.concat(mFreeze);
         if (mHold) mHighlight.push(mHold.target);
         // some basic validation.
         mHighlight = mHighlight.filter(item => {
-            if (!item || typeof item.unhighlight != "function" || typeof item.highlight != "function") {
+            if (!item || typeof item.idle != "function" || typeof item.highlight != "function") {
                 return false;
             }
             return true;
@@ -267,8 +321,16 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
 
     function screenToNomralizedCoords(screenCoords) {
         let bb = mMainCanvas.getBoundingClientRect();
-        let x = ((screenCoords.x - bb.x) / bb.width) * 2 - 1;
-        let y = - ((screenCoords.y - bb.y) / bb.height) * 2 + 1;
+        return canvasToNomralizedCoords({
+            x: screenCoords.x - bb.x,
+            y: screenCoords.y - bb.y
+        })
+    }
+
+    function canvasToNomralizedCoords(canvasCoords) {
+        let bb = mMainCanvas.getBoundingClientRect();
+        let x = (canvasCoords.x / bb.width) * 2 - 1;
+        let y = - (canvasCoords.y / bb.height) * 2 + 1;
         return { x, y }
     }
 
@@ -288,6 +350,17 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         return { pos, dir };
     }
 
+    function setSceneController(sceneContoller) {
+        mSceneController = sceneContoller;
+        mSceneController.getScene().add(mMenuContainer)
+    }
+
+    function setMenuController(controller) {
+        mMenuController = controller;
+        mMenuController.setContainer(mMenuContainer);
+        mMenuController.setMode(mToolMode);
+    }
+
     this.resize = resize;
 
     this.pointerMove = pointerMove;
@@ -297,7 +370,9 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     this.setUserPositionAndDirection = setUserPositionAndDirection;
     this.getUserPositionAndDirection = getUserPositionAndDirection;
 
-    this.setSceneController = (sceneContoller) => { mSceneController = sceneContoller }
+    this.getMenuContainer = () => mMenuContainer;
+    this.setSceneController = setSceneController;
+    this.setMenuController = setMenuController;
     this.onTransform = (func) => { mTransformCallback = func }
     this.onTransformMany = (func) => { mTransformManyCallback = func }
 }

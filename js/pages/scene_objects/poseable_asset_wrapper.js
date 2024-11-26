@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Data } from "../../data.js";
 import { GLTKUtil } from '../../utils/gltk_util.js';
-import { InteractionTargetWrapper } from './interaction_target_interface.js';
+import { InteractionTargetInterface } from './interaction_target_interface.js';
 
 export function PoseableAssetWrapper(parent) {
     let mModel = new Data.StoryModel();
@@ -100,7 +100,7 @@ export function PoseableAssetWrapper(parent) {
 
     function makeInteractionTargets() {
         return mPoses.map(pose => {
-            let interactionTarget = new InteractionTargetWrapper();
+            let interactionTarget = new InteractionTargetInterface();
 
             interactionTarget.getLocalPosition = () => {
                 let p = new THREE.Vector3();
@@ -212,7 +212,7 @@ export function PoseableAssetWrapper(parent) {
                     console.error("Unexpected target object!", obj);
                 }
             };
-            interactionTarget.unhighlight = () => {
+            interactionTarget.idle = () => {
                 let obj = interactionTarget.getObject3D();
                 if (obj.isMesh) {
                     obj.material.color.set(obj.userData.originalColor);

@@ -53,6 +53,9 @@ export function XRInputController() {
         new THREE.ConeGeometry(0.007, 0.015, 3).rotateX(-Math.PI / 2), mControllerInnerMaterial);
     mControllerLInnerTip.position.set(0.005, 0, -0.03);
 
+    const mLeftMenuContainer = new THREE.Group();
+    const mRightMenuContainer = new THREE.Group();
+
     function setupControllers(xr) {
         setupController(0, xr)
         setupController(1, xr);
@@ -66,6 +69,8 @@ export function XRInputController() {
             controller.userData.handedness = event.data.handedness;
             grip.add(new XRControllerModelFactory()
                 .createControllerModel(grip));
+
+            controller.add(event.data.handedness == "left" ? mLeftMenuContainer : mRightMenuContainer);
         });
         controller.addEventListener('disconnected', function (event) {
             removeTip(controller.userData.handedness == "left", controller);
@@ -406,9 +411,9 @@ export function XRInputController() {
 
         for (let t of oldHovered) {
             if (oldHoveredIds.includes(t.getId()) && !newHoveredIds.includes(t.getId())) {
-                // Remove so it only get unhighlighted once. 
+                // Remove so it only gets set to idle once. 
                 oldHoveredIds.filter(id => id != t.getId());
-                t.unhighlight();
+                t.idle();
             }
         }
     }
@@ -476,6 +481,7 @@ export function XRInputController() {
     this.updateInteractionState = updateInteractionState;
     this.setUserPositionAndDirection = setUserPositionAndDirection;
     this.setSceneController = setSceneController;
+    this.getMenuContainer = () => [mLeftMenuContainer, mRightMenuContainer];
 
     this.onInteractionEnd = (func) => mInteractionEndCallback = func;
     this.onDragStarted = (func) => mDragStartedCallback = func;

@@ -23,6 +23,7 @@ export function XRSessionController(mWebsocketController) {
     }
 
     let mSceneController;
+    let mMenuController;
     let mXRPageInterfaceController = new XRPageInterfaceController();
     let mXRInputController = new XRInputController();
 
@@ -62,6 +63,11 @@ export function XRSessionController(mWebsocketController) {
         mXRPageInterfaceController.setSceneController(scene)
     }
 
+    function setMenuController(controller) {
+        mMenuController = controller;
+        mMenuController.setContainer(...mXRInputController.getMenuContainer());
+    }
+
     function setupListeners() {
         if (!mSystemState.session) return;
 
@@ -98,6 +104,8 @@ export function XRSessionController(mWebsocketController) {
             await mXRPageInterfaceController.updateClickState(
                 mXRInputController.getPrimaryRPressed());
         }
+
+        mMenuController?.render();
     }
 
     function updateInteractionObjects() {
@@ -292,4 +300,5 @@ export function XRSessionController(mWebsocketController) {
     this.startRendering = function () { mXRRenderer.setAnimationLoop(xrRender); }
     this.stopRendering = function () { mXRRenderer.setAnimationLoop(null); }
     this.setSceneController = setSceneController;
+    this.setMenuController = setMenuController;
 }

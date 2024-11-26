@@ -45,7 +45,30 @@ export const XRInteraction = {
     NONE: 'none'
 }
 
-
 export const RINGS = 32;
 export const SEGMENTS = 64;
-export const SPHERE_POINTS = SEGMENTS * RINGS * 6;;
+export const SPHERE_POINTS = SEGMENTS * RINGS * 6;
+
+export const ToolButtons = {
+    MOVE: 'move',
+    BRUSH: 'brush',
+    SURFACE: 'surface',
+    SCISSORS: 'scissors',
+    RECORD: 'record',
+}
+
+export const MenuButtons = {
+    SPHERE_SETTINGS: 'sphereSettings',
+    SETTINGS: 'settings',
+    ADD: 'add',
+    BACK_BUTTON: 'backButton',
+    NEXT_BUTTON: 'nextButton',
+}
+
+export const ItemButtons = {
+    RECENTER: 'recenter',
+    AUDIO: 'audio',
+    PICTURE: 'picture',
+    TELEPORT: 'teleport',
+    MODEL: 'model'
+}

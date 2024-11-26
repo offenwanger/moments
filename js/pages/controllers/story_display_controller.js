@@ -4,6 +4,7 @@ import { CanvasViewController } from './canvas_view_controller.js';
 import { PictureEditorController } from "./picture_editor_controller.js";
 import { SceneController } from "./scene_controller.js";
 import { XRSessionController } from './xr_controllers/xr_session_controller.js';
+import { MenuController } from "./menu_controllers/menu_controller.js";
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -18,12 +19,14 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     let isVR = false;
 
     let mSceneController = new SceneController();
+    let mMenuController = new MenuController();
     let mOtherUsers = {};
 
     let mXRSessionController = new XRSessionController(mWebsocketController);
     mXRSessionController.setSceneController(mSceneController);
     let mCanvasViewController = new CanvasViewController(parentContainer, mWebsocketController);
     mCanvasViewController.setSceneController(mSceneController);
+    mCanvasViewController.setMenuController(mMenuController);
     mCanvasViewController.startRendering();
 
     let mModel = new Data.StoryModel();
@@ -47,6 +50,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
 
         let { pos, dir } = mCanvasViewController.getUserPositionAndDirection();
         mXRSessionController.setUserPositionAndDirection(pos, dir);
+        mXRSessionController.setMenuController(mMenuController);
     }
 
     mXRSessionController.onSessionEnd(() => {
@@ -57,6 +61,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
 
             let { pos, dir } = mXRSessionController.getUserPositionAndDirection();
             mCanvasViewController.setUserPositionAndDirection(pos, dir);
+            mCanvasViewController.setMenuController(mMenuController);
         }
     })
 

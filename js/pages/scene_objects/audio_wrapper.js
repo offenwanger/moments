@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Data } from "../../data.js";
-import { InteractionTargetWrapper } from "./interaction_target_interface.js";
+import { InteractionTargetInterface } from "./interaction_target_interface.js";
 
 export function AudioWrapper(parent) {
     let mParent = parent;

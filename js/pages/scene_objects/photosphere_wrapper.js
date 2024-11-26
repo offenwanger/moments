@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Data } from "../../data.js";
-import { InteractionTargetWrapper } from "./interaction_target_interface.js";
+import { InteractionTargetInterface } from "./interaction_target_interface.js";
 
 const DEFAULT_TEXTURE = 'assets/images/default_sphere_texture.png';
 
@@ -161,7 +161,7 @@ export function PhotosphereWrapper(parent) {
     }
 
     function createInteractionTarget() {
-        let target = new InteractionTargetWrapper();
+        let target = new InteractionTargetInterface();
         target.getLocalPosition = () => {
             let p = new THREE.Vector3();
             p.copy(mPlane.position)
@@ -199,7 +199,7 @@ export function PhotosphereWrapper(parent) {
             mMaterial.color.set(0xff0000);
             mMaterial.needsUpdate = true;
         };
-        target.unhighlight = () => {
+        target.idle = () => {
             mMaterial.color.set(0xffffff);
             mMaterial.needsUpdate = true;
         }

@@ -1,25 +1,27 @@
 import * as THREE from "three"
 
-export function InteractionTargetWrapper() {
-    this.getId = () => { return "No ID" };
+export class InteractionTargetInterface {
+    getId = () => { return "No ID" };
 
-    this.getLocalPosition = () => { return new THREE.Vector3(); }
+    getLocalPosition = () => { return new THREE.Vector3(); }
+    getWorldPosition = () => { return new THREE.Vector3(); }
+    setWorldPosition = (worldPosition) => { }
+    getLocalOrientation = () => { return new THREE.Quaternion() }
+    setLocalOrientation = (orientation) => { }
 
-    this.getWorldPosition = () => { return new THREE.Vector3(); }
-    this.setWorldPosition = (worldPosition) => { }
+    getScale = () => { return 1 }
+    setScale = (scale) => { }
 
-    this.getLocalOrientation = () => { return new THREE.Quaternion() }
-    this.setLocalOrientation = (orientation) => { }
+    // update visual state
+    highlight = () => { };
+    select = () => { };
+    idle = () => { };
 
-    this.getScale = () => { return 1 }
-    this.setScale = (scale) => { }
+    getIntersection = () => { return {} }
+    getObject3D = () => { return null; }
+    getParent = () => { return new InteractionTargetInterface(); }
+    getRoot = () => { return new InteractionTargetInterface(); }
+    getDepth = () => { return 0; }
 
-    this.highlight = () => { };
-    this.unhighlight = () => { };
-
-    this.getIntersection = () => { return {} }
-    this.getObject3D = () => { return null; }
-    this.getParent = () => { return new InteractionTargetWrapper(); }
-    this.getRoot = () => { return new InteractionTargetWrapper(); }
-    this.getDepth = () => { return 0; }
+    isButton = () => false;
 }

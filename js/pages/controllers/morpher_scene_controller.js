@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { EditMode, RINGS, SEGMENTS } from '../../constants.js';
 import { Data } from '../../data.js';
-import { InteractionTargetWrapper } from '../scene_objects/interaction_target_wrapper.js';
+import { InteractionTargetInterface } from '../scene_objects/interaction_target_wrapper.js';
 import { OtherUserWrapper } from '../scene_objects/other_user_wrapper.js';
 
 export function MorpherSceneController() {
@@ -244,7 +244,7 @@ export function MorpherSceneController() {
             // issue here where calling get ID always returns the current not the previous
             let id = "points-" + indexes.join('-');
 
-            let target = new InteractionTargetWrapper();
+            let target = new InteractionTargetInterface();
             let originalPositions = intersects.map(i => getPosition(i.index));
             target.getId = () => ids;
             target.getIntersection = () => closestIntersect;
@@ -255,7 +255,7 @@ export function MorpherSceneController() {
                 }
                 colorAttribute.needsUpdate = true;
             }
-            target.unhighlight = () => {
+            target.idle = () => {
                 for (let index of indexes) {
                     colors.set([0, 0, 1, 0], colorNumComponents * index)
                 }

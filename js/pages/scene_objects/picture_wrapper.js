@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Data } from "../../data.js";
-import { InteractionTargetWrapper } from "./interaction_target_interface.js";
+import { InteractionTargetInterface } from "./interaction_target_interface.js";
 
 export function PictureWrapper(parent) {
     let mParent = parent;
@@ -38,7 +38,7 @@ export function PictureWrapper(parent) {
     }
 
     function createInteractionTarget() {
-        let target = new InteractionTargetWrapper();
+        let target = new InteractionTargetInterface();
         target.getLocalPosition = () => {
             let p = new THREE.Vector3();
             p.copy(mPlane.position)
@@ -76,7 +76,7 @@ export function PictureWrapper(parent) {
             mMaterial.color.set(0xff0000);
             mMaterial.needsUpdate = true;
         };
-        target.unhighlight = () => {
+        target.idle = () => {
             mMaterial.color.set(0xffffff);
             mMaterial.needsUpdate = true;
         }

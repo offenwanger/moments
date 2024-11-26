@@ -3,7 +3,7 @@ import { spawn, spawnSync } from 'child_process';
 import express from 'express';
 import * as fs from 'fs';
 import http from 'http';
-import { dirname } from 'path';
+import path from 'path';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { ServerMessage } from './js/constants.js';
@@ -12,7 +12,7 @@ import { ModelController } from './js/pages/controllers/model_controller.js';
 import { logInfo } from './js/utils/log_util.js';
 import { TOKEN } from './token.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOAD_FOLDER = __dirname + '/uploads/'
 if (!fs.existsSync(UPLOAD_FOLDER)) { fs.mkdirSync(UPLOAD_FOLDER); }
 

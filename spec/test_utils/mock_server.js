@@ -32,12 +32,14 @@ export async function mockServerSetup() {
 
 function mockPath() {
     return {
-        dirname: function (path) {
-            // it's the app path
-            if (path == 'C:\\Users\\annao\\OneDrive\\Desktop\\Moments\\Moments Code\\app.js') {
-                return OUT_FOLDER;
-            } else {
-                return dirname(path);
+        default: {
+            dirname: function (path) {
+                // it's the app path
+                if (path == 'C:\\Users\\annao\\OneDrive\\Desktop\\Moments\\Moments Code\\app.js') {
+                    return OUT_FOLDER;
+                } else {
+                    return dirname(path);
+                }
             }
         }
     }

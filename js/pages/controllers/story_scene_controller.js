@@ -11,6 +11,28 @@ export function StorySceneController() {
     let mStoryWrapper = new StoryWrapper(mContent);
     let mModel = new Data.StoryModel();
 
+    let mCamera = new THREE.PerspectiveCamera(75, window.innerWidth/ window.innerHeight, 0.1, 1000);
+    let mListener = new THREE.AudioListener();
+    mCamera.add(mListener);
+    let mSound = new THREE.PositionalAudio( mListener );
+
+    let mAudioLoader = new THREE.AudioLoader();
+    mAudioLoader.load('js/pages/controllers/sounds/ogg-baby-shark-122769.ogg', function( buffer ) {
+        console.log("BABY SHARK")
+        mSound.setBuffer( buffer );
+        mSound.setLoop( true );
+        mSound.setVolume( 0.5 );
+        mSound.setRefDistance(20);
+        mSound.play();
+    });
+
+    let mSphere = new THREE.SphereGeometry(100, 32, 16);
+    let mMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
+    let mMesh = new THREE.Mesh( mSphere, mMaterial);
+    console.log("Red Sphere")
+    mScene.add(mMesh);
+    mMesh.add(mSound);
+
     let mOtherUsers = [];
 
     let mEnvironmentBox;

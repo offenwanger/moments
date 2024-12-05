@@ -1,5 +1,5 @@
-import * as fr from 'file-api';
 import * as fs from 'fs';
+import mime from 'mime';
 import { dirname } from 'path';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { fileURLToPath } from 'url';
@@ -52,13 +52,8 @@ export function mockFileSystemDirectoryHandle(directoryName) {
 
 export async function loadRealFile(filename) {
     try {
-        let reader = new fr.default.FileReader();
-        let read = await new Promise((resolve, reject) => {
-            reader.addEventListener('load', () => resolve(reader.result));
-            reader.addEventListener('error', (e) => reject(e));
-            reader.readAsDataURL(new fr.default.File(IN_FOLDER + filename), 'utf8');
-        })
-        global.fileSystem[filename] = read;
+        const contents = fs.readFileSync(IN_FOLDER + filename, { encoding: 'base64' });
+        global.fileSystem[filename] = 'data:' + mime.getType(filename) + ";base64," + contents;
     } catch (e) {
         console.error(e);
     }

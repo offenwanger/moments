@@ -39,10 +39,14 @@ export async function setup() {
     //// THREE things /////
     global.HTMLCanvasElement = Object;
     global.ProgressEvent = Event;
-    global.navigator = {
-        userAgent: 'TestEnv',
-        xr: new mockXR(),
-    };
+    if (global.navigator) {
+        (console).log("Weird bug...");
+    } else {
+        global.navigator = {
+            userAgent: 'TestEnv',
+            xr: new mockXR(),
+        };
+    }
     global.xrAccess = {};
     ////
     global.document = {

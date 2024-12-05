@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
-import { XRInteraction } from '../../../constants.js';
+import { ToolButtons, XRInteraction } from '../../../constants.js';
 import { GLTKUtil } from '../../../utils/gltk_util.js';
 import { logInfo } from '../../../utils/log_util.js';
 import { Util } from '../../../utils/utility.js';
@@ -65,7 +65,7 @@ export function XRSessionController(mWebsocketController) {
 
     function setMenuController(controller) {
         mMenuController = controller;
-        mMenuController.setContainer(...mXRInputController.getMenuContainer());
+        mXRInputController.setMenuController(mMenuController);
     }
 
     function setupListeners() {

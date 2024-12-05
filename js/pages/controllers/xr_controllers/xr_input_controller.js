@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
-import { UP, USER_HEIGHT, XRInteraction } from "../../../constants.js";
+import { ToolButtons, UP, USER_HEIGHT, XRInteraction } from "../../../constants.js";
 import { Util } from "../../../utils/utility.js";
 
 export function XRInputController() {
@@ -16,8 +16,10 @@ export function XRInputController() {
     let mGripRPressed = false;
     let mLHovered = [];
     let mRHovered = [];
+    let mToolMode = ToolButtons.MOVE;
 
     let mSceneController;
+    let mMenuController;
 
     const fov = 75, aspect = 2, near = 0.1, far = 200;
     const mXRCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -25,6 +27,11 @@ export function XRInputController() {
 
     const mUserGroup = new THREE.Group()
     mUserGroup.add(mXRCamera)
+
+    const mRaycaster = new THREE.Raycaster();
+
+    let mLeftController;
+    let mRightController;
 
     const mControllerOuterMaterial = new THREE.MeshBasicMaterial({
         opacity: 0.5,
@@ -54,7 +61,11 @@ export function XRInputController() {
     mControllerLInnerTip.position.set(0.005, 0, -0.03);
 
     const mLeftMenuContainer = new THREE.Group();
+    mLeftMenuContainer.scale.set(0.1, 0.1, 0.1)
+    mLeftMenuContainer.position.set(-0.075, 0, 0.1);
+    mLeftMenuContainer.rotateX(-Math.PI / 4);
     const mRightMenuContainer = new THREE.Group();
+
 
     function setupControllers(xr) {
         setupController(0, xr)
@@ -63,14 +74,28 @@ export function XRInputController() {
 
     function setupController(index, xr) {
         let controller = xr.getController(index);
+        const ray = linesHelper.clone();
+        const point = pointer.clone();
+
+        controller.add(ray, point);
+        controller.ray = ray;
+        controller.point = point;
+
         let grip = xr.getControllerGrip(index);
+
         controller.addEventListener('connected', function (event) {
             addTip(event.data.handedness == "left", controller);
             controller.userData.handedness = event.data.handedness;
             grip.add(new XRControllerModelFactory()
                 .createControllerModel(grip));
 
-            controller.add(event.data.handedness == "left" ? mLeftMenuContainer : mRightMenuContainer);
+            controller.add(event.data.handedness == "left" ?
+                mLeftMenuContainer : mRightMenuContainer);
+            if (event.data.handedness == "left") {
+                mLeftController = controller;
+            } else {
+                mRightController = controller;
+            }
         });
         controller.addEventListener('disconnected', function (event) {
             removeTip(controller.userData.handedness == "left", controller);
@@ -349,14 +374,22 @@ export function XRInputController() {
         let cameraPosition = new THREE.Vector3(); mXRCamera.getWorldPosition(cameraPosition);
 
         // Left hand
-        if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE && systemState.interactionData.isLeft) {
+        if (!mLeftController) {
+            // no controller, do nothing.
+        } else if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE &&
+            systemState.interactionData.isLeft) {
             // left hand is dragging, no need to update hover array.
         } else {
             mLHovered = [];
             let controllerLPos = getLeftControllerPosition();
             if (frustum.containsPoint(controllerLPos)) {
-                let targets = mSceneController.getTargets(getRay(cameraPosition, controllerLPos));
+                setRay(mLeftController, mRaycaster);
+                let targets = mMenuController.getTargets(mRaycaster);
+                if (targets.length == 0) targets = mSceneController.getTargets(mRaycaster);
                 mLHovered.push(getClosestTarget(targets, controllerLPos));
+                if (mLHovered[0]) {
+                    setPointerAt(mLeftController, mLHovered[0].getIntersection().point);
+                }
             };
             // not sure why we need this but sure.
             mLHovered = mLHovered.filter(t => t);
@@ -374,14 +407,21 @@ export function XRInputController() {
         }
 
         // Right hand
-        if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE && !systemState.interactionData.isLeft) {
+        if (!mRightController) {
+            // no controller, do nothing.
+        } else if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE && !systemState.interactionData.isLeft) {
             // right hand is dragging, no need to update hover array.
         } else {
             mRHovered = [];
             let controllerRPos = getRightControllerPosition();
             if (frustum.containsPoint(controllerRPos)) {
-                let targets = mSceneController.getTargets(getRay(cameraPosition, controllerRPos))
+                setRay(mRightController, mRaycaster);
+                let targets = mMenuController.getTargets(mRaycaster);
+                if (targets.length == 0) targets = mSceneController.getTargets(mRaycaster);
                 mRHovered.push(getClosestTarget(targets, controllerRPos));
+                if (mRHovered[0]) {
+                    setPointerAt(mLeftController, mRHovered[0].getIntersection().point);
+                }
             };
             mRHovered = mRHovered.filter(t => t);
 
@@ -418,17 +458,6 @@ export function XRInputController() {
         }
     }
 
-
-    function getRay(p1, p2) {
-        let dir = new THREE.Vector3().copy(p2).sub(p1);
-        let dist = dir.length();
-        dir.normalize();
-
-        let rayCaster = new THREE.Raycaster(p1, dir, 0, dist * 1.1);
-        rayCaster.camera = mXRCamera;
-        return rayCaster;
-    }
-
     function getRightGamePad(systemState) {
         if (!systemState.session) return [0, 0, 0, 0];
         let rightController;
@@ -463,6 +492,153 @@ export function XRInputController() {
         mSceneController.getScene().add(mUserGroup);
     }
 
+    function setMenuController(controller) {
+        mMenuController = controller;
+        mMenuController.setContainer(mLeftMenuContainer, mRightMenuContainer);
+        mMenuController.setMode(mToolMode);
+    }
+
+    const dummyMatrix = new THREE.Matrix4();
+    function setRay(controller, raycaster) {
+        dummyMatrix.identity().extractRotation(controller.matrixWorld);
+        raycaster.origin.setFromMatrixPosition(controller.matrixWorld);
+        raycaster.direction.set(0, 0, -1).applyMatrix4(dummyMatrix);
+    }
+
+    ////////////////////////////////////// hijacked
+    function generatePointerTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+
+        const ctx = canvas.getContext('2d');
+
+        ctx.beginPath();
+        ctx.arc(32, 32, 29, 0, 2 * Math.PI);
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.fillStyle = 'white';
+        ctx.fill();
+
+        return canvas;
+
+    }
+
+    function generateRayTexture() {
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+
+        const ctx = canvas.getContext('2d');
+
+        const gradient = ctx.createLinearGradient(0, 0, 64, 0);
+        gradient.addColorStop(0, 'black');
+        gradient.addColorStop(1, 'white');
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
+
+        return canvas;
+
+    }
+
+    function setPointerAt(controller, vec) {
+        const localVec = controller.worldToLocal(vec);
+
+        controller.point.position.copy(localVec);
+        controller.point.visible = true;
+
+    }
+
+    //////////////////
+    // Lines helpers
+    //////////////////
+
+    const material = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        alphaMap: new THREE.CanvasTexture(generateRayTexture()),
+        transparent: true
+    });
+
+    const geometry = new THREE.BoxGeometry(0.004, 0.004, 0.35);
+
+    geometry.translate(0, 0, -0.15);
+
+    const uvAttribute = geometry.attributes.uv;
+
+    for (let i = 0; i < uvAttribute.count; i++) {
+
+        let u = uvAttribute.getX(i);
+        let v = uvAttribute.getY(i);
+
+        [u, v] = (() => {
+
+            switch (i) {
+
+                case 0:
+                    return [1, 1];
+                case 1:
+                    return [0, 0];
+                case 2:
+                    return [1, 1];
+                case 3:
+                    return [0, 0];
+                case 4:
+                    return [0, 0];
+                case 5:
+                    return [1, 1];
+                case 6:
+                    return [0, 0];
+                case 7:
+                    return [1, 1];
+                case 8:
+                    return [0, 0];
+                case 9:
+                    return [0, 0];
+                case 10:
+                    return [1, 1];
+                case 11:
+                    return [1, 1];
+                case 12:
+                    return [1, 1];
+                case 13:
+                    return [1, 1];
+                case 14:
+                    return [0, 0];
+                case 15:
+                    return [0, 0];
+                default:
+                    return [0, 0];
+
+            }
+
+        })();
+
+        uvAttribute.setXY(i, u, v);
+
+    }
+
+    const linesHelper = new THREE.Mesh(geometry, material);
+    linesHelper.renderOrder = Infinity;
+
+    /////////////////
+    // Point helper
+    /////////////////
+
+    const spriteMaterial = new THREE.SpriteMaterial({
+        map: new THREE.CanvasTexture(generatePointerTexture()),
+        sizeAttenuation: false,
+        depthTest: false
+    });
+
+    const pointer = new THREE.Sprite(spriteMaterial);
+
+    pointer.scale.set(0.015, 0.015, 1);
+    pointer.renderOrder = Infinity;
+
+    //////////////////////////////////////////////////
+
     this.getCamera = () => mXRCamera;
     this.getGroup = () => mUserGroup;
     this.getPrimaryRPressed = () => mPrimaryRPressed;
@@ -481,7 +657,7 @@ export function XRInputController() {
     this.updateInteractionState = updateInteractionState;
     this.setUserPositionAndDirection = setUserPositionAndDirection;
     this.setSceneController = setSceneController;
-    this.getMenuContainer = () => [mLeftMenuContainer, mRightMenuContainer];
+    this.setMenuController = setMenuController;
 
     this.onInteractionEnd = (func) => mInteractionEndCallback = func;
     this.onDragStarted = (func) => mDragStartedCallback = func;

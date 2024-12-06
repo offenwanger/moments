@@ -41,6 +41,7 @@ export async function setup() {
     global.ProgressEvent = Event;
     if (global.navigator) {
         (console).log("Weird bug...");
+        global.navigator.xr = new mockXR();
     } else {
         global.navigator = {
             userAgent: 'TestEnv',

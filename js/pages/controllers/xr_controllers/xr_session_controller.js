@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
-import { ToolButtons, XRInteraction } from '../../../constants.js';
+import { ItemButtons, MenuButtons, ToolButtons, XRInteraction } from '../../../constants.js';
 import { GLTKUtil } from '../../../utils/gltk_util.js';
 import { logInfo } from '../../../utils/log_util.js';
 import { Util } from '../../../utils/utility.js';
@@ -21,6 +21,7 @@ export function XRSessionController(mWebsocketController) {
         mouseDown: false,
         session: null,
     }
+    let mToolMode = ToolButtons.MOVE;
 
     let mSceneController;
     let mMenuController;
@@ -66,6 +67,7 @@ export function XRSessionController(mWebsocketController) {
     function setMenuController(controller) {
         mMenuController = controller;
         mXRInputController.setMenuController(mMenuController);
+        mMenuController.setMode(mToolMode);
     }
 
     function setupListeners() {
@@ -158,22 +160,44 @@ export function XRSessionController(mWebsocketController) {
     }
 
     mXRInputController.onDragStarted(async (target, isLeft) => {
-        let rootTarget = target.getRoot();
+        if (target.isButton()) {
+            target.select();
+            let buttonId = target.getId();
+            if (Object.values(ToolButtons).includes(buttonId)) {
+                if (mToolMode == buttonId && buttonId != ToolButtons.MOVE) {
+                    buttonId = ToolButtons.MOVE;
+                }
+                mToolMode = buttonId;
+                mMenuController.setMode(mToolMode);
+            } else if (Object.values(MenuButtons).includes(buttonId)) {
+                mMenuController.navigate(buttonId);
+            } else if (Object.values(ItemButtons).includes(buttonId)) {
+                console.error("Impliment me!")
+            } else {
+                console.error('Invalid button id: ' + buttonId);
+            }
 
-        let controllerStart = isLeft ?
-            mXRInputController.getLeftControllerPosition() :
-            mXRInputController.getRightControllerPosition();
+            mSystemState.interactionType = XRInteraction.BUTTON_CLICK;
+            mSystemState.interactionData = { target }
 
-        let targetPositionOffset = new THREE.Vector3().subVectors(
-            rootTarget.getWorldPosition(),
-            controllerStart);
+        } else {
+            let rootTarget = target.getRoot();
 
-        mSystemState.interactionType = XRInteraction.ONE_HAND_MOVE;
-        mSystemState.interactionData = {
-            target,
-            rootTarget,
-            targetPositionOffset,
-            isLeft,
+            let controllerStart = isLeft ?
+                mXRInputController.getLeftControllerPosition() :
+                mXRInputController.getRightControllerPosition();
+
+            let targetPositionOffset = new THREE.Vector3().subVectors(
+                rootTarget.getWorldPosition(),
+                controllerStart);
+
+            mSystemState.interactionType = XRInteraction.ONE_HAND_MOVE;
+            mSystemState.interactionData = {
+                target,
+                rootTarget,
+                targetPositionOffset,
+                isLeft,
+            }
         }
     })
 

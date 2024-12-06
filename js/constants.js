@@ -39,6 +39,7 @@ export const ServerMessage = {
 }
 
 export const XRInteraction = {
+    BUTTON_CLICK: 'buttonClick',
     ONE_HAND_MOVE: 'oneHandMove',
     TWO_HAND_MOVE: 'twoHandMove',
     TWO_HAND_POSE: 'twoHandPose',

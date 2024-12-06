@@ -120,6 +120,43 @@ export function EditorPage(parentContainer, mWebsocketController) {
         }
         await updateModel();
     })
+    mAssetPicker.onAssetsUpload(async (files) => {
+        let updates = [];
+        for (let file of files) {
+            try {
+                let t = file.type.split('/')[0];
+                let type;
+                if (t == 'image') {
+                    type = AssetTypes.IMAGE;
+                } else {
+                    let extension = file.name.split('.').pop();
+                    if (extension == 'glb' || extension == 'gltf') {
+                        type = AssetTypes.MODEL;
+                    } else {
+                        console.error('Unhandled file type: ' + file.type + " " + extension);
+                        continue;
+                    }
+                }
+
+                if (!mWorkspace) {
+                    await mWebsocketController.newAsset(file, type)
+                } else {
+                    let newFilename = await mWorkspace.storeAsset(file);
+                    let asset = null;
+                    if (type == AssetTypes.MODEL) {
+                        asset = await mAssetUtil.loadGLTFModel(newFilename);
+                    }
+                    updates.push(...(await DataUtil.getAssetCreationUpdates(file.name, newFilename, type, asset)));
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        if (updates) {
+            await mModelController.applyUpdates(updates);
+            await updateModel();
+        }
+    })
 
     let mSidebarController = new SidebarController(mSidebarContainer);
     mSidebarController.onAdd(async (parentId, itemClass, config) => {
@@ -136,21 +173,28 @@ export function EditorPage(parentContainer, mWebsocketController) {
             ];
             await mModelController.applyUpdates(updates);
         } else if (itemClass == Data.Audio) {
-            let id = IdUtil.getUniqueId(itemClass);
-            let parent = mModelController.getModel().find(parentId);
-            if (!parent) { console.error('invalid parent id: ' + parentId); return; }
-            parent.audioIds.push(id);
-            let updates = [
-                { action: 'createOrUpdate', row: { id } },
-                { action: 'createOrUpdate', row: { id: parentId, audioIds: parent.audioIds } }
-            ];
-            await mModelController.applyUpdates(updates);
+            let assetId = await mAssetPicker.showOpenAssetPicker(AssetTypes.AUDIO);
+            if (assetId) {
+                let id = IdUtil.getUniqueId(itemClass);
+                let parent = mModelController.getModel().find(parentId);
+                if (!parent) { console.error('invalid parent id: ' + parentId); return; }
+                parent.audioIds.push(id);
+                let updates = [
+                    { action: 'createOrUpdate', row: { id, assetId } },
+                    { action: 'createOrUpdate', row: { id: parentId, audioIds: parent.audioIds } }
+                ];
+                await mModelController.applyUpdates(updates);
+            }
         } else if (itemClass == Data.PoseableAsset) {
-            let assetId = await mAssetPicker.showOpenAssetPicker();
+            let assetId = await mAssetPicker.showOpenAssetPicker(AssetTypes.MODEL);
             if (assetId) {
                 let updates = await DataUtil.getPoseableAssetCreationUpdates(mModelController.getModel(), parentId, assetId);
                 await mModelController.applyUpdates(updates);
             }
+        } else if (itemClass == Data.Moment) {
+            console.error('impliment me!');
+        } else if (itemClass == Data.Asset) {
+            await mAssetPicker.showOpenAssetPicker();
         } else {
             console.error("Parent + item class not supported", parentId, itemClass);
             return;

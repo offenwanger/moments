@@ -120,13 +120,22 @@ async function downloadPNG(name, canvas) {
     URL.revokeObjectURL(link.href);
 }
 
-async function showFilePicker(accept = null) {
+async function showFilePicker(accept = null, multiple = false) {
     let file = await new Promise((resolve, reject) => {
         let input = document.createElement('input');
         input.type = 'file';
         if (accept) input.accept = accept;
-        input.addEventListener('change', e => { resolve(e.target.files[0]); });
-        input.addEventListener('cancel', e => { reject("User Cancelled."); });
+        if (multiple) input.multiple = true;
+        input.addEventListener('change', e => {
+            if (multiple) {
+                resolve(e.target.files);
+            } else {
+                resolve(e.target.files[0]);
+            }
+        });
+        input.addEventListener('cancel', e => {
+            reject("User Cancelled.");
+        });
         input.click();
     })
     if (!file) return null;

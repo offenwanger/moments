@@ -4,7 +4,14 @@ import { Util } from "../../utils/utility.js";
 import { ButtonInput } from "../components/button_input.js";
 
 export function AssetPicker(container) {
-    let mNewAssetCallback = async (filename) => { }
+    let mNewAssetCallback = async (file, type) => { }
+    let mAssetsUploadCallback = async (files) => { }
+
+    let userAssetTypes = [
+        AssetTypes.AUDIO,
+        AssetTypes.IMAGE,
+        AssetTypes.MODEL,
+    ]
 
     let mAssets = [];
 
@@ -19,15 +26,21 @@ export function AssetPicker(container) {
         .setId("asset-add-button")
         .setLabel("New Asset [+]")
         .setOnClick(async () => {
-            let accept = null;
-            if (mSelectionType == AssetTypes.IMAGE) {
-                accept = "image/*";
-            } else if (mSelectionType == AssetTypes.MODEL) {
-                accept = ".glb,.glTF";
+            if (mSelectionType) {
+                let accept = null;
+                if (mSelectionType == AssetTypes.AUDIO) {
+                    accept = "audio/*";
+                } else if (mSelectionType == AssetTypes.IMAGE) {
+                    accept = "image/*";
+                } else if (mSelectionType == AssetTypes.MODEL) {
+                    accept = ".glb,.glTF";
+                }
+                let file = await FileUtil.showFilePicker(accept);
+                if (file) await mNewAssetCallback(file, mSelectionType);
+            } else {
+                let files = await FileUtil.showFilePicker(null, true);
+                await mAssetsUploadCallback(files);
             }
-
-            let file = await FileUtil.showFilePicker(accept);
-            if (file) await mNewAssetCallback(file, mSelectionType);
         });
 
     let mAssetsContainer = document.createElement('div');
@@ -56,7 +69,7 @@ export function AssetPicker(container) {
         refreshList();
     }
 
-    async function showOpenAssetPicker(type = AssetTypes.MODEL) {
+    async function showOpenAssetPicker(type = null) {
         mSelectionType = type;
         refreshList();
 
@@ -77,7 +90,9 @@ export function AssetPicker(container) {
     }
 
     function refreshList() {
-        let typeAssets = mAssets.filter(a => a.type == mSelectionType);
+        let typeAssets = mSelectionType ?
+            mAssets.filter(a => a.type == mSelectionType) :
+            mAssets.filter(a => userAssetTypes.includes(a.type));
         Util.setComponentListLength(mAssetList, typeAssets.length, () => new ButtonInput(mAssetsContainer));
         for (let i = 0; i < typeAssets.length; i++) {
             mAssetList[i].setId("asset-button-" + typeAssets[i].id)
@@ -92,4 +107,5 @@ export function AssetPicker(container) {
     this.updateModel = updateModel;
     this.showOpenAssetPicker = showOpenAssetPicker;
     this.onNewAsset = (func) => mNewAssetCallback = func;
+    this.onAssetsUpload = (func) => mAssetsUploadCallback = func;
 }

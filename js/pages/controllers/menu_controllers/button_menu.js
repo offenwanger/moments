@@ -1,7 +1,11 @@
 import * as ThreeMeshUI from 'three-mesh-ui';
+import { MeshButton } from './mesh_button.js';
 
-export function ButtonMenu(width) {
+export function ButtonMenu(id, width) {
     const PADDING = 0.1;
+
+    let mId = id;
+    // set of MeshButtons
     let mButtons = [];
     let mRows = []
 
@@ -9,6 +13,7 @@ export function ButtonMenu(width) {
         padding: PADDING,
         width,
         borderRadius: 0.1,
+        alignItems: 'start',
         fontFamily: "../../../assets/menu_fonts/Roboto-msdf.json",
         fontTexture: "../../../assets/menu_fonts/Roboto-msdf.png",
     });
@@ -27,25 +32,37 @@ export function ButtonMenu(width) {
             let row = new ThreeMeshUI.Block({
                 contentDirection: 'row',
                 backgroundOpacity: 0,
-                justifyContent: 'center',
+                alignItems: 'start',
             });
-            row.add(...buttons);
+            row.add(...buttons.map(b => b.getObject()));
             mRows.push(row);
             mContainer.add(row)
         }
+
+        mContainer.update(false, true, false);
     }
 
+    /**
+     * Add mesh buttons.
+     * @param  {...MeshButton} buttons 
+     */
     function add(...buttons) {
         mButtons.push(...buttons);
         layout();
     }
 
+    /**
+     * remove mesh buttons.
+     * @param  {...MeshButton} buttons 
+     */
     function remove(...buttons) {
-        mButtons.filter(b => !buttons.includes[b]);
+        let ids = buttons.map(b => b.getId())
+        mButtons = mButtons.filter(b => !ids.includes(b.getId()));
         layout();
     }
 
     this.add = add;
     this.remove = remove;
     this.getObject = () => mContainer;
+    this.getButtons = () => [...mButtons];
 }

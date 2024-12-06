@@ -58,12 +58,16 @@ export const ToolButtons = {
     RECORD: 'record',
 }
 
-export const MenuButtons = {
+export const MenuNavButtons = {
+    MAIN_MENU: 'mainMenu',
     SPHERE_SETTINGS: 'sphereSettings',
     SETTINGS: 'settings',
     ADD: 'add',
     BACK_BUTTON: 'backButton',
+    PREVIOUS_BUTTON: 'previousButton',
     NEXT_BUTTON: 'nextButton',
+    SPHERE_IMAGE: 'chooseSphereImage',
+    SPHERE_COLOR: 'chooseSphereColor',
 }
 
 export const ItemButtons = {
@@ -72,4 +76,10 @@ export const ItemButtons = {
     PICTURE: 'picture',
     TELEPORT: 'teleport',
     MODEL: 'model'
+}
+
+export const AttributeButtons = {
+    SPHERE_TOGGLE: 'sphereToggle',
+    SPHERE_SCALE_UP: 'increaseScale',
+    SPHERE_SCALE_DOWN: 'decreaseScale',
 }

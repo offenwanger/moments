@@ -35,7 +35,7 @@ export function MomentPanel(container) {
     mPanelContainer.appendChild(mPoseableAssetsContainer)
     let mPoseableAssetsAddButton = new ButtonInput(mPoseableAssetsContainer)
         .setId('moment-poseable-asset-add-button')
-        .setLabel('PoseableAssets [+]')
+        .setLabel('Poseable Assets [+]')
         .setOnClick(async () => {
             await mAddCallback(mMoment.id, Data.PoseableAsset, {});
         })

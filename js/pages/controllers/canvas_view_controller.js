@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { DOUBLE_CLICK_SPEED, ItemButtons, MenuButtons, ToolButtons, USER_HEIGHT } from '../../constants.js';
+import { DOUBLE_CLICK_SPEED, ItemButtons, MenuNavButtons, ToolButtons, USER_HEIGHT } from '../../constants.js';
 import { GLTKUtil } from '../../utils/gltk_util.js';
 
 export function CanvasViewController(parentContainer, mWebsocketController) {
@@ -20,7 +20,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     let mMenuController;
     let mRendering = false;
 
-    let mToolMode = MenuButtons.MOVE;
+    let mToolMode = MenuNavButtons.MOVE;
     let mInteraction = false;
     let mHovered = []
     let mFreeze = []
@@ -143,7 +143,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
                 }
                 mToolMode = buttonId;
                 mMenuController.setMode(mToolMode);
-            } else if (Object.values(MenuButtons).includes(buttonId)) {
+            } else if (Object.values(MenuNavButtons).includes(buttonId)) {
                 mMenuController.navigate(buttonId);
             } else if (Object.values(ItemButtons).includes(buttonId)) {
                 console.error("Impliment me!")

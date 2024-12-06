@@ -106,6 +106,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
 
         mModel = model;
         await mSceneController.updateModel(model, assetUtil);
+        await mMenuController.updateModel(model, assetUtil);
     }
 
     function resize(width, height) {

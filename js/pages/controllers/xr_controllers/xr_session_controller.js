@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
-import { ItemButtons, MenuButtons, ToolButtons, XRInteraction } from '../../../constants.js';
+import { ItemButtons, MenuNavButtons, ToolButtons, XRInteraction } from '../../../constants.js';
 import { GLTKUtil } from '../../../utils/gltk_util.js';
 import { logInfo } from '../../../utils/log_util.js';
 import { Util } from '../../../utils/utility.js';
@@ -169,7 +169,7 @@ export function XRSessionController(mWebsocketController) {
                 }
                 mToolMode = buttonId;
                 mMenuController.setMode(mToolMode);
-            } else if (Object.values(MenuButtons).includes(buttonId)) {
+            } else if (Object.values(MenuNavButtons).includes(buttonId)) {
                 mMenuController.navigate(buttonId);
             } else if (Object.values(ItemButtons).includes(buttonId)) {
                 console.error("Impliment me!")

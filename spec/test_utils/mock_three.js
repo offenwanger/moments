@@ -56,6 +56,7 @@ function mockThreeMeshUI() {
         o.setupState = () => { };
         o.setState = () => { };
         o.set = () => { };
+        o.update = () => { };
         list.push(o);
         return o;
     };

@@ -5,6 +5,8 @@ import { PictureEditorController } from "./picture_editor_controller.js";
 import { SceneController } from "./scene_controller.js";
 import { XRSessionController } from './xr_controllers/xr_session_controller.js';
 import { MenuController } from "./menu_controllers/menu_controller.js";
+import { ItemButtons, MenuNavButtons, ToolButtons } from "../../constants.js";
+import { IdUtil } from "../../utils/id_util.js";
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -15,6 +17,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     let mTransformManyCallback = async () => { }
     let mTransformCallback = async () => { }
     let mUpdatePictureImageCallback = async () => { }
+    let mUpdateSphereImageCallback = async () => { }
 
     let isVR = false;
 
@@ -30,6 +33,8 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     mCanvasViewController.startRendering();
 
     let mModel = new Data.StoryModel();
+    let mToolMode = ToolButtons.MOVE;
+    let mMomentId = null;
 
     // this needs to go over the buttons
     let mPictureEditorController = new PictureEditorController(parentContainer);
@@ -41,6 +46,8 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     mCanvasViewController.onTransformMany(async (items) => {
         await mTransformManyCallback(items);
     })
+
+    mCanvasViewController.onMenuButtonClicked(menuButtonClicked)
 
     async function sessionStart(session) {
         await mXRSessionController.sessionStart(session);
@@ -72,6 +79,34 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     mXRSessionController.onTransformMany(async (items) => {
         await mTransformManyCallback(items);
     })
+    mXRSessionController.onMenuButtonClicked(menuButtonClicked);
+
+    async function menuButtonClicked(target) {
+        target.select();
+        let buttonId = target.getId();
+        let menuId = mMenuController.getCurrentMenuId();
+        if (Object.values(ToolButtons).includes(buttonId)) {
+            if (mToolMode == buttonId && buttonId != ToolButtons.MOVE) {
+                buttonId = ToolButtons.MOVE;
+            }
+            mToolMode = buttonId;
+            mMenuController.setMode(mToolMode);
+        } else if (Object.values(MenuNavButtons).includes(buttonId)) {
+            mMenuController.navigate(buttonId);
+        } else if (Object.values(ItemButtons).includes(buttonId)) {
+            console.error("Impliment me!")
+        } else if (IdUtil.getClass(buttonId) == Data.Asset) {
+            if (menuId == MenuNavButtons.SPHERE_IMAGE) {
+                let moment = mModel.moments.find(m => m.id == mMomentId);
+                if (!moment) { console.error("invalid moment id: " + mMomentId); return; }
+                await mUpdateSphereImageCallback(moment.photosphereId, buttonId);
+            } else {
+                console.error("not implimented!!");
+            }
+        } else {
+            console.error('Invalid button id: ' + buttonId);
+        }
+    }
 
     mPictureEditorController.onSave(async (id, json, dataUrl) => {
         await mUpdatePictureImageCallback(id, json, dataUrl);
@@ -109,6 +144,11 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
         await mMenuController.updateModel(model, assetUtil);
     }
 
+    function setCurrentMoment(momentId) {
+        mSceneController.setCurrentMoment(momentId);
+        mMomentId = momentId;
+    }
+
     function resize(width, height) {
         mCanvasViewController.resize(width, height);
         mPictureEditorController.resize(width, height);
@@ -123,7 +163,7 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     }
 
     this.updateModel = updateModel;
-    this.setCurrentMoment = mSceneController.setCurrentMoment;
+    this.setCurrentMoment = setCurrentMoment;
     this.resize = resize;
     this.pointerMove = pointerMove;
     this.pointerUp = pointerUp;
@@ -133,5 +173,6 @@ export function StoryDisplayController(parentContainer, mWebsocketController) {
     this.onTransform = (func) => mTransformCallback = func;
     this.onTransformMany = (func) => mTransformManyCallback = func;
     this.onUpdatePictureImage = (func) => mUpdatePictureImageCallback = func;
+    this.onUpdateSphereImage = (func) => mUpdateSphereImageCallback = func;
 }
 

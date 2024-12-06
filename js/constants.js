@@ -72,10 +72,7 @@ export const MenuNavButtons = {
 
 export const ItemButtons = {
     RECENTER: 'recenter',
-    AUDIO: 'audio',
-    PICTURE: 'picture',
     TELEPORT: 'teleport',
-    MODEL: 'model'
 }
 
 export const AttributeButtons = {

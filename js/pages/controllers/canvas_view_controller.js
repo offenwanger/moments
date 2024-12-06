@@ -12,6 +12,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
 
     let mTransformCallback = async () => { }
     let mTransformManyCallback = async () => { }
+    let mMenuButtonClicked = async () => { }
 
     let mWidth = 10;
     let mHeight = 10;
@@ -134,23 +135,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         mLastPointerDown.pos = screenCoords;
 
         if (mHovered[0]?.isButton()) {
-            mHovered[0].select();
-
-            let buttonId = mHovered[0].getId();
-            if (Object.values(ToolButtons).includes(buttonId)) {
-                if (mToolMode == buttonId && buttonId != ToolButtons.MOVE) {
-                    buttonId = ToolButtons.MOVE;
-                }
-                mToolMode = buttonId;
-                mMenuController.setMode(mToolMode);
-            } else if (Object.values(MenuNavButtons).includes(buttonId)) {
-                mMenuController.navigate(buttonId);
-            } else if (Object.values(ItemButtons).includes(buttonId)) {
-                console.error("Impliment me!")
-            } else {
-                console.error('Invalid button id: ' + buttonId);
-            }
-
+            mMenuButtonClicked(mHovered[0]);
             mInteraction = {
                 type: BUTTON_CLICK,
                 target: mHovered[0]
@@ -358,7 +343,6 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     function setMenuController(controller) {
         mMenuController = controller;
         mMenuController.setContainer(mMenuContainer);
-        mMenuController.setMode(mToolMode);
     }
 
     this.resize = resize;
@@ -375,4 +359,5 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     this.setMenuController = setMenuController;
     this.onTransform = (func) => { mTransformCallback = func }
     this.onTransformMany = (func) => { mTransformManyCallback = func }
+    this.onMenuButtonClicked = (func) => { mMenuButtonClicked = func }
 }

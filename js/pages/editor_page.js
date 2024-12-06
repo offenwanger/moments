@@ -105,6 +105,11 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
     })
 
+    mStoryDisplayController.onUpdateSphereImage(async (sphereId, assetId) => {
+        await mModelController.update(sphereId, { imageAssetId: assetId });
+        await updateModel();
+    })
+
     let mAssetPicker = new AssetPicker(parentContainer);
     mAssetPicker.onNewAsset(async (file, type) => {
         if (!mWorkspace) {

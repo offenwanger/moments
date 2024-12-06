@@ -30,6 +30,10 @@ export function MomentPanel(container) {
             await mUpdateAttributeCallback(mMoment.id, { name: newText });
         });
 
+
+    let mPhotoSphereAssetButton = new ButtonInput(mPanelContainer)
+        .setId('photosphere-asset-button')
+
     let mPoseableAssetsContainer = document.createElement('div');
     mPoseableAssetsContainer.setAttribute('id', 'moment-poseable-assets');
     mPanelContainer.appendChild(mPoseableAssetsContainer)
@@ -77,6 +81,18 @@ export function MomentPanel(container) {
         mMoment = model.find(momentId);
         if (!mMoment) console.error("Invalid id: " + momentId);
         mNameInput.setText(mMoment.name)
+
+        let photosphere = model.find(mMoment.photosphereId)
+        if (photosphere) {
+            let asset = model.find(photosphere.imageAssetId);
+            if (asset) {
+                mPhotoSphereAssetButton.setLabel(asset.name);
+            } else {
+                mPhotoSphereAssetButton.setLabel('None');
+            }
+        } else {
+            mPhotoSphereAssetButton.hide();
+        }
 
         let assets = model.poseableAssets.filter(a => mMoment.poseableAssetIds.includes(a.id));
         Util.setComponentListLength(mPoseableAssetsList, assets.length, () => new ButtonInput(mPoseableAssetsContainer))

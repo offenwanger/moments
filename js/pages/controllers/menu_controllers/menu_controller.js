@@ -168,6 +168,7 @@ export function MenuController() {
     this.getCurrentMenuId = () => mCurrentMenuId;
     this.onAdd = func => mAddCallback = func;
     this.onToolChange = func => mToolChangeCallback = func;
+    this.getMode = () => mMode;
     this.render = render
     this.getWidth = getWidth;
     this.getTargets = getTargets;

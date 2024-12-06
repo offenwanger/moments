@@ -13,6 +13,7 @@ export function XRSessionController(mWebsocketController) {
 
     let mTransformCallback = async () => { }
     let mTransformManyCallback = async () => { }
+    let mMenuButtonClicked = async () => { }
 
     let mSystemState = {
         interactionType: XRInteraction.NONE,
@@ -21,7 +22,6 @@ export function XRSessionController(mWebsocketController) {
         mouseDown: false,
         session: null,
     }
-    let mToolMode = ToolButtons.MOVE;
 
     let mSceneController;
     let mMenuController;
@@ -67,7 +67,6 @@ export function XRSessionController(mWebsocketController) {
     function setMenuController(controller) {
         mMenuController = controller;
         mXRInputController.setMenuController(mMenuController);
-        mMenuController.setMode(mToolMode);
     }
 
     function setupListeners() {
@@ -161,22 +160,7 @@ export function XRSessionController(mWebsocketController) {
 
     mXRInputController.onDragStarted(async (target, isLeft) => {
         if (target.isButton()) {
-            target.select();
-            let buttonId = target.getId();
-            if (Object.values(ToolButtons).includes(buttonId)) {
-                if (mToolMode == buttonId && buttonId != ToolButtons.MOVE) {
-                    buttonId = ToolButtons.MOVE;
-                }
-                mToolMode = buttonId;
-                mMenuController.setMode(mToolMode);
-            } else if (Object.values(MenuNavButtons).includes(buttonId)) {
-                mMenuController.navigate(buttonId);
-            } else if (Object.values(ItemButtons).includes(buttonId)) {
-                console.error("Impliment me!")
-            } else {
-                console.error('Invalid button id: ' + buttonId);
-            }
-
+            mMenuButtonClicked(target);
             mSystemState.interactionType = XRInteraction.BUTTON_CLICK;
             mSystemState.interactionData = { target }
 
@@ -318,6 +302,7 @@ export function XRSessionController(mWebsocketController) {
     this.onSessionEnd = (func) => mOnSessionEndCallback = func;
     this.onTransform = (func) => { mTransformCallback = func }
     this.onTransformMany = (func) => { mTransformManyCallback = func }
+    this.onMenuButtonClicked = (func) => { mMenuButtonClicked = func }
     this.setUserPositionAndDirection = mXRInputController.setUserPositionAndDirection;
     this.getUserPositionAndDirection = mXRInputController.getUserPositionAndDirection;
 

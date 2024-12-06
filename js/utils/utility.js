@@ -70,7 +70,8 @@ function setComponentListLength(arr, length, createCallback) {
     for (let i = arr.length; i < length; i++) {
         arr.push(createCallback());
     }
-    for (let i = length; i < arr.length; i++) {
+    while (arr.length > length) {
+        let i = arr.length - 1;
         if (typeof arr[i].remove == 'function') { arr[i].remove(); }
         arr.splice(i, 1);
     }

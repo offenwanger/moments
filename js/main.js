@@ -1,4 +1,3 @@
-import { EventManager } from './event_manager.js';
 import { WebsocketController } from './pages/controllers/websocket_controller.js';
 import { EditorPage } from './pages/editor_page.js';
 import { ListPage } from './pages/list_page.js';
@@ -7,7 +6,6 @@ import { HandleStorage } from './utils/handle_storage.js';
 import { WorkspaceManager } from './workspace_manager.js';
 
 export async function main() {
-    let mEventManager = new EventManager();
     let mWebsocketController = new WebsocketController();
 
     async function updatePage() {
@@ -88,7 +86,6 @@ export async function main() {
 
     async function showEditorPage(workspaceManger) {
         let page = new EditorPage(document.querySelector('#content'), mWebsocketController);
-        await mEventManager.setListener(page);
         // handel all the needed async stuff
         await page.show(workspaceManger);
     }

@@ -1,14 +1,17 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { DOUBLE_CLICK_SPEED, ItemButtons, MenuNavButtons, ToolButtons, USER_HEIGHT } from '../../constants.js';
+import { DOUBLE_CLICK_SPEED, MenuNavButtons, USER_HEIGHT } from '../../constants.js';
 import { GLTKUtil } from '../../utils/gltk_util.js';
+import { WindowEventManager } from '../../window_event_manager.js';
 
 export function CanvasViewController(parentContainer, mWebsocketController) {
     const DRAGGING = 'dragging'
     const DRAGGING_KINEMATIC = 'draggingKinematic'
     const NAVIGATING = 'navigating'
     const BUTTON_CLICK = 'click'
+
+    let mWindowEventManager = new WindowEventManager();
 
     let mTransformCallback = async () => { }
     let mTransformManyCallback = async () => { }
@@ -201,7 +204,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
 
     }
 
-    async function pointerMove(screenCoords) {
+    mWindowEventManager.onPointerMove(async (screenCoords) => {
         mLastPointerPosition = screenCoords;
         let pointer = screenToNomralizedCoords(screenCoords);
 
@@ -235,9 +238,9 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
             let localPosition = mInteraction.rootBone.worldToLocal(position);
             mInteraction.controlBone.position.copy(localPosition);
         }
-    }
+    });
 
-    async function pointerUp(screenCoords) {
+    mWindowEventManager.onPointerUp(async (screenCoords) => {
         mIKSolver = null
         mSceneController.getContent().remove(mCCDIKHelper);
         let interaction = mInteraction;
@@ -262,7 +265,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
                 interaction.target.idle();
             }
         }
-    }
+    });
 
     function startRendering() {
         mPageRenderer.setAnimationLoop(pageRender);
@@ -346,9 +349,6 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     }
 
     this.resize = resize;
-
-    this.pointerMove = pointerMove;
-    this.pointerUp = pointerUp;
     this.startRendering = startRendering;
     this.stopRendering = stopRendering;
     this.setUserPositionAndDirection = setUserPositionAndDirection;

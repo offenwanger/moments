@@ -78,6 +78,7 @@ export async function setup() {
                     element.open = false;
                     element.eventListeners.close();
                 }
+                element.removeEventListener = () => { }
             }
 
             if (e == 'iframe') {
@@ -98,8 +99,10 @@ export async function setup() {
         callbacks: {},
         directories: [],
         files: [],
-        on: (event, callback) => { window.callbacks[event] = callback; },
-        addEventListener: (event, callback) => { window.callbacks[event] = callback; },
+        addEventListener: (event, callback) => {
+            if (!window.callbacks[event]) window.callbacks[event] = []
+            window.callbacks[event].push(callback);
+        },
         showDirectoryPicker: () => global.window.directories.pop(),
         showOpenFilePicker: () => [global.window.files.pop()],
         location: { search: "" },

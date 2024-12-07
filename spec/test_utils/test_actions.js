@@ -8,6 +8,18 @@ export function testmodel() {
     return Data.StoryModel.fromObject(JSON.parse(global.fileSystem[storyFile]))
 }
 
+export async function pointermove(x, y) {
+    if (!window.callbacks.pointermove) console.error("No callbacks registered for pointermove");
+    for (let cb of window.callbacks.pointermove)
+        await cb({ clientX: x, clientY: y });
+}
+
+export async function pointerup(x, y) {
+    if (!window.callbacks.pointerup) console.error("No callbacks registered for pointerup");
+    for (let cb of window.callbacks.pointerup)
+        await cb({ clientX: x, clientY: y });
+}
+
 export async function createAndEditStory() {
     window.directories.push(new mockFileSystemDirectoryHandle('test'));
     await document.querySelector('#choose-folder-button').eventListeners.click();

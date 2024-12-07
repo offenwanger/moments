@@ -1,7 +1,7 @@
 
 import { cleanup, setup } from './test_utils/test_environment.js';
 
-import { createAndOpenPoseableAsset, testmodel } from './test_utils/test_actions.js';
+import { createAndOpenPoseableAsset, pointermove, pointerup, testmodel } from './test_utils/test_actions.js';
 
 
 
@@ -32,7 +32,7 @@ describe('Test Moment Panel', function () {
                 .find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id)).z)
                 .toBeCloseTo(-1, 4);
 
-            await window.callbacks.pointermove({
+            await pointermove({
                 clientX: window.innerWidth,
                 clientY: window.innerHeight / 2
             });
@@ -42,12 +42,12 @@ describe('Test Moment Panel', function () {
                 clientY: window.innerHeight / 2
             });
 
-            await window.callbacks.pointermove({
+            await pointermove({
                 clientX: window.innerWidth / 2 - 100,
                 clientY: window.innerHeight / 2
             });
 
-            await window.callbacks.pointerup({
+            await pointerup({
                 clientX: window.innerWidth / 2 - 100,
                 clientY: window.innerHeight / 2
             });
@@ -71,7 +71,7 @@ describe('Test Moment Panel', function () {
                 .find(p => p.name == "Bone" && poseableAsset.poseIds.includes(p.id)).z)
                 .toBeCloseTo(0.0, 4);
 
-            await window.callbacks.pointermove({
+            await pointermove({
                 clientX: window.innerWidth / 2,
                 clientY: window.innerHeight / 2
             });
@@ -81,12 +81,12 @@ describe('Test Moment Panel', function () {
                 clientY: window.innerHeight / 2
             });
 
-            await window.callbacks.pointermove({
+            await pointermove({
                 clientX: window.innerWidth / 2 - 100,
                 clientY: window.innerHeight / 2
             });
 
-            await window.callbacks.pointerup({
+            await pointerup({
                 clientX: window.innerWidth / 2 - 100,
                 clientY: window.innerHeight / 2
             });

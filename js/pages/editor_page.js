@@ -7,9 +7,10 @@ import { IdUtil } from '../utils/id_util.js';
 import { Util } from '../utils/utility.js';
 import { ModelController, ModelUpdate } from './controllers/model_controller.js';
 import { SidebarController } from './controllers/sidebar_controller.js';
-import { SessionController } from './controllers/session_controller.js';
+import { SceneInterfaceController } from './controllers/scene_interface_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 import { PictureEditorController } from './controllers/picture_editor_controller.js';
+import { WindowEventManager } from '../window_event_manager.js';
 
 export function EditorPage(parentContainer, mWebsocketController) {
     const RESIZE_TARGET_SIZE = 20;
@@ -23,6 +24,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
     let mHeight = 100;
 
     let mResizingWindows = false;
+    let mWindowEventManager = new WindowEventManager();
 
     let mMainContainer = document.createElement('div');
     mMainContainer.setAttribute('id', 'story-display-main-container')
@@ -62,8 +64,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
     mResizeTarget.addEventListener('pointerdown', () => { mResizingWindows = true; });
     parentContainer.appendChild(mResizeTarget);
 
-    let mSessionController = new SessionController(mViewContainer, mWebsocketController);
-    mSessionController.onTransform(async (id, newPosition = null, newOrientation = null, newScale = null) => {
+    let mSceneInterface = new SceneInterfaceController(mViewContainer, mWebsocketController);
+    mSceneInterface.onTransform(async (id, newPosition = null, newOrientation = null, newScale = null) => {
         let attrs = {}
         if (newPosition) {
             attrs.x = newPosition.x;
@@ -80,7 +82,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
     });
 
-    mSessionController.onTransformMany(async (items) => {
+    mSceneInterface.onTransformMany(async (items) => {
         await mModelController.applyUpdates(items.map(({ id, position, orientation, scale }) => {
             let data = { id }
             if (position) {
@@ -99,7 +101,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
     });
 
-    mSessionController.onUpdateSphereImage(async (sphereId, assetId) => {
+    mSceneInterface.onUpdateSphereImage(async (sphereId, assetId) => {
         await mModelController.applyUpdates([new ModelUpdate({ id: sphereId, imageAssetId: assetId })]);
         await updateModel();
     })
@@ -228,11 +230,11 @@ export function EditorPage(parentContainer, mWebsocketController) {
     })
     mSidebarController.onNavigate(async id => {
         if (IdUtil.getClass(id) == Data.Moment) {
-            await mSessionController.setCurrentMoment(id);
+            await mSceneInterface.setCurrentMoment(id);
         }
     })
     mSidebarController.onSessionStart(async session => {
-        await mSessionController.sessionStart(session);
+        await mSceneInterface.sessionStart(session);
     })
     mSidebarController.onStartShare(async () => {
         if (!mWorkspace) { console.error("Invalid state, should not share unless running local worksapce."); }
@@ -320,7 +322,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
 
         if (searchParams.get("assetViewId")) {
-            await mSessionController.showAsset(searchParams.get("assetViewId"), mAssetUtil);
+            await mSceneInterface.showAsset(searchParams.get("assetViewId"), mAssetUtil);
         }
     }
 
@@ -330,12 +332,13 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await mAssetPicker.updateModel(model);
 
         await mSidebarController.updateModel(model);
-        await mSessionController.updateModel(model, mAssetUtil);
+        await mSceneInterface.updateModel(model, mAssetUtil);
     }
 
-    function resize(width, height) {
-        mWidth = width;
-        mHeight = height;
+    mWindowEventManager.onResize(resize);
+    function resize(windowWidth, windowHeight) {
+        mWidth = windowWidth;
+        mHeight = windowHeight;
 
         mSidebarController.resize(mWidth - Math.round(mWidth * mSidebarDivider), mHeight);
 
@@ -345,27 +348,21 @@ export function EditorPage(parentContainer, mWebsocketController) {
         mResizeTarget.style['left'] = (viewCanvasWidth - RESIZE_TARGET_SIZE / 2) + "px"
         mResizeTarget.style['top'] = (viewCanvasHeight - RESIZE_TARGET_SIZE / 2) + "px"
 
-        mSessionController.resize(viewCanvasWidth, viewCanvasHeight);
+        mSceneInterface.resize(viewCanvasWidth, viewCanvasHeight);
         mPictureEditorController.resize(viewCanvasWidth, viewCanvasHeight);
     }
 
-    async function pointerMove(screenCoords) {
+    mWindowEventManager.onPointerUp((screenCoords) => {
         if (mResizingWindows) {
             mSidebarDivider = Util.limit(screenCoords.x / mWidth, 0.01, 0.99);
             mBottomDivider = Util.limit(screenCoords.y / mHeight, 0.01, 0.99);
             resize(mWidth, mHeight);
         }
+    });
 
-        await mSessionController.pointerMove(screenCoords);
-    }
-
-    async function pointerUp(screenCoords) {
+    mWindowEventManager.onPointerUp(() => {
         mResizingWindows = false;
-        await mSessionController.pointerUp(screenCoords);
-    }
+    });
 
     this.show = show;
-    this.resize = resize;
-    this.pointerMove = pointerMove;
-    this.pointerUp = pointerUp;
 }

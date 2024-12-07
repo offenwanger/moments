@@ -12,7 +12,7 @@ import { XRSessionController } from './xr_controllers/xr_session_controller.js';
  * transitions between VR and canvas viewing. 
  * @param {*} parentContainer 
  */
-export function SessionController(parentContainer, mWebsocketController) {
+export function SceneInterfaceController(parentContainer, mWebsocketController) {
     let mTransformManyCallback = async () => { }
     let mTransformCallback = async () => { }
     let mUpdateSphereImageCallback = async () => { }
@@ -37,36 +37,6 @@ export function SessionController(parentContainer, mWebsocketController) {
     mCanvasViewController.onTransform(async (id, newPosition) => {
         await mTransformCallback(id, newPosition);
     })
-
-    mCanvasViewController.onTransformMany(async (items) => {
-        await mTransformManyCallback(items);
-    })
-
-    mCanvasViewController.onMenuButtonClicked(menuButtonClicked)
-
-    async function sessionStart(session) {
-        await mXRSessionController.sessionStart(session);
-        isVR = true;
-        mCanvasViewController.stopRendering();
-        mXRSessionController.startRendering();
-
-        let { pos, dir } = mCanvasViewController.getUserPositionAndDirection();
-        mXRSessionController.setUserPositionAndDirection(pos, dir);
-        mXRSessionController.setMenuController(mMenuController);
-    }
-
-    mXRSessionController.onSessionEnd(() => {
-        if (isVR) {
-            isVR = false;
-            mCanvasViewController.startRendering();
-            mXRSessionController.stopRendering();
-
-            let { pos, dir } = mXRSessionController.getUserPositionAndDirection();
-            mCanvasViewController.setUserPositionAndDirection(pos, dir);
-            mCanvasViewController.setMenuController(mMenuController);
-        }
-    })
-
     mXRSessionController.onTransform(async (id, newPosition, newOrientation, newScale) => {
         await mTransformCallback(id, newPosition, newOrientation, newScale);
     })
@@ -74,8 +44,12 @@ export function SessionController(parentContainer, mWebsocketController) {
     mXRSessionController.onTransformMany(async (items) => {
         await mTransformManyCallback(items);
     })
-    mXRSessionController.onMenuButtonClicked(menuButtonClicked);
+    mCanvasViewController.onTransformMany(async (items) => {
+        await mTransformManyCallback(items);
+    })
 
+    mCanvasViewController.onMenuButtonClicked(menuButtonClicked);
+    mXRSessionController.onMenuButtonClicked(menuButtonClicked);
     async function menuButtonClicked(target) {
         target.select();
         let buttonId = target.getId();
@@ -102,6 +76,29 @@ export function SessionController(parentContainer, mWebsocketController) {
             console.error('Invalid button id: ' + buttonId);
         }
     }
+
+    async function sessionStart(session) {
+        await mXRSessionController.sessionStart(session);
+        isVR = true;
+        mCanvasViewController.stopRendering();
+        mXRSessionController.startRendering();
+
+        let { pos, dir } = mCanvasViewController.getUserPositionAndDirection();
+        mXRSessionController.setUserPositionAndDirection(pos, dir);
+        mXRSessionController.setMenuController(mMenuController);
+    }
+
+    mXRSessionController.onSessionEnd(() => {
+        if (isVR) {
+            isVR = false;
+            mCanvasViewController.startRendering();
+            mXRSessionController.stopRendering();
+
+            let { pos, dir } = mXRSessionController.getUserPositionAndDirection();
+            mCanvasViewController.setUserPositionAndDirection(pos, dir);
+            mCanvasViewController.setMenuController(mMenuController);
+        }
+    })
 
     mWebsocketController.onParticipantUpdate((id, head, handR, handL) => {
         try {
@@ -135,28 +132,18 @@ export function SessionController(parentContainer, mWebsocketController) {
         await mMenuController.updateModel(model, assetUtil);
     }
 
+    function resize(width, height) {
+        mCanvasViewController.resize(width, height);
+    }
+
     function setCurrentMoment(momentId) {
         mSceneController.setCurrentMoment(momentId);
         mMomentId = momentId;
     }
 
-    function resize(width, height) {
-        mCanvasViewController.resize(width, height);
-    }
-
-    async function pointerMove(screenCoords) {
-        await mCanvasViewController.pointerMove(screenCoords);
-    }
-
-    async function pointerUp(screenCoords) {
-        await mCanvasViewController.pointerUp(screenCoords);
-    }
-
     this.updateModel = updateModel;
-    this.setCurrentMoment = setCurrentMoment;
     this.resize = resize;
-    this.pointerMove = pointerMove;
-    this.pointerUp = pointerUp;
+    this.setCurrentMoment = setCurrentMoment;
     this.sessionStart = sessionStart;
     this.onTransform = (func) => mTransformCallback = func;
     this.onTransformMany = (func) => mTransformManyCallback = func;

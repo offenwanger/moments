@@ -80,3 +80,8 @@ export const AttributeButtons = {
     SPHERE_SCALE_UP: 'increaseScale',
     SPHERE_SCALE_DOWN: 'decreaseScale',
 }
+
+export const ModelUpdateCommands = {
+    DELETE: 'delete',
+    CREATE_OR_UPDATE: 'createOrUpdate',
+}

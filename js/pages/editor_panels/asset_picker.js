@@ -74,7 +74,7 @@ export function AssetPicker(container) {
         refreshList();
 
         return new Promise((resolve, reject) => {
-            mDialog.addEventListener('close', () => {
+            let listenFunc = () => {
                 let assetId = mSelectedAssetId;
                 mSelectedAssetId = null;
                 mSelectionType = null;
@@ -83,8 +83,9 @@ export function AssetPicker(container) {
                 } else {
                     reject("No asset selected.")
                 }
-            });
-
+                mDialog.removeEventListener('close', listenFunc);
+            }
+            mDialog.addEventListener('close', listenFunc);
             mDialog.show();
         })
     }

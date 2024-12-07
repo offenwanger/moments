@@ -1,5 +1,6 @@
 import { AssetTypes } from '../constants.js';
 import { Data } from '../data.js';
+import { ModelUpdate } from '../pages/controllers/model_controller.js';
 import { GLTKUtil } from './gltk_util.js';
 import { IdUtil } from './id_util.js';
 import { Util } from './utility.js';
@@ -16,8 +17,18 @@ import { Util } from './utility.js';
 async function getMomentCreationUpdates(blurFileName, colorFileName) {
     let updates = [];
 
-    let blurUpdate = (await getAssetCreationUpdates(blurFileName, blurFileName, AssetTypes.PHOTOSPHERE_BLUR))[0];
-    let colorUpdate = (await getAssetCreationUpdates(colorFileName, colorFileName, AssetTypes.PHOTOSPHERE_COLOR))[0];
+    let blurUpdate = new ModelUpdate({
+        id: IdUtil.getUniqueId(Data.Asset),
+        name: blurFileName,
+        filename: blurFileName,
+        type: AssetTypes.PHOTOSPHERE_BLUR
+    });
+    let colorUpdate = new ModelUpdate({
+        id: IdUtil.getUniqueId(Data.Asset),
+        name: colorFileName,
+        filename: colorFileName,
+        type: AssetTypes.PHOTOSPHERE_COLOR
+    });
 
     updates.push(blurUpdate, colorUpdate);
 
@@ -34,25 +45,21 @@ async function getMomentCreationUpdates(blurFileName, colorFileName) {
                 dist: 1,
             }
             pointIds.push(attrs.id);
-            updates.push({ action: 'createOrUpdate', row: attrs })
+            updates.push(new ModelUpdate(attrs));
         }
     }
     let photosphereId = IdUtil.getUniqueId(Data.Photosphere);
-    updates.push({
-        action: 'createOrUpdate', row: {
-            id: photosphereId,
-            pointIds,
-            blurAssetId: blurUpdate.row.id,
-            colorAssetId: colorUpdate.row.id,
-        }
-    })
+    updates.push(new ModelUpdate({
+        id: photosphereId,
+        pointIds,
+        blurAssetId: blurUpdate.data.id,
+        colorAssetId: colorUpdate.data.id,
+    }))
     let momentId = IdUtil.getUniqueId(Data.Moment)
-    updates.push({
-        action: 'createOrUpdate', row: {
-            id: momentId,
-            photosphereId,
-        }
-    })
+    updates.push(new ModelUpdate({
+        id: momentId,
+        photosphereId,
+    }))
 
     return updates;
 }
@@ -67,7 +74,7 @@ async function getPoseableAssetCreationUpdates(model, parentId, assetId = null) 
     let poseIds = poses.map(pose => {
         let attrs = pose.clone(true);
         attrs.id = IdUtil.getUniqueId(Data.AssetPose);
-        updates.push({ action: 'createOrUpdate', row: attrs })
+        updates.push(new ModelUpdate(attrs))
         return attrs.id;
     });
 
@@ -78,11 +85,11 @@ async function getPoseableAssetCreationUpdates(model, parentId, assetId = null) 
         poseIds: poseIds,
     }
 
-    updates.push({ action: 'createOrUpdate', row: attrs });
+    updates.push(new ModelUpdate(attrs));
 
     let parent = model.find(parentId);
     parent.poseableAssetIds.push(attrs.id);
-    updates.push({ action: 'createOrUpdate', row: { id: parentId, poseableAssetIds: parent.poseableAssetIds } });
+    updates.push(new ModelUpdate({ id: parentId, poseableAssetIds: parent.poseableAssetIds }));
 
     return updates;
 }
@@ -110,20 +117,18 @@ async function getAssetCreationUpdates(name, filename, type, asset = null) {
                 orientation: child.quaternion.toArray(),
                 scale: child.scale.x,
             };
-            updates.push({ action: 'createOrUpdate', row: attrs });
+            updates.push(new ModelUpdate(attrs));
             return attrs.id;
         });
     }
 
-    updates.push({
-        action: 'createOrUpdate', row: {
-            id: IdUtil.getUniqueId(Data.Asset),
-            name,
-            filename,
-            type,
-            poseIds,
-        }
-    })
+    updates.push(new ModelUpdate({
+        id: IdUtil.getUniqueId(Data.Asset),
+        name,
+        filename,
+        type,
+        poseIds,
+    }));
 
     return updates;
 }

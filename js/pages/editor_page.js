@@ -1,13 +1,13 @@
 
-import { AssetTypes } from '../constants.js';
+import { AssetTypes, ModelUpdateCommands } from '../constants.js';
 import { Data } from '../data.js';
 import { AssetUtil } from '../utils/assets_util.js';
 import { DataUtil } from '../utils/data_util.js';
 import { IdUtil } from '../utils/id_util.js';
 import { Util } from '../utils/utility.js';
-import { ModelController } from './controllers/model_controller.js';
+import { ModelController, ModelUpdate } from './controllers/model_controller.js';
 import { SidebarController } from './controllers/sidebar_controller.js';
-import { StoryDisplayController } from './controllers/story_display_controller.js';
+import { SessionController } from './controllers/session_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 
 export function EditorPage(parentContainer, mWebsocketController) {
@@ -61,8 +61,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
     mResizeTarget.addEventListener('pointerdown', () => { mResizingWindows = true; });
     parentContainer.appendChild(mResizeTarget);
 
-    let mStoryDisplayController = new StoryDisplayController(mViewContainer, mWebsocketController);
-    mStoryDisplayController.onTransform(async (id, newPosition = null, newOrientation = null, newScale = null) => {
+    let mSessionController = new SessionController(mViewContainer, mWebsocketController);
+    mSessionController.onTransform(async (id, newPosition = null, newOrientation = null, newScale = null) => {
         let attrs = {}
         if (newPosition) {
             attrs.x = newPosition.x;
@@ -75,38 +75,36 @@ export function EditorPage(parentContainer, mWebsocketController) {
         if (newScale) {
             attrs.scale = newScale;
         }
-        await mModelController.update(id, attrs);
+        await mModelController.applyUpdates([new ModelUpdate({ id, ...attrs })]);
         await updateModel();
     });
 
-    mStoryDisplayController.onTransformMany(async (items) => {
-        await mModelController.updateMany(items.map(({ id, position, orientation, scale }) => {
-            let attrs = {}
+    mSessionController.onTransformMany(async (items) => {
+        await mModelController.applyUpdates(items.map(({ id, position, orientation, scale }) => {
+            let data = { id }
             if (position) {
-                attrs.x = position.x;
-                attrs.y = position.y;
-                attrs.z = position.z;
+                data.x = position.x;
+                data.y = position.y;
+                data.z = position.z;
             }
             if (orientation && IdUtil.getClass(id) != Data.Picture) {
-                attrs.orientation = orientation.toArray();
+                data.orientation = orientation.toArray();
             }
             if (scale) {
-                attrs.scale = scale;
+                data.scale = scale;
             }
-
-            return { id, attrs }
+            return new ModelUpdate(data);
         }));
         await updateModel();
     });
 
-    mStoryDisplayController.onUpdatePictureImage(async (pictureId, json, dataUrl) => {
-        await mModelController.update(pictureId, { json });
-        await mModelController.update(pictureId, { image: dataUrl });
+    mSessionController.onUpdatePictureImage(async (pictureId, json, dataUrl) => {
+        await mModelController.applyUpdates([new ModelUpdate({ id: pictureId, json, image: dataUrl })]);
         await updateModel();
     })
 
-    mStoryDisplayController.onUpdateSphereImage(async (sphereId, assetId) => {
-        await mModelController.update(sphereId, { imageAssetId: assetId });
+    mSessionController.onUpdateSphereImage(async (sphereId, assetId) => {
+        await mModelController.applyUpdates([new ModelUpdate({ id: sphereId, imageAssetId: assetId })]);
         await updateModel();
     })
 
@@ -173,8 +171,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
             if (!parent) { console.error('invalid parent id: ' + parentId); return; }
             parent.pictureIds.push(id);
             let updates = [
-                { action: 'createOrUpdate', row: { id } },
-                { action: 'createOrUpdate', row: { id: parentId, pictureIds: parent.pictureIds } }
+                new ModelUpdate({ id }),
+                new ModelUpdate({ id: parentId, pictureIds: parent.pictureIds }),
             ];
             await mModelController.applyUpdates(updates);
         } else if (itemClass == Data.Audio) {
@@ -185,8 +183,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
                 if (!parent) { console.error('invalid parent id: ' + parentId); return; }
                 parent.audioIds.push(id);
                 let updates = [
-                    { action: 'createOrUpdate', row: { id, assetId } },
-                    { action: 'createOrUpdate', row: { id: parentId, audioIds: parent.audioIds } }
+                    new ModelUpdate({ id, assetId }),
+                    new ModelUpdate({ id: parentId, audioIds: parent.audioIds }),
                 ];
                 await mModelController.applyUpdates(updates);
             }
@@ -207,11 +205,11 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
     })
     mSidebarController.setUpdateAttributeCallback(async (id, attrs) => {
-        await mModelController.update(id, attrs);
+        await mModelController.applyUpdates([new ModelUpdate({ id, ...attrs })]);
         await updateModel();
     })
     mSidebarController.setDeleteCallback(async (id) => {
-        await mModelController.delete(id);
+        await mModelController.applyUpdates([new ModelUpdate({ id }, ModelUpdateCommands.DELETE)]);
         await updateModel();
     })
     mSidebarController.setSelectAsset(async () => {
@@ -220,18 +218,18 @@ export function EditorPage(parentContainer, mWebsocketController) {
     mSidebarController.setEditPictureCallback(async (id) => {
         let picture = mModelController.getModel().find(id);
         if (!picture) { console.error("Invalid id:" + id); return; }
-        await mStoryDisplayController.editPicture(id, picture.json);
+        await mSessionController.editPicture(id, picture.json);
     })
     mSidebarController.setCloseEditPictureCallback(async () => {
-        await mStoryDisplayController.closeEditPicture();
+        await mSessionController.closeEditPicture();
     })
     mSidebarController.onNavigate(async id => {
         if (IdUtil.getClass(id) == Data.Moment) {
-            await mStoryDisplayController.setCurrentMoment(id);
+            await mSessionController.setCurrentMoment(id);
         }
     })
     mSidebarController.onSessionStart(async session => {
-        await mStoryDisplayController.sessionStart(session);
+        await mSessionController.sessionStart(session);
     })
     mSidebarController.onStartShare(async () => {
         if (!mWorkspace) { console.error("Invalid state, should not share unless running local worksapce."); }
@@ -239,9 +237,9 @@ export function EditorPage(parentContainer, mWebsocketController) {
     })
 
     mWebsocketController.onStoryUpdate(async updates => {
-        mModelController.removeUpdateCallback(mWebsocketController.updateStory);
+        mModelController.removeUpdateListener(mWebsocketController.updateStory);
         await mModelController.applyUpdates(updates);
-        mModelController.addUpdateCallback(mWebsocketController.updateStory);
+        mModelController.addUpdateListener(mWebsocketController.updateStory);
         updateModel();
     })
 
@@ -295,7 +293,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
             if (!story) throw Error("Invalid workspace!");
 
             mModelController = new ModelController(story);
-            mModelController.addUpdateCallback((updates, model) => mWorkspace.updateStory(model));
+            mModelController.addUpdateListener((updates, model) => mWorkspace.updateStory(model));
             mAssetUtil = new AssetUtil(mWorkspace);
 
             if (story.moments.length == 0) {
@@ -309,7 +307,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
             }
         }
 
-        mModelController.addUpdateCallback(mWebsocketController.updateStory);
+        mModelController.addUpdateListener(mWebsocketController.updateStory);
 
         resize(mWidth, mHeight);
 
@@ -319,7 +317,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
 
         if (searchParams.get("assetViewId")) {
-            await mStoryDisplayController.showAsset(searchParams.get("assetViewId"), mAssetUtil);
+            await mSessionController.showAsset(searchParams.get("assetViewId"), mAssetUtil);
         }
     }
 
@@ -329,7 +327,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await mAssetPicker.updateModel(model);
 
         await mSidebarController.updateModel(model);
-        await mStoryDisplayController.updateModel(model, mAssetUtil);
+        await mSessionController.updateModel(model, mAssetUtil);
     }
 
     function resize(width, height) {
@@ -344,7 +342,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         mResizeTarget.style['left'] = (viewCanvasWidth - RESIZE_TARGET_SIZE / 2) + "px"
         mResizeTarget.style['top'] = (viewCanvasHeight - RESIZE_TARGET_SIZE / 2) + "px"
 
-        mStoryDisplayController.resize(viewCanvasWidth, viewCanvasHeight);
+        mSessionController.resize(viewCanvasWidth, viewCanvasHeight);
     }
 
     async function pointerMove(screenCoords) {
@@ -354,12 +352,12 @@ export function EditorPage(parentContainer, mWebsocketController) {
             resize(mWidth, mHeight);
         }
 
-        await mStoryDisplayController.pointerMove(screenCoords);
+        await mSessionController.pointerMove(screenCoords);
     }
 
     async function pointerUp(screenCoords) {
         mResizingWindows = false;
-        await mStoryDisplayController.pointerUp(screenCoords);
+        await mSessionController.pointerUp(screenCoords);
     }
 
     this.show = show;

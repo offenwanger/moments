@@ -13,7 +13,7 @@ import { IdUtil } from "../../utils/id_util.js";
  * transitions between VR and canvas viewing. 
  * @param {*} parentContainer 
  */
-export function StoryDisplayController(parentContainer, mWebsocketController) {
+export function SessionController(parentContainer, mWebsocketController) {
     let mTransformManyCallback = async () => { }
     let mTransformCallback = async () => { }
     let mUpdatePictureImageCallback = async () => { }

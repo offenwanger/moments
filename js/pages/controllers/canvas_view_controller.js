@@ -5,7 +5,7 @@ import { DOUBLE_CLICK_SPEED, MenuNavButtons, USER_HEIGHT } from '../../constants
 import { GLTKUtil } from '../../utils/gltk_util.js';
 import { WindowEventManager } from '../../window_event_manager.js';
 
-export function CanvasViewController(parentContainer, mWebsocketController) {
+export function CanvasViewController(parentContainer) {
     const DRAGGING = 'dragging'
     const DRAGGING_KINEMATIC = 'draggingKinematic'
     const NAVIGATING = 'navigating'
@@ -16,6 +16,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     let mTransformCallback = async () => { }
     let mTransformManyCallback = async () => { }
     let mMenuButtonClicked = async () => { }
+    let mUserMovedCallback = async () => { }
 
     let mWidth = 10;
     let mHeight = 10;
@@ -80,12 +81,12 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
         mPageCamera.updateMatrixWorld()
 
         mSceneController.userMove(mPageCamera.position);
-        mWebsocketController.updateParticipant({
+        mUserMovedCallback({
             x: mPageCamera.position.x,
             y: mPageCamera.position.y,
             z: mPageCamera.position.z,
             orientation: mPageCamera.quaternion.toArray()
-        })
+        });
 
         mRaycaster.setFromCamera(canvasToNomralizedCoords({ x: 0, y: 0 }), mPageCamera)
         let result = mRaycaster.ray.at(MENU_DIST, new THREE.Vector3());
@@ -357,6 +358,7 @@ export function CanvasViewController(parentContainer, mWebsocketController) {
     this.getMenuContainer = () => mMenuContainer;
     this.setSceneController = setSceneController;
     this.setMenuController = setMenuController;
+    this.onUserMoved = (func) => { mUserMovedCallback = func }
     this.onTransform = (func) => { mTransformCallback = func }
     this.onTransformMany = (func) => { mTransformManyCallback = func }
     this.onMenuButtonClicked = (func) => { mMenuButtonClicked = func }

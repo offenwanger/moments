@@ -1,19 +1,20 @@
 import * as THREE from 'three';
 import { CCDIKHelper, CCDIKSolver } from 'three/addons/animation/CCDIKSolver.js';
-import { ItemButtons, MenuNavButtons, ToolButtons, XRInteraction } from '../../../constants.js';
+import { XRInteraction } from '../../../constants.js';
 import { GLTKUtil } from '../../../utils/gltk_util.js';
 import { logInfo } from '../../../utils/log_util.js';
 import { Util } from '../../../utils/utility.js';
 import { XRInputController } from './xr_input_controller.js';
 import { XRPageInterfaceController } from './xr_page_interface_controller.js';
 
-export function XRSessionController(mWebsocketController) {
+export function XRSessionController() {
     let mOnSessionStartCallback = () => { }
     let mOnSessionEndCallback = () => { }
 
     let mTransformCallback = async () => { }
     let mTransformManyCallback = async () => { }
     let mMenuButtonClicked = async () => { }
+    let mUserMovedCallback = async () => { }
 
     let mSystemState = {
         interactionType: XRInteraction.NONE,
@@ -95,7 +96,7 @@ export function XRSessionController(mWebsocketController) {
 
         if (Date.now() - lastSend > 1000) {
             let pos = mXRInputController.getUserPosition();
-            mWebsocketController.updateParticipant(pos.head, pos.handR, pos.handL);
+            mUserMovedCallback(pos.head, pos.handR, pos.handL);
         }
 
         if (mSystemState.interactionType != XRInteraction.NONE) updateInteractionObjects();
@@ -303,6 +304,7 @@ export function XRSessionController(mWebsocketController) {
     this.onTransform = (func) => { mTransformCallback = func }
     this.onTransformMany = (func) => { mTransformManyCallback = func }
     this.onMenuButtonClicked = (func) => { mMenuButtonClicked = func }
+    this.onUserMoved = (func) => { mUserMovedCallback = func }
     this.setUserPositionAndDirection = mXRInputController.setUserPositionAndDirection;
     this.getUserPositionAndDirection = mXRInputController.getUserPositionAndDirection;
 

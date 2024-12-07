@@ -118,6 +118,12 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             console.error(error);
         }
     })
+    mXRSessionController.onUserMoved((head, handR, handL) => {
+        mWebsocketController.updateParticipant(head, handR, handL);
+    })
+    mCanvasViewController.onUserMoved((head) => {
+        mWebsocketController.updateParticipant(head);
+    })
 
     async function updateModel(model, assetUtil) {
         if (mModel.id != model.id) {

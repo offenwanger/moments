@@ -9,6 +9,7 @@ import { ModelController, ModelUpdate } from './controllers/model_controller.js'
 import { SidebarController } from './controllers/sidebar_controller.js';
 import { SessionController } from './controllers/session_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
+import { PictureEditorController } from './controllers/picture_editor_controller.js';
 
 export function EditorPage(parentContainer, mWebsocketController) {
     const RESIZE_TARGET_SIZE = 20;
@@ -98,13 +99,15 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await updateModel();
     });
 
-    mSessionController.onUpdatePictureImage(async (pictureId, json, dataUrl) => {
-        await mModelController.applyUpdates([new ModelUpdate({ id: pictureId, json, image: dataUrl })]);
+    mSessionController.onUpdateSphereImage(async (sphereId, assetId) => {
+        await mModelController.applyUpdates([new ModelUpdate({ id: sphereId, imageAssetId: assetId })]);
         await updateModel();
     })
 
-    mSessionController.onUpdateSphereImage(async (sphereId, assetId) => {
-        await mModelController.applyUpdates([new ModelUpdate({ id: sphereId, imageAssetId: assetId })]);
+    // Shares a container with the sessions
+    let mPictureEditorController = new PictureEditorController(mViewContainer);
+    mPictureEditorController.onSave(async (id, json, dataUrl) => {
+        await mModelController.applyUpdates([new ModelUpdate({ id, json, image: dataUrl })]);
         await updateModel();
     })
 
@@ -218,10 +221,10 @@ export function EditorPage(parentContainer, mWebsocketController) {
     mSidebarController.setEditPictureCallback(async (id) => {
         let picture = mModelController.getModel().find(id);
         if (!picture) { console.error("Invalid id:" + id); return; }
-        await mSessionController.editPicture(id, picture.json);
+        await mPictureEditorController.show(id, picture.json);
     })
     mSidebarController.setCloseEditPictureCallback(async () => {
-        await mSessionController.closeEditPicture();
+        await mPictureEditorController.hide()
     })
     mSidebarController.onNavigate(async id => {
         if (IdUtil.getClass(id) == Data.Moment) {
@@ -343,6 +346,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         mResizeTarget.style['top'] = (viewCanvasHeight - RESIZE_TARGET_SIZE / 2) + "px"
 
         mSessionController.resize(viewCanvasWidth, viewCanvasHeight);
+        mPictureEditorController.resize(viewCanvasWidth, viewCanvasHeight);
     }
 
     async function pointerMove(screenCoords) {

@@ -1,12 +1,11 @@
 import * as THREE from "three";
+import { ItemButtons, MenuNavButtons, ToolButtons } from "../../constants.js";
 import { Data } from "../../data.js";
+import { IdUtil } from "../../utils/id_util.js";
 import { CanvasViewController } from './canvas_view_controller.js';
-import { PictureEditorController } from "./picture_editor_controller.js";
+import { MenuController } from "./menu_controllers/menu_controller.js";
 import { SceneController } from "./scene_controller.js";
 import { XRSessionController } from './xr_controllers/xr_session_controller.js';
-import { MenuController } from "./menu_controllers/menu_controller.js";
-import { ItemButtons, MenuNavButtons, ToolButtons } from "../../constants.js";
-import { IdUtil } from "../../utils/id_util.js";
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -16,7 +15,6 @@ import { IdUtil } from "../../utils/id_util.js";
 export function SessionController(parentContainer, mWebsocketController) {
     let mTransformManyCallback = async () => { }
     let mTransformCallback = async () => { }
-    let mUpdatePictureImageCallback = async () => { }
     let mUpdateSphereImageCallback = async () => { }
 
     let isVR = false;
@@ -35,9 +33,6 @@ export function SessionController(parentContainer, mWebsocketController) {
     let mModel = new Data.StoryModel();
     let mToolMode = ToolButtons.MOVE;
     let mMomentId = null;
-
-    // this needs to go over the buttons
-    let mPictureEditorController = new PictureEditorController(parentContainer);
 
     mCanvasViewController.onTransform(async (id, newPosition) => {
         await mTransformCallback(id, newPosition);
@@ -108,10 +103,6 @@ export function SessionController(parentContainer, mWebsocketController) {
         }
     }
 
-    mPictureEditorController.onSave(async (id, json, dataUrl) => {
-        await mUpdatePictureImageCallback(id, json, dataUrl);
-    })
-
     mWebsocketController.onParticipantUpdate((id, head, handR, handL) => {
         try {
             if (mOtherUsers[id]) {
@@ -151,7 +142,6 @@ export function SessionController(parentContainer, mWebsocketController) {
 
     function resize(width, height) {
         mCanvasViewController.resize(width, height);
-        mPictureEditorController.resize(width, height);
     }
 
     async function pointerMove(screenCoords) {
@@ -168,11 +158,8 @@ export function SessionController(parentContainer, mWebsocketController) {
     this.pointerMove = pointerMove;
     this.pointerUp = pointerUp;
     this.sessionStart = sessionStart;
-    this.editPicture = async (id, json) => await mPictureEditorController.show(id, json);
-    this.closeEditPicture = async () => await mPictureEditorController.hide();
     this.onTransform = (func) => mTransformCallback = func;
     this.onTransformMany = (func) => mTransformManyCallback = func;
-    this.onUpdatePictureImage = (func) => mUpdatePictureImageCallback = func;
     this.onUpdateSphereImage = (func) => mUpdateSphereImageCallback = func;
 }
 

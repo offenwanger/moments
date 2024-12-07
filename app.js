@@ -9,8 +9,7 @@ import { fileURLToPath } from 'url';
 import { ServerMessage } from './js/constants.js';
 import { Data } from './js/data.js';
 import { ModelController } from './js/pages/controllers/model_controller.js';
-import { TOKEN } from './token.js';
-
+import { TOKEN, STATIC_URL } from './token.js';
 const LOCAL_IMPORT = ` 
 <script type="importmap">
     {
@@ -67,9 +66,11 @@ server.listen(port);
 
 //////////////// ngrok /////////////////
 try {
-    (console).log('Spawning ngrok. Public URL: https://careful-loosely-moose.ngrok-free.app')
+    (console).log(`Spawning ngrok. Public URL: https://${STATIC_URL}.ngrok-free.app`)
     spawnSync(`ngrok config add-authtoken ${TOKEN}`);
-    const ngrok = spawn("ngrok", ["http", "--domain", "careful-loosely-moose.ngrok-free.app", port]);
+    const ngrok = spawn("ngrok", ["http", "--url=", `${STATIC_URL}.ngrok-free.app`, port]);
+    // ngrok http --url=informally-aware-phoenix.ngrok-free.app 8000
+
     ngrok.stdout.on('data', function (data) { (console).log(data.toString()); });
     ngrok.stderr.on('data', function (data) { console.error(data.toString()) })
     ngrok.on("error", function (error) { console.error(error) })

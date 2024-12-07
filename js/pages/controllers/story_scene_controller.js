@@ -26,7 +26,7 @@ export function StorySceneController() {
         mSound.play();
     });
 
-    let mSphere = new THREE.SphereGeometry(100, 32, 16);
+    let mSphere = new THREE.SphereGeometry(0.1, 32, 16);
     let mMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
     let mMesh = new THREE.Mesh( mSphere, mMaterial);
     console.log("Red Sphere")

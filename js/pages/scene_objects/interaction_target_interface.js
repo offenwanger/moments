@@ -13,9 +13,9 @@ export class InteractionTargetInterface {
     setScale = (scale) => { }
 
     // update visual state
-    highlight = () => { };
-    select = () => { };
-    idle = () => { };
+    highlight = (toolMode) => { };
+    select = (toolMode) => { };
+    idle = (toolMode) => { };
 
     getIntersection = () => { return {} }
     getObject3D = () => { return null; }

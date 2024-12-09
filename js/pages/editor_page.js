@@ -66,46 +66,10 @@ export function EditorPage(parentContainer, mWebsocketController) {
     parentContainer.appendChild(mResizeTarget);
 
     let mSceneInterface = new SceneInterfaceController(mViewContainer, mWebsocketController);
-    mSceneInterface.onTransform(async (id, newPosition = null, newOrientation = null, newScale = null) => {
-        let attrs = {}
-        if (newPosition) {
-            attrs.x = newPosition.x;
-            attrs.y = newPosition.y;
-            attrs.z = newPosition.z;
-        }
-        if (newOrientation && IdUtil.getClass(id) != Data.Picture) {
-            attrs.orientation = newOrientation.toArray();
-        }
-        if (newScale) {
-            attrs.scale = newScale;
-        }
-        await mModelController.applyUpdates([new ModelUpdate({ id, ...attrs })]);
+    mSceneInterface.onModelUpdate(async (updates) => {
+        await mModelController.applyUpdates(updates);
         await updateModel();
     });
-
-    mSceneInterface.onTransformMany(async (items) => {
-        await mModelController.applyUpdates(items.map(({ id, position, orientation, scale }) => {
-            let data = { id }
-            if (position) {
-                data.x = position.x;
-                data.y = position.y;
-                data.z = position.z;
-            }
-            if (orientation && IdUtil.getClass(id) != Data.Picture) {
-                data.orientation = orientation.toArray();
-            }
-            if (scale) {
-                data.scale = scale;
-            }
-            return new ModelUpdate(data);
-        }));
-        await updateModel();
-    });
-
-    mSceneInterface.onUpdateSphereImage(async (sphereId, assetId) => {
-        await mModelController.applyUpdates([new ModelUpdate({ id: sphereId, imageAssetId: assetId })]);
-        await updateModel();
-    })
 
     // Shares a container with the sessions
     let mPictureEditorController = new PictureEditorController(mViewContainer);

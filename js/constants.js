@@ -43,6 +43,7 @@ export const InteractionType = {
     ONE_HAND_MOVE: 'oneHandMove',
     TWO_HAND_MOVE: 'twoHandMove',
     TWO_HAND_POSE: 'twoHandPose',
+    BRUSHING: 'brushing',
     NONE: 'none'
 }
 
@@ -56,6 +57,18 @@ export const ToolButtons = {
     SURFACE: 'surface',
     SCISSORS: 'scissors',
     RECORD: 'record',
+}
+
+export const BrushToolButtons = {
+    BLUR: 'brushToolBlur',
+    UNBLUR: 'brushToolUnblur',
+    COLOR: 'brushToolColor',
+}
+
+export const SurfaceToolButtons = {
+    MOVE: 'surfaceToolMove',
+    FLATTEN: 'surfaceToolFlatten',
+    SELECT: 'surfaceToolSelect',
 }
 
 export const MenuNavButtons = {

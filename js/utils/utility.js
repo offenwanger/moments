@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
-import { logInfo } from './log_util.js';
 
 function getSphereIntersection(fromPoint, toPoint, spherePos, sphereRadius) {
     let closestPoint = Util.closestPointOnLine(fromPoint, toPoint, spherePos);
@@ -126,6 +124,18 @@ function pivot(vector, pivot, quaternion) {
     return v;
 }
 
+function getClosestTarget(ray, targets) {
+    if (targets.length == 0) return null;
+    if (targets.length == 1) return targets[0];
+
+    let sortation = targets.map(t => {
+        return { t, distance: ray.distanceToPoint(t.getIntersection().point) }
+    })
+
+    sortation.sort((a, b) => a.distance - b.distance)
+    return sortation[0].t;
+}
+
 
 export const Util = {
     getSphereIntersection,
@@ -139,4 +149,5 @@ export const Util = {
     setComponentListLength,
     simplify3DLine,
     pivot,
+    getClosestTarget,
 }

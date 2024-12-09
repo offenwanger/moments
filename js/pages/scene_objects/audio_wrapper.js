@@ -19,7 +19,7 @@ export function AudioWrapper(parent) {
 
     }
 
-    function getTargets(ray) {
+    function getTargets(ray, toolMode) {
 
     }
 

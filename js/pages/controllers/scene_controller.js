@@ -58,8 +58,8 @@ export function SceneController() {
         if (mAssetUtil) await updateModel(mModel, mAssetUtil);
     }
 
-    function getTargets(ray) {
-        return [...mMomentWrapper.getTargets(ray)]
+    function getTargets(ray, tool) {
+        return [...mMomentWrapper.getTargets(ray, tool)]
     }
 
     function toSceneCoordinates(v) {

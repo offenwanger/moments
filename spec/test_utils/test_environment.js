@@ -104,7 +104,17 @@ export async function setup() {
         },
         showDirectoryPicker: () => global.window.directories.pop(),
         showOpenFilePicker: () => [global.window.files.pop()],
-        location: { search: "" },
+        location: {
+            href: "http://test.com",
+            search: "",
+
+        },
+        history: {
+            replaceState: function (something, somethingElse, url) {
+                window.location.href = url.href;
+                window.location.search = url.search;
+            }
+        },
         innerWidth: 1000,
         innerHeight: 800
     };

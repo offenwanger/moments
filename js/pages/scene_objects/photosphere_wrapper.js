@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Data } from "../../data.js";
 import { InteractionTargetInterface } from "./interaction_target_interface.js";
+import { BrushToolButtons, ToolButtons } from '../../constants.js';
 
 const DEFAULT_TEXTURE = 'assets/images/default_sphere_texture.png';
 
@@ -31,12 +32,16 @@ export function PhotosphereWrapper(parent) {
 
     let mImage = document.createElement('canvas');
     let mBlur = document.createElement('canvas');
+    let mBlurCtx = mBlur.getContext('2d')
     let mColor = document.createElement('canvas');
+    let mColorCtx = mColor.getContext('2d')
+    let mOriginalBlur = document.createElement('canvas');
+    let mOriginalColor = document.createElement('canvas');
 
     const mCanvas = document.createElement('canvas');
     mCanvas.width = BASE_CANVAS_WIDTH;
     mCanvas.height = BASE_CANVAS_HEIGHT;
-    const ctx = mCanvas.getContext('2d');
+    const mCtx = mCanvas.getContext('2d');
     const mCanvasMaterial = new THREE.CanvasTexture(mCanvas);
 
     const mMaterial = new THREE.MeshStandardMaterial({ map: mCanvasMaterial });
@@ -44,8 +49,6 @@ export function PhotosphereWrapper(parent) {
     const mSphere = new THREE.Mesh(mGeometry, mMaterial);
 
     async function update(photosphereId, model, assetUtil) {
-        drawTexture();
-        let oldSphere = mPhotosphere;
         mPhotosphere = model.find(photosphereId);
         mModel = model;
 
@@ -59,31 +62,35 @@ export function PhotosphereWrapper(parent) {
         // TODO: Might need to fix performance here. 
         updateMesh();
 
-
-        let redraw = false;
         if (mPhotosphere.imageAssetId) {
             mImage = await assetUtil.loadImage(mPhotosphere.imageAssetId);
         } else {
             mImage = await (new THREE.ImageLoader()).loadAsync(DEFAULT_TEXTURE)
         }
-        mColor = await assetUtil.loadImage(mPhotosphere.colorAssetId);
-        mBlur = await assetUtil.loadImage(mPhotosphere.blurAssetId);
+        mOriginalColor = await assetUtil.loadImage(mPhotosphere.colorAssetId);
+        mOriginalBlur = await assetUtil.loadImage(mPhotosphere.blurAssetId);
+        mBlur.height = mOriginalBlur.height
+        mBlur.width = mOriginalBlur.width
+        resetBlur();
+        mColor.height = mOriginalColor.height
+        mColor.width = mOriginalColor.width
+        resetColor();
 
-        if (redraw) drawTexture();
+        drawTexture();
     }
 
     function drawTexture() {
-        ctx.reset();
-        ctx.drawImage(mBlur, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
-        ctx.globalCompositeOperation = 'source-atop'
-        ctx.drawImage(mImage, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT);
-        ctx.filter = 'blur(15px)'
-        ctx.globalCompositeOperation = 'destination-over'
-        ctx.drawImage(mImage, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
-        ctx.drawImage(mImage, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
-        ctx.globalCompositeOperation = 'source-over'
-        ctx.filter = null;
-        ctx.drawImage(mColor, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
+        mCtx.reset();
+        mCtx.drawImage(mBlur, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
+        mCtx.globalCompositeOperation = 'source-atop'
+        mCtx.drawImage(mImage, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT);
+        mCtx.filter = 'blur(15px)'
+        mCtx.globalCompositeOperation = 'destination-over'
+        mCtx.drawImage(mImage, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
+        mCtx.drawImage(mImage, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
+        mCtx.globalCompositeOperation = 'source-over'
+        mCtx.filter = null;
+        mCtx.drawImage(mColor, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
         mCanvasMaterial.needsUpdate = true;
     }
 
@@ -152,57 +159,107 @@ export function PhotosphereWrapper(parent) {
         mParent.remove(mSphere);
     }
 
-    function getTargets(ray) {
-        const intersect = ray.intersectObject(mPlane);
-        if (intersect.length > 0) {
-            mInteractionTarget.getIntersection = () => { return intersect[0]; }
-            return [mInteractionTarget];
-        } else return [];
+    function getTargets(ray, toolMode) {
+        if (toolMode.tool == ToolButtons.BRUSH ||
+            toolMode.tool == ToolButtons.SURFACE ||
+            toolMode.tool == ToolButtons.SCISSORS) {
+        } else {
+            return []
+        }
+
+        let intersect = ray.intersectObject(mSphere);
+        if (intersect.length == 0) return [];
+        intersect = intersect[0];
+
+        mInteractionTarget.getIntersection = () => intersect;
+        mInteractionTarget.highlight = function (toolMode) {
+            if (toolMode.tool == ToolButtons.BRUSH) {
+                if (toolMode.brushSettings.mode == BrushToolButtons.UNBLUR) {
+                    resetBlur();
+                    drawBlur(intersect.uv.x, intersect.uv.y, toolMode.brushSettings.brushWidth, false)
+                    drawTexture();
+                } else if (toolMode.brushSettings.mode == BrushToolButtons.BLUR) {
+                    resetBlur();
+                    drawBlur(intersect.uv.x, intersect.uv.y, toolMode.brushSettings.brushWidth, true)
+                    drawTexture();
+                }
+            } else if (toolMode.tool == ToolButtons.SURFACE) {
+
+            }
+        };
+        mInteractionTarget.select = (toolMode) => {
+            if (toolMode.tool == ToolButtons.BRUSH) {
+                if (toolMode.brushSettings.mode == BrushToolButtons.UNBLUR) {
+                    drawBlur(intersect.uv.x, intersect.uv.y, toolMode.brushSettings.brushWidth, false)
+                    drawTexture();
+                } else if (toolMode.brushSettings.mode == BrushToolButtons.BLUR) {
+                    drawBlur(intersect.uv.x, intersect.uv.y, toolMode.brushSettings.brushWidth, true)
+                    drawTexture();
+                }
+            } else if (toolMode.tool == ToolButtons.SURFACE) {
+
+            }
+        }
+        mInteractionTarget.idle = (toolMode) => {
+            if (toolMode.tool == ToolButtons.BRUSH) {
+                resetBlur();
+                drawTexture();
+            } else if (toolMode.tool == ToolButtons.SURFACE) {
+
+            }
+        }
+        return [mInteractionTarget];
+    }
+
+    function drawBlur(u, v, brushWidth, blur) {
+        let x = Math.round(u * mBlur.width);
+        let y = Math.round((1 - v) * mBlur.height);
+        mBlurCtx.save();
+        mBlurCtx.filter = "blur(16px)";
+        if (blur) {
+            mBlurCtx.fillStyle = '#00000000';
+        } else {
+            mBlurCtx.fillStyle = 'black';
+        }
+        drawWrappedCircle(x, y, brushWidth, mBlur, mBlurCtx);
+        mBlurCtx.restore();
+    }
+
+    function drawWrappedCircle(x, y, brushWidth, canvas, ctx) {
+        ctx.beginPath();
+        ctx.arc(x, y, brushWidth, 0, Math.PI * 2, true);
+        if (x + brushWidth > canvas.width) {
+            ctx.arc(x - canvas.width, y, brushWidth, 0, Math.PI * 2, true);
+        } else if (x - brushWidth < 0) {
+            ctx.arc(x + canvas.width, y, brushWidth, 0, Math.PI * 2, true);
+        }
+        ctx.fill();
+    }
+
+    function resetBlur() {
+        mBlurCtx.clearRect(0, 0, mBlur.width, mBlur.height);
+        mBlurCtx.drawImage(mOriginalBlur, 0, 0);
+    }
+
+    mColorCtx.filter = "blur(16px)";
+    function drawColor(u, v, brushWidth, color) {
+        let x = Math.round(u * mBlur.width);
+        let y = Math.round(v * mBlur.height);
+        mColorCtx.save();
+        mColorCtx.fillStyle = color;
+        mColorCtx.beginPath();
+        mColorCtx.arc(x, y, brushWidth, 0, Math.PI * 2, true);
+        mColorCtx.fill();
+        mColorCtx.restore();
+    }
+
+    function resetColor() {
+        mColorCtx.drawImage(mOriginalColor, 0, 0);
     }
 
     function createInteractionTarget() {
         let target = new InteractionTargetInterface();
-        target.getLocalPosition = () => {
-            let p = new THREE.Vector3();
-            p.copy(mPlane.position)
-            return p;
-        }
-        target.getWorldPosition = () => {
-            let worldPos = new THREE.Vector3();
-            mPlane.getWorldPosition(worldPos);
-            return worldPos;
-        }
-        target.setWorldPosition = (worldPos) => {
-            let localPosition = mPlane.parent.worldToLocal(worldPos);
-            mPlane.position.copy(localPosition)
-        }
-        target.getLocalOrientation = () => {
-            let q = new THREE.Quaternion();
-            q.copy(mPlane.quaternion);
-            return q;
-        }
-        target.setLocalOrientation = (orientation) => {
-            // can't set angle on these.
-        }
-        target.getScale = () => {
-            let scale = 1;
-            scale = mPlane.scale.x;
-            return scale;
-        }
-        target.setScale = (scale) => {
-            mPlane.scale.set(scale, scale, scale);
-        }
-        target.getParent = () => { return null; }
-        target.getRoot = () => { return target; }
-        target.getObject3D = () => { return mPlane; }
-        target.highlight = () => {
-            mMaterial.color.set(0xff0000);
-            mMaterial.needsUpdate = true;
-        };
-        target.idle = () => {
-            mMaterial.color.set(0xffffff);
-            mMaterial.needsUpdate = true;
-        }
+        target.getObject3D = () => { return mSphere; }
         target.getId = () => mPhotosphere.id;
         return target;
     }

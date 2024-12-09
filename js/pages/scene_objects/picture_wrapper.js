@@ -29,7 +29,7 @@ export function PictureWrapper(parent) {
         mParent.remove(mPlane);
     }
 
-    function getTargets(ray) {
+    function getTargets(ray, toolMode) {
         const intersect = ray.intersectObject(mPlane);
         if (intersect.length > 0) {
             mInteractionTarget.getIntersection = () => { return intersect[0]; }
@@ -72,11 +72,11 @@ export function PictureWrapper(parent) {
         target.getParent = () => { return null; }
         target.getRoot = () => { return target; }
         target.getObject3D = () => { return mPlane; }
-        target.highlight = () => {
+        target.highlight = (toolMode) => {
             mMaterial.color.set(0xff0000);
             mMaterial.needsUpdate = true;
         };
-        target.idle = () => {
+        target.idle = (toolMode) => {
             mMaterial.color.set(0xffffff);
             mMaterial.needsUpdate = true;
         }

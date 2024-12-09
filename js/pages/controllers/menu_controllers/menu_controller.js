@@ -1,12 +1,13 @@
 import * as ThreeMeshUI from 'three-mesh-ui';
 import { AssetTypes, AttributeButtons, ItemButtons, MENU_WIDTH, MenuNavButtons, ToolButtons } from '../../../constants.js';
+import { ToolMode } from '../system_state.js';
 import { ButtonMenu } from './button_menu.js';
 import { MeshButton } from './mesh_button.js';
 
 export function MenuController() {
     const BUTTON_SIZE = 0.4;
 
-    let mMode = null;
+    let mToolMode = new ToolMode();
     let mCurrentMenuId = null;
     let mCurrentMenu = null;
 
@@ -27,12 +28,16 @@ export function MenuController() {
         container1.add(mMenuContainer);
     }
 
-    function setMode(mode) {
-        let currentModeButton = mCurrentMenu.getButtons().find(b => b.getId() == mMode);
+    function setToolMode(toolMode) {
+        let currentModeButton = mCurrentMenu.getButtons().find(b => b.getId() == mToolMode.tool);
         if (currentModeButton) currentModeButton.deactivate();
-        mMode = mode;
-        let newButton = mCurrentMenu.getButtons().find(b => b.getId() == mMode);
+
+        mToolMode = toolMode.clone();
+
+        let newButton = mCurrentMenu.getButtons().find(b => b.getId() == mToolMode.tool);
         if (newButton) newButton.activate();
+
+        // TODO: activate all the right settings buttons to.
     }
 
     function navigate(buttonId) {
@@ -96,7 +101,7 @@ export function MenuController() {
         ThreeMeshUI.update();
     }
 
-    function getTargets(raycaster) {
+    function getTargets(raycaster, toolMode) {
         for (let button of mCurrentMenu.getButtons()) {
             const intersection = raycaster.intersectObject(button.getObject(), true);
             if (intersection[0]) {
@@ -157,13 +162,13 @@ export function MenuController() {
     }
 
     this.setContainer = setContainer;
-    this.setMode = setMode;
+    this.setToolMode = setToolMode;
     this.updateModel = updateModel;
     this.navigate = navigate;
     this.getCurrentMenuId = () => mCurrentMenuId;
     this.onAdd = func => mAddCallback = func;
     this.onToolChange = func => mToolChangeCallback = func;
-    this.getMode = () => mMode;
+    this.getMode = () => mToolMode;
     this.render = render
     this.getTargets = getTargets;
 }

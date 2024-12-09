@@ -70,10 +70,11 @@ export function MomentWrapper(parent) {
         return localPosition;
     }
 
-    function getTargets(ray) {
+    function getTargets(ray, toolMode) {
         return [
-            ...mPoseableAssetWrappers.map(w => w.getTargets(ray)).flat(),
-            ...mPictureWrappers.map(w => w.getTargets(ray)).flat(),
+            ...mPoseableAssetWrappers.map(w => w.getTargets(ray, toolMode)).flat(),
+            ...mPictureWrappers.map(w => w.getTargets(ray, toolMode)).flat(),
+            ...mPhotosphereWrapper.getTargets(ray, toolMode),
         ]
     }
 

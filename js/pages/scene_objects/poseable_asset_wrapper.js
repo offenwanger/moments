@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Data } from "../../data.js";
 import { GLTKUtil } from '../../utils/gltk_util.js';
 import { InteractionTargetInterface } from './interaction_target_interface.js';
+import { ToolButtons } from '../../constants.js';
 
 export function PoseableAssetWrapper(parent) {
     let mModel = new Data.StoryModel();
@@ -83,8 +84,10 @@ export function PoseableAssetWrapper(parent) {
         mParent.remove(mModelGroup)
     }
 
-    function getTargets(ray) {
+    function getTargets(ray, toolMode) {
         if (!mGLTF) return [];
+        if (toolMode.tool != ToolButtons.MOVE) return [];
+
         const intersects = ray.intersectObjects(mTargets);
         let targets = intersects.map(i => {
             if (!i.object) { console.error("Invalid Intersect!"); return null; }
@@ -201,7 +204,7 @@ export function PoseableAssetWrapper(parent) {
                 return obj
             }
 
-            interactionTarget.highlight = () => {
+            interactionTarget.highlight = (toolMode) => {
                 let obj = interactionTarget.getObject3D();
                 if (obj.isMesh) {
                     obj.material.color.set(0x0000ff);
@@ -213,7 +216,7 @@ export function PoseableAssetWrapper(parent) {
                     console.error("Unexpected target object!", obj);
                 }
             };
-            interactionTarget.idle = () => {
+            interactionTarget.idle = (toolMode) => {
                 let obj = interactionTarget.getObject3D();
                 if (obj.isMesh) {
                     obj.material.color.set(obj.userData.originalColor);

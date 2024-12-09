@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { MENU_WIDTH, MenuNavButtons, USER_HEIGHT } from '../../constants.js';
+import { MENU_WIDTH, USER_HEIGHT } from '../../constants.js';
 import { WindowEventManager } from '../../window_event_manager.js';
 
 export function PageSessionController(parentContainer) {
@@ -11,21 +11,8 @@ export function PageSessionController(parentContainer) {
     let mPointerDownCallback = async () => { }
     let mPointerUpCallback = async () => { }
 
-    let mWidth = 10;
-    let mHeight = 10;
-
-    let mToolMode = MenuNavButtons.MOVE;
-    let mInteraction = false;
-    let mHovered = []
-    let mFreeze = []
-    let mFreezeRoots = []
-    let mHighlight = [];
-    let mHold = null;
-    let mLastPointerDown = { time: 0, pos: { x: 0, y: 0 } }
     const mRaycaster = new THREE.Raycaster();
     mRaycaster.near = 0.2;
-
-    let mLastPointerPosition = { x: -10, y: -10 }
 
     let mSceneContainer = new THREE.Group();
 
@@ -73,9 +60,6 @@ export function PageSessionController(parentContainer) {
     })
 
     function resize(width, height) {
-        mWidth = width;
-        mHeight = height;
-
         if (!mPageRenderer) return;
         mPageRenderer.setSize(width, height, false);
 
@@ -164,5 +148,4 @@ export function PageSessionController(parentContainer) {
     this.onPointerMove = (func) => { mPointerMoveCallback = func }
     this.onPointerDown = (func) => { mPointerDownCallback = func }
     this.onPointerUp = (func) => { mPointerUpCallback = func }
-    this.onTransformMany = (func) => { mTransformManyCallback = func }
 }

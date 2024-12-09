@@ -212,8 +212,6 @@ export function PhotosphereWrapper(parent) {
     }
 
     function drawBlur(u, v, brushWidth, blur) {
-        let x = Math.round(u * mBlur.width);
-        let y = Math.round((1 - v) * mBlur.height);
         mBlurCtx.save();
         mBlurCtx.filter = "blur(16px)";
         if (blur) {
@@ -221,19 +219,8 @@ export function PhotosphereWrapper(parent) {
         } else {
             mBlurCtx.fillStyle = 'black';
         }
-        drawWrappedCircle(x, y, brushWidth, mBlur, mBlurCtx);
+        drawWrappedCircle(u, v, brushWidth, mBlur, mBlurCtx);
         mBlurCtx.restore();
-    }
-
-    function drawWrappedCircle(x, y, brushWidth, canvas, ctx) {
-        ctx.beginPath();
-        ctx.arc(x, y, brushWidth, 0, Math.PI * 2, true);
-        if (x + brushWidth > canvas.width) {
-            ctx.arc(x - canvas.width, y, brushWidth, 0, Math.PI * 2, true);
-        } else if (x - brushWidth < 0) {
-            ctx.arc(x + canvas.width, y, brushWidth, 0, Math.PI * 2, true);
-        }
-        ctx.fill();
     }
 
     function resetBlur() {
@@ -241,20 +228,31 @@ export function PhotosphereWrapper(parent) {
         mBlurCtx.drawImage(mOriginalBlur, 0, 0);
     }
 
-    mColorCtx.filter = "blur(16px)";
     function drawColor(u, v, brushWidth, color) {
-        let x = Math.round(u * mBlur.width);
-        let y = Math.round(v * mBlur.height);
         mColorCtx.save();
+        mColorCtx.filter = "blur(16px)";
         mColorCtx.fillStyle = color;
-        mColorCtx.beginPath();
-        mColorCtx.arc(x, y, brushWidth, 0, Math.PI * 2, true);
-        mColorCtx.fill();
+        drawWrappedCircle(u, v, brushWidth, mColor, mColorCtx);
         mColorCtx.restore();
     }
 
     function resetColor() {
         mColorCtx.drawImage(mOriginalColor, 0, 0);
+    }
+
+    function drawWrappedCircle(u, v, brushWidth, canvas, ctx) {
+        let x = Math.round(u * canvas.width);
+        let y = Math.round((1 - v) * canvas.height);
+        ctx.beginPath();
+        let widthX = brushWidth / 2 * canvas.width
+        let widthY = brushWidth * canvas.height;
+        ctx.ellipse(x, y, widthX, widthY, 0, 0, Math.PI * 2, true);
+        if (x + widthX > canvas.width) {
+            ctx.ellipse(x - canvas.width, y, widthX, widthY, 0, 0, Math.PI * 2, true);
+        } else if (x - widthX < 0) {
+            ctx.ellipse(x + canvas.width, y, widthX, widthY, 0, 0, Math.PI * 2, true);
+        }
+        ctx.fill();
     }
 
     function createInteractionTarget() {

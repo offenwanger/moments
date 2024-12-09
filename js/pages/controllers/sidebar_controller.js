@@ -31,11 +31,11 @@ export function SidebarController(container) {
     const mPoseableAssetPanel = new PoseableAssetPanel(container);
     const mStoryPanel = new StoryPanel(container);
 
-    mStoryPanel.setNavigationCallback(navigate);
-    mPoseableAssetPanel.setNavigationCallback(navigate);
-    mMomentPanel.setNavigationCallback(navigate);
-    mPicturePanel.setNavigationCallback(navigate);
-    mAssetPanel.setNavigationCallback(navigate);
+    mStoryPanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
+    mPoseableAssetPanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
+    mMomentPanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
+    mPicturePanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
+    mAssetPanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
 
     async function updateModel(model) {
         mModel = model;
@@ -66,8 +66,6 @@ export function SidebarController(container) {
         } else {
             console.error('Invalid navigation!', itemClass, id);
         }
-
-        await mNavigateCallback(id);
     }
 
     function resize(width, height) {

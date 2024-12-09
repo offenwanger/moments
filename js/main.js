@@ -3,6 +3,7 @@ import { EditorPage } from './pages/editor_page.js';
 import { ListPage } from './pages/list_page.js';
 import { WelcomePage } from './pages/welcome_page.js';
 import { HandleStorage } from './utils/handle_storage.js';
+import { UrlUtil } from './utils/url_util.js';
 import { WorkspaceManager } from './workspace_manager.js';
 
 export async function main() {
@@ -12,10 +13,10 @@ export async function main() {
         document.querySelector('#content').replaceChildren();
         let folder = await HandleStorage.getItem('folder');
         let missingPermissions = folder ? await folder.queryPermission({ mode: 'readwrite' }) !== 'granted' : false;
-        let story = new URLSearchParams(window.location.search).get("story");
-        let view = new URLSearchParams(window.location.search).get("view") == 'true';
-        let remote = new URLSearchParams(window.location.search).get("remote") == 'true';
-        let list = new URLSearchParams(window.location.search).get("list") == 'true';
+        let story = UrlUtil.getParam("story");
+        let view = UrlUtil.getParam("view") == 'true';
+        let remote = UrlUtil.getParam("remote") == 'true';
+        let list = UrlUtil.getParam("list") == 'true';
 
         if (story && remote) {
             if (view) {
@@ -46,9 +47,7 @@ export async function main() {
             if (await folder.requestPermission({ mode: 'readwrite' }) === 'granted') {
                 await HandleStorage.setItem('folder', folder);
             }
-            let params = new URLSearchParams(window.location.search)
-            params.set("list", 'true')
-            window.location.search = params.toString();
+            UrlUtil.setParam("list", 'true');
             await updatePage();
         });
 
@@ -57,17 +56,13 @@ export async function main() {
             if (await folder.requestPermission({ mode: 'readwrite' }) !== 'granted') {
                 await HandleStorage.removeItem('folder');
             }
-            let params = new URLSearchParams(window.location.search)
-            params.set("list", 'true')
-            window.location.search = params.toString();
+            UrlUtil.setParam("list", 'true');
             await updatePage();
         });
 
         page.onOpenRemoteStory(async (storyId) => {
-            let params = new URLSearchParams(window.location.search)
-            params.set("story", storyId)
-            params.set("remote", 'true')
-            window.location.search = params.toString();
+            UrlUtil.setParam("story", storyId);
+            UrlUtil.setParam("remote", 'true');
             await updatePage();
         });
     }
@@ -75,9 +70,7 @@ export async function main() {
     async function showListPage(workspaceManger) {
         let page = new ListPage(document.querySelector('#content'));
         page.setEditCallback(async (storyId) => {
-            let params = new URLSearchParams(window.location.search)
-            params.set("story", storyId)
-            window.location.search = params.toString();
+            UrlUtil.setParam("story", storyId);
             await updatePage();
         });
 

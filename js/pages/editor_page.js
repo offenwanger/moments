@@ -4,6 +4,7 @@ import { Data } from '../data.js';
 import { AssetUtil } from '../utils/assets_util.js';
 import { DataUtil } from '../utils/data_util.js';
 import { IdUtil } from '../utils/id_util.js';
+import { UrlUtil } from '../utils/url_util.js';
 import { Util } from '../utils/utility.js';
 import { WindowEventManager } from '../window_event_manager.js';
 import { ModelController, ModelUpdate } from './controllers/model_controller.js';
@@ -230,7 +231,9 @@ export function EditorPage(parentContainer, mWebsocketController) {
     })
     mSidebarController.onNavigate(async id => {
         if (IdUtil.getClass(id) == Data.Moment) {
-            await mSceneInterface.setCurrentMoment(id);
+            await setCurrentMoment(id);
+        } else if (IdUtil.getClass(id) == Data.StoryModel) {
+            await setCurrentMoment(null);
         }
     })
     mSidebarController.onSessionStart(async session => {
@@ -265,11 +268,10 @@ export function EditorPage(parentContainer, mWebsocketController) {
     async function show(workspace = null) {
         mWorkspace = workspace;
 
-        const searchParams = new URLSearchParams(window.location.search)
-        const storyId = searchParams.get("story");
+        const storyId = UrlUtil.getParam('story');
         if (!storyId) { console.error("Story not set!"); return; }
 
-        const remote = searchParams.get("remote") == 'true';
+        const remote = UrlUtil.getParam("remote") == 'true';
 
         if (remote) {
             mSidebarController.hideShare();
@@ -317,12 +319,14 @@ export function EditorPage(parentContainer, mWebsocketController) {
         resize(mWidth, mHeight);
 
         await mSidebarController.updateModel(mModelController.getModel());
-        await mSidebarController.navigate(mModelController.getModel().id);
 
         await updateModel();
 
-        if (searchParams.get("assetViewId")) {
-            await mSceneInterface.showAsset(searchParams.get("assetViewId"), mAssetUtil);
+        const momentId = UrlUtil.getParam('moment')
+        if (momentId) {
+            setCurrentMoment(momentId);
+        } else {
+            setCurrentMoment(null);
         }
     }
 
@@ -337,6 +341,22 @@ export function EditorPage(parentContainer, mWebsocketController) {
         } catch (e) {
             console.error(e);
         }
+    }
+
+    async function setCurrentMoment(momentId) {
+        if (!momentId) { UrlUtil.setParam('moment', null); }
+
+        let model = mModelController.getModel();
+        let moment = model.find(momentId);
+        if (moment) {
+            UrlUtil.setParam('moment', momentId);
+            await mSceneInterface.setCurrentMoment(momentId);
+            await mSidebarController.navigate(momentId);
+        } else {
+            UrlUtil.setParam('moment', null);
+            await mSidebarController.navigate(model.id);
+        }
+
     }
 
     mWindowEventManager.onResize(resize);

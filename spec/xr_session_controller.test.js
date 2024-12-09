@@ -1,9 +1,7 @@
 import { createAndOpenPoseableAsset, lookHead, moveXRController, pressXRTrigger, releaseXRTrigger, startXR, stopXR, testmodel } from './test_utils/test_actions.js';
 import { cleanup, setup } from './test_utils/test_environment.js';
 
-
-
-describe('Test Moment Panel', function () {
+describe('Test XR Session', function () {
     beforeEach(async function () {
         await setup();
     });
@@ -27,7 +25,7 @@ describe('Test Moment Panel', function () {
         it('should perform a render pass', async function () {
             await createAndOpenPoseableAsset();
             await startXR();
-            global.xrAccess.animationLoop();
+            global.test_rendererAccess.animationLoop();
         });
     });
 
@@ -44,10 +42,10 @@ describe('Test Moment Panel', function () {
             expect(cubePos.z).toBeCloseTo(-1, 4);
 
             await lookHead(cubePos.x, cubePos.y, cubePos.z);
-            await moveXRController(true, cubePos.x, cubePos.y, cubePos.z);
-            await pressXRTrigger(true)
-            await moveXRController(true, 1, 0, -1);
-            await releaseXRTrigger(true);
+            await moveXRController(false, cubePos.x, cubePos.y, cubePos.z);
+            await pressXRTrigger(false)
+            await moveXRController(false, 1, 0, -1);
+            await releaseXRTrigger(false);
 
             let newcubePos = testmodel().assetPoses.find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id));
             expect(newcubePos.x).toBeCloseTo(1, 3);
@@ -177,7 +175,6 @@ describe('Test Moment Panel', function () {
 
             let poseableAsset = testmodel().find(testmodel().moments[0].poseableAssetIds[0]);
             let cubeData = testmodel().assetPoses.find(p => p.name == "Cube" && poseableAsset.poseIds.includes(p.id));
-
             expect(cubeData.x).toBeCloseTo(0.6, 3);
             expect(cubeData.y).toBeCloseTo(0, 4);
             expect(cubeData.z).toBeCloseTo(-1, 4);

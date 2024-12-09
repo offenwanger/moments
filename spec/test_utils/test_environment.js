@@ -48,8 +48,7 @@ export async function setup() {
             xr: new mockXR(),
         };
     }
-    global.xrAccess = {};
-    ////
+    global.test_rendererAccess = {};
     global.document = {
         elements: [],
         querySelector: function (query) {

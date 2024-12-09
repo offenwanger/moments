@@ -1,4 +1,4 @@
-import * as THREE from "three"
+import * as THREE from "three";
 
 export class InteractionTargetInterface {
     getId = () => { return "No ID" };
@@ -19,8 +19,8 @@ export class InteractionTargetInterface {
 
     getIntersection = () => { return {} }
     getObject3D = () => { return null; }
-    getParent = () => { return new InteractionTargetInterface(); }
-    getRoot = () => { return new InteractionTargetInterface(); }
+    getParent = () => { return null; }
+    getRoot = function () { return this; }
     getDepth = () => { return 0; }
 
     isButton = () => false;

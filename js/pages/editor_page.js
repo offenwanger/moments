@@ -5,12 +5,12 @@ import { AssetUtil } from '../utils/assets_util.js';
 import { DataUtil } from '../utils/data_util.js';
 import { IdUtil } from '../utils/id_util.js';
 import { Util } from '../utils/utility.js';
-import { ModelController, ModelUpdate } from './controllers/model_controller.js';
-import { SidebarController } from './controllers/sidebar_controller.js';
-import { SceneInterfaceController } from './controllers/scene_interface_controller.js';
-import { AssetPicker } from './editor_panels/asset_picker.js';
-import { PictureEditorController } from './controllers/picture_editor_controller.js';
 import { WindowEventManager } from '../window_event_manager.js';
+import { ModelController, ModelUpdate } from './controllers/model_controller.js';
+import { PictureEditorController } from './controllers/picture_editor_controller.js';
+import { SceneInterfaceController } from './controllers/scene_interface_controller.js';
+import { SidebarController } from './controllers/sidebar_controller.js';
+import { AssetPicker } from './editor_panels/asset_picker.js';
 
 export function EditorPage(parentContainer, mWebsocketController) {
     const RESIZE_TARGET_SIZE = 20;
@@ -327,12 +327,16 @@ export function EditorPage(parentContainer, mWebsocketController) {
     }
 
     async function updateModel() {
-        let model = mModelController.getModel();
-        await mAssetUtil.updateModel(model);
-        await mAssetPicker.updateModel(model);
+        try {
+            let model = mModelController.getModel();
+            await mAssetUtil.updateModel(model);
+            await mAssetPicker.updateModel(model);
 
-        await mSidebarController.updateModel(model);
-        await mSceneInterface.updateModel(model, mAssetUtil);
+            await mSidebarController.updateModel(model);
+            await mSceneInterface.updateModel(model, mAssetUtil);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     mWindowEventManager.onResize(resize);

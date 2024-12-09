@@ -15,20 +15,23 @@ export function WindowEventManager() {
 
     window.addEventListener('pointermove', async (event) => {
         try {
-            mPointerMoveCallback({ x: event.clientX, y: event.clientY });
+            await mPointerMoveCallback({ x: event.clientX, y: event.clientY });
         } catch (e) { console.error(e); }
     });
 
     window.addEventListener('pointerup', async (event) => {
         try {
-            mPointerUpCallback({ x: event.clientX, y: event.clientY });
+            await mPointerUpCallback({ x: event.clientX, y: event.clientY });
         } catch (e) { console.error(e); }
     });
 
     return {
         onPointerUp: (func) => mPointerUpCallback = func,
         onPointerMove: (func) => mPointerMoveCallback = func,
-        onResize: (func) => mResizeCallback = func,
+        onResize: (func) => {
+            mResizeCallback = func;
+            mResizeCallback(window.innerWidth, window.innerHeight);
+        },
     }
 }
 

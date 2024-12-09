@@ -38,7 +38,7 @@ export const ServerMessage = {
     ERROR: 'error',
 }
 
-export const XRInteraction = {
+export const InteractionType = {
     BUTTON_CLICK: 'buttonClick',
     ONE_HAND_MOVE: 'oneHandMove',
     TWO_HAND_MOVE: 'twoHandMove',
@@ -85,3 +85,5 @@ export const ModelUpdateCommands = {
     DELETE: 'delete',
     CREATE_OR_UPDATE: 'createOrUpdate',
 }
+
+export const MENU_WIDTH = 1.5;

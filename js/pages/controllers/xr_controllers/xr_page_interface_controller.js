@@ -9,8 +9,6 @@ export function XRPageInterfaceController() {
     let mMousePosition = { x: 0, y: 0 };
     let mMouseDown = false;
 
-    let mSceneController;
-
     let mLeftGroup = new THREE.Group();
     // in case we want something on that wrist
     let mRightGroup = new THREE.Group();
@@ -55,7 +53,7 @@ export function XRPageInterfaceController() {
         }
     }
 
-    async function userMoved(headPos, headDir, leftPos, leftOrient, rightPos, rightOrient) {
+    async function setPositions(headPos, headDir, leftPos, leftOrient, rightPos, rightOrient) {
         mHeadPos = headPos;
         mHeadDir = headDir;
         mRightGroup.position.copy(rightPos)
@@ -237,16 +235,9 @@ export function XRPageInterfaceController() {
         }
     }
 
-    function setSceneController(sceneController) {
-        mSceneController?.getScene().remove(mGroup);
-        mSceneController = sceneController;
-        mSceneController.getScene().add(mGroup);
-    }
-
-    this.userMoved = userMoved;
+    this.setPositions = setPositions;
     this.isInteracting = isInteracting;
     this.updateClickState = updateClickState;
     this.renderWebpage = renderWebpage;
     this.getGroup = () => mGroup;
-    this.setSceneController = setSceneController;
 }

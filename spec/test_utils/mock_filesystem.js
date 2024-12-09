@@ -62,7 +62,10 @@ export async function loadRealFile(filename) {
 export function mockFileSystemFileHandle(filename, config) {
     this.name = filename;
     if (config && config.create && !global.fileSystem[filename]) { global.fileSystem[filename] = "new" }
-    if (!global.fileSystem[filename]) throw new Error("A requested file or directory could not be found at the time an operation was processed")
+    if (!global.fileSystem[filename]) {
+        throw new Error("A requested file or directory could not be found at the time an operation was processed => fake filesystem: " +
+            filename + " Existing files: " + (global.fileSystem ? JSON.stringify(Object.keys(global.fileSystem)) : "No filesystem: " + global.fileSystem));
+    }
     this.getFile = () => new mockFile(filename, global.fileSystem[filename]);
     this.createWritable = () => new mockFile(filename);
 }

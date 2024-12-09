@@ -1,25 +1,18 @@
 import * as THREE from 'three';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
-import { UP, USER_HEIGHT, XRInteraction } from "../../../constants.js";
+import { UP, USER_HEIGHT } from "../../../constants.js";
 import { CanvasUtil } from '../../../utils/canvas_util.js';
 import { Util } from "../../../utils/utility.js";
 
-export function XRInputController() {
-    let mInteractionEndCallback = async () => { }
-    let mDragStartedCallback = async (target, isLeft) => { }
-    let mTwoHandDragStartedCallback = async (target) => { }
-    let mTwoHandPoseStartedCallback = async (lTarget, rTarget) => { }
+export function XRInputController(sceneContainer) {
+    let mPointerDownCallback = async (raycaster, isPrimary) => { }
+    let mPointerMoveCallback = async (raycaster, isPrimary) => { }
+    let mPointerUpCallback = async (raycaster, isPrimary) => { }
 
+
+    let mSession = null;
     let mMoved = false;
-    let mPrimaryLPressed = false;
-    let mPrimaryRPressed = false;
-    let mGripLPressed = false;
-    let mGripRPressed = false;
-    let mLHovered = [];
-    let mRHovered = [];
-
-    let mSceneController;
-    let mMenuController;
+    let mButtonState = getButtonPressedState();
 
     const fov = 75, aspect = 2, near = 0.1, far = 200;
     const mXRCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -28,19 +21,13 @@ export function XRInputController() {
     const mUserGroup = new THREE.Group()
     mUserGroup.add(mXRCamera)
 
+    let mSceneContainer = sceneContainer;
+    mSceneContainer.add(mUserGroup);
+
     const mRaycaster = new THREE.Raycaster();
 
     let mLeftController;
     let mRightController;
-
-    const mPoint = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: new THREE.CanvasTexture(CanvasUtil.generateDotCanvas()),
-        sizeAttenuation: false,
-        depthTest: false
-    }));
-    mPoint.scale.set(0.015, 0.015, 1);
-    mPoint.renderOrder = Infinity;
-
 
     const mControllerRayMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
@@ -94,11 +81,9 @@ export function XRInputController() {
     function setupController(index, xr) {
         let controller = xr.getController(index);
         const ray = mLinesHelper.clone();
-        const point = mPoint.clone();
 
-        controller.add(ray, point);
+        controller.add(ray);
         controller.ray = ray;
-        controller.point = point;
 
         let grip = xr.getControllerGrip(index);
 
@@ -144,10 +129,8 @@ export function XRInputController() {
         }
     }
 
-    async function updateInteractionState(systemState) {
-        updateHoverArray(systemState);
-
-        let axes = getRightGamePad(systemState);
+    async function pollInteractionState() {
+        let axes = getRightGamePad();
         if (!mMoved && Math.abs(axes[3]) > 0.5) {
             let add = new THREE.Vector3();
             mXRCamera.getWorldDirection(add);
@@ -173,109 +156,68 @@ export function XRInputController() {
             mMoved = false;
         }
 
-        updateControllerState(systemState);
-        if (systemState.interactionType == XRInteraction.NONE) {
-            if (nothingIsPressed()) {
-                // no transition. 
+        let lastButtonState = mButtonState;
+        mButtonState = getButtonPressedState();
+
+
+        setRay(mRightController, mRaycaster);
+        await mPointerMoveCallback(mRaycaster, true);
+        if (lastButtonState.primaryRPressed != mButtonState.primaryRPressed) {
+            if (mButtonState.primaryRPressed) {
+                await mPointerDownCallback(mRaycaster, true);
             } else {
-                if (mLHovered[0] && mPrimaryLPressed) {
-                    let target = getClosestTarget(mLHovered, getLeftControllerPosition());
-                    await mDragStartedCallback(target, true);
-                } else if (mRHovered[0] && mPrimaryRPressed) {
-                    let target = getClosestTarget(mRHovered, getRightControllerPosition());
-                    await mDragStartedCallback(target, false);
-                }
+                await mPointerUpCallback(mRaycaster, true);
             }
-        } else {
-            if (nothingIsPressed()) {
-                await mInteractionEndCallback();
-            } else if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE && systemState.interactionData.isLeft) {
-                // If we are already moving something with the left, we can transition to 
-                // a two hand move or pose. 
-                if (mRHovered[0] && mPrimaryRPressed) {
-                    let rTarget = getClosestTarget(mRHovered, getRightControllerPosition());
-                    if (rTarget.getId() == systemState.interactionData.target.getId()) {
-                        await mInteractionEndCallback();
-                        await mTwoHandDragStartedCallback(rTarget);
-                    } else {
-                        let lTarget = systemState.interactionData.target;
-                        await mInteractionEndCallback();
-                        await mTwoHandPoseStartedCallback(lTarget, rTarget);
-                    }
-                } else {
-                    // if primary R is not pressed or isn't hovering, no transition.
-                }
-            } else if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE && !systemState.interactionData.isLeft) {
-                // If we are already moving something with the right, we can transition to 
-                // a two hand move or pose. 
-                if (mLHovered[0] && mPrimaryLPressed) {
-                    let lTarget = getClosestTarget(mLHovered, getLeftControllerPosition());
-                    if (lTarget.getId() == systemState.interactionData.target.getId()) {
-                        await mInteractionEndCallback();
-                        await mTwoHandDragStartedCallback(lTarget);
-                    } else {
-                        let rTarget = systemState.interactionData.target;
-                        await mInteractionEndCallback();
-                        await mTwoHandPoseStartedCallback(lTarget, rTarget);
-                    }
-                } else {
-                    // if primary L is not pressed or isn't hovering, no transition. 
-                }
-            } else if (systemState.interactionType == XRInteraction.TWO_HAND_MOVE ||
-                systemState.interactionType == XRInteraction.TWO_HAND_POSE) {
-                // Both two handed interactions can only transition to a one handed interaction.
-                if (!mPrimaryLPressed) {
-                    // transition to r drag. 
-                    let rTarget = systemState.interactionType == XRInteraction.TWO_HAND_POSE ?
-                        systemState.interactionData.rTarget :
-                        systemState.interactionData.target;
-                    await mInteractionEndCallback();
-                    await mDragStartedCallback(rTarget, false);
-                } else if (!mPrimaryRPressed) {
-                    // transition to l drag. 
-                    let lTarget = systemState.interactionType == XRInteraction.TWO_HAND_POSE ?
-                        systemState.interactionData.lTarget :
-                        systemState.interactionData.target;
-                    await mInteractionEndCallback();
-                    await mDragStartedCallback(lTarget, true);
-                } else {
-                    // Triggers are pressed, nothing to do. 
-                }
+        }
+
+        setRay(mLeftController, mRaycaster);
+        await mPointerMoveCallback(mRaycaster, false);
+        if (lastButtonState.primaryLPressed != mButtonState.primaryLPressed) {
+            if (mButtonState.primaryLPressed) {
+                await mPointerDownCallback(mRaycaster, false);
+            } else {
+                await mPointerUpCallback(mRaycaster, false);
             }
         }
     }
 
-    function updateControllerState(systemState) {
-        mPrimaryLPressed = false;
-        mPrimaryRPressed = false;
-        mGripLPressed = false;
-        mGripRPressed = false;
+    function getButtonPressedState() {
+        let primaryLPressed = false;
+        let primaryRPressed = false;
+        let gripLPressed = false;
+        let gripRPressed = false;
 
-        if (!systemState.session) return;
-        if (!systemState.session.inputSources) return;
+        if (mSession && mSession.inputSources) {
+            let leftController, rightController;
+            for (let source of mSession.inputSources) {
+                if (source.handedness == 'left') leftController = source;
+                if (source.handedness == 'right') rightController = source;
+            }
 
-        let leftController, rightController;
-        for (let source of systemState.session.inputSources) {
-            if (source.handedness == 'left') leftController = source;
-            if (source.handedness == 'right') rightController = source;
+            if (leftController && leftController.gamepad) {
+                // trigger button
+                primaryLPressed = leftController.gamepad.buttons[0]
+                    && leftController.gamepad.buttons[0].pressed;
+                // grip button
+                gripLPressed = leftController.gamepad.buttons[1]
+                    && leftController.gamepad.buttons[1].pressed;
+            }
+
+            if (rightController && rightController.gamepad) {
+                // trigger button
+                primaryRPressed = rightController.gamepad.buttons[0]
+                    && rightController.gamepad.buttons[0].pressed;
+                // grip button
+                gripRPressed = rightController.gamepad.buttons[1]
+                    && rightController.gamepad.buttons[1].pressed;
+            }
         }
 
-        if (leftController && leftController.gamepad) {
-            // trigger button
-            mPrimaryLPressed = leftController.gamepad.buttons[0]
-                && leftController.gamepad.buttons[0].pressed;
-            // grip button
-            mGripLPressed = leftController.gamepad.buttons[1]
-                && leftController.gamepad.buttons[1].pressed;
-        }
-
-        if (rightController && rightController.gamepad) {
-            // trigger button
-            mPrimaryRPressed = rightController.gamepad.buttons[0]
-                && rightController.gamepad.buttons[0].pressed;
-            // grip button
-            mGripRPressed = rightController.gamepad.buttons[1]
-                && rightController.gamepad.buttons[1].pressed;
+        return {
+            primaryLPressed,
+            primaryRPressed,
+            gripLPressed,
+            gripRPressed,
         }
     }
 
@@ -353,11 +295,6 @@ export function XRInputController() {
         }
     }
 
-    function nothingIsPressed() {
-        return !(mPrimaryLPressed || mPrimaryRPressed ||
-            mGripLPressed || mGripRPressed);
-    }
-
     function setUserPositionAndDirection(worldPosition, unitDirection) {
         mUserGroup.position.copy(worldPosition);
         let dir = new THREE.Vector3();
@@ -371,119 +308,11 @@ export function XRInputController() {
         mUserGroup.applyQuaternion(rotation);
     }
 
-    function updateHoverArray(systemState) {
-        if (!mSceneController) return;
-
-        hidePoints();
-
-        if (systemState.interactionType != XRInteraction.NONE &&
-            systemState.interactionType != XRInteraction.ONE_HAND_MOVE) {
-            // nothing to hover. 
-            return;
-        }
-
-        let oldHovered = mLHovered.concat(mRHovered);
-
-        mXRCamera.updateMatrix();
-        mXRCamera.updateMatrixWorld();
-
-        let frustum = new THREE.Frustum();
-        let projScreenMatrix = new THREE.Matrix4();
-        projScreenMatrix.multiplyMatrices(mXRCamera.projectionMatrix, mXRCamera.matrixWorldInverse);
-        frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(
-            mXRCamera.projectionMatrix, mXRCamera.matrixWorldInverse));
-        let cameraPosition = new THREE.Vector3(); mXRCamera.getWorldPosition(cameraPosition);
-
-        // Left hand
-        if (!mLeftController) {
-            // no controller, do nothing.
-        } else if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE &&
-            systemState.interactionData.isLeft) {
-            // left hand is dragging, no need to update hover array.
-        } else {
-            mLHovered = [];
-            let controllerLPos = getLeftControllerPosition();
-            if (frustum.containsPoint(controllerLPos)) {
-                setRay(mLeftController, mRaycaster);
-                let targets = mMenuController.getTargets(mRaycaster);
-                if (targets.length == 0) targets = mSceneController.getTargets(mRaycaster);
-                mLHovered.push(getClosestTarget(targets, controllerLPos));
-                if (mLHovered[0]) {
-                    placePoint(mLeftController, mLHovered[0].getIntersection().point);
-                }
-            };
-            // not sure why we need this but sure.
-            mLHovered = mLHovered.filter(t => t);
-
-            if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE) {
-                // Right hand is dragging, filter the valid targets. 
-                mLHovered = mLHovered.filter(t => {
-                    // Must be the same mesh or a bone on the same mesh
-                    // A meshes root is itself, so this will work.
-                    if (t.getRoot().getId() == systemState.interactionData.target.getRoot().getId()) {
-                        return true;
-                    } else return false;
-                });
-            }
-        }
-
-        // Right hand
-        if (!mRightController) {
-            // no controller, do nothing.
-        } else if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE && !systemState.interactionData.isLeft) {
-            // right hand is dragging, no need to update hover array.
-        } else {
-            mRHovered = [];
-            let controllerRPos = getRightControllerPosition();
-            if (frustum.containsPoint(controllerRPos)) {
-                setRay(mRightController, mRaycaster);
-                let targets = mMenuController.getTargets(mRaycaster);
-                if (targets.length == 0) targets = mSceneController.getTargets(mRaycaster);
-                mRHovered.push(getClosestTarget(targets, controllerRPos));
-                if (mRHovered[0]) {
-                    placePoint(mLeftController, mRHovered[0].getIntersection().point);
-                }
-            };
-            mRHovered = mRHovered.filter(t => t);
-
-            if (systemState.interactionType == XRInteraction.ONE_HAND_MOVE) {
-                // Left hand is dragging, filter the valid targets. 
-                mRHovered = mRHovered.filter(t => {
-                    // Must be the same mesh or a bone on the same mesh
-                    // A meshes root is itself, so this will work.
-                    if (t.getRoot().getId() == systemState.interactionData.target.getRoot().getId()) {
-                        return true;
-                    } else return false;
-                });
-            }
-        }
-
-        let newHovered = mLHovered.concat(mRHovered);
-        let newHoveredIds = Util.unique(newHovered.map(t => t.getId()));
-        let oldHoveredIds = Util.unique(oldHovered.map(t => t.getId()));
-
-        for (let t of newHovered) {
-            if (!oldHoveredIds.includes(t.getId())) {
-                // Add the id to the array so it only gets highlighted once
-                oldHoveredIds.push(t.getId());
-                t.highlight();
-            }
-        }
-
-        for (let t of oldHovered) {
-            if (oldHoveredIds.includes(t.getId()) && !newHoveredIds.includes(t.getId())) {
-                // Remove so it only gets set to idle once. 
-                oldHoveredIds.filter(id => id != t.getId());
-                t.idle();
-            }
-        }
-    }
-
-    function getRightGamePad(systemState) {
-        if (!systemState.session) return [0, 0, 0, 0];
+    function getRightGamePad() {
+        if (!mSession) return [0, 0, 0, 0];
         let rightController;
         // input sources is not an array, but is iterable
-        for (let source of systemState.session.inputSources) {
+        for (let source of mSession.inputSources) {
             if (source.handedness == 'right') rightController = source;
         }
         if (!rightController || !rightController.gamepad ||
@@ -494,30 +323,6 @@ export function XRInputController() {
         }
     }
 
-    function getClosestTarget(targets, pointerCoords) {
-        if (targets.length == 0) return null;
-        if (targets.length == 1) return targets[0];
-
-        let sortation = targets.map(t => {
-            return { t, distance: pointerCoords.distanceTo(t.getIntersection().point) }
-        })
-
-        sortation.sort((a, b) => a.distance - b.distance)
-
-        return sortation[0].t;
-    }
-
-    function setSceneController(sceneController) {
-        mSceneController?.getScene().remove(mUserGroup);
-        mSceneController = sceneController;
-        mSceneController.getScene().add(mUserGroup);
-    }
-
-    function setMenuController(controller) {
-        mMenuController = controller;
-        mMenuController.setContainer(mLeftMenuContainer, mRightMenuContainer);
-    }
-
     const dummyMatrix = new THREE.Matrix4();
     function setRay(controller, raycaster) {
         dummyMatrix.identity().extractRotation(controller.matrixWorld);
@@ -525,19 +330,9 @@ export function XRInputController() {
         raycaster.ray.direction.set(0, 0, -1).applyMatrix4(dummyMatrix);
     }
 
-    function placePoint(controller, vec) {
-        const localVec = controller.worldToLocal(vec);
-        controller.point.position.copy(localVec);
-        controller.point.visible = true;
-    }
-
-    function hidePoints() {
-        mLeftController.point.visible = false;
-        mRightController.point.visible = false;
-    }
-
     this.getCamera = () => mXRCamera;
     this.getGroup = () => mUserGroup;
+    this.getMenuContainers = () => [mLeftMenuContainer, mRightMenuContainer];
     this.getPrimaryRPressed = () => mPrimaryRPressed;
     this.getUserPositionAndDirection = () => { return { pos: getHeadPosition(), dir: getHeadDirection() } };
     this.getHeadPosition = getHeadPosition;
@@ -548,17 +343,13 @@ export function XRInputController() {
     this.getRightControllerPosition = getRightControllerPosition;
     this.getRightControllerOrientation = getRightControllerOrientation;
     this.getUserPosition = getUserPosition;
-
+    this.setSession = (session) => mSession = session;
 
     this.setupControllers = setupControllers;
-    this.updateInteractionState = updateInteractionState;
+    this.pollInteractionState = pollInteractionState;
     this.setUserPositionAndDirection = setUserPositionAndDirection;
-    this.setSceneController = setSceneController;
-    this.setMenuController = setMenuController;
 
-    this.onInteractionEnd = (func) => mInteractionEndCallback = func;
-    this.onDragStarted = (func) => mDragStartedCallback = func;
-    this.onTwoHandDragStarted = (func) => mTwoHandDragStartedCallback = func;
-    this.onTwoHandPoseStarted = (func) => mTwoHandPoseStartedCallback = func;
-
+    this.onPointerDown = (func) => { mPointerDownCallback = func }
+    this.onPointerMove = (func) => { mPointerMoveCallback = func }
+    this.onPointerUp = (func) => { mPointerUpCallback = func }
 }

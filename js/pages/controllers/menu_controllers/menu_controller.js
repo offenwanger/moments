@@ -1,11 +1,10 @@
 import * as ThreeMeshUI from 'three-mesh-ui';
-import { AssetTypes, AttributeButtons, ItemButtons, MenuNavButtons, ToolButtons } from '../../../constants.js';
+import { AssetTypes, AttributeButtons, ItemButtons, MENU_WIDTH, MenuNavButtons, ToolButtons } from '../../../constants.js';
 import { ButtonMenu } from './button_menu.js';
 import { MeshButton } from './mesh_button.js';
 
 export function MenuController() {
     const BUTTON_SIZE = 0.4;
-    const MENU_WIDTH = 1.5;
 
     let mMode = null;
     let mCurrentMenuId = null;
@@ -93,10 +92,6 @@ export function MenuController() {
         }
     }
 
-    function getWidth() {
-        return MENU_WIDTH;
-    }
-
     function render() {
         ThreeMeshUI.update();
     }
@@ -170,6 +165,5 @@ export function MenuController() {
     this.onToolChange = func => mToolChangeCallback = func;
     this.getMode = () => mMode;
     this.render = render
-    this.getWidth = getWidth;
     this.getTargets = getTargets;
 }

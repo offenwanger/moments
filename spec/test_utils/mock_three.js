@@ -13,11 +13,11 @@ export async function mockThreeSetup() {
             this.setSize = () => { }
             this.setAnimationLoop = (func) => {
                 this.animationLoop = func
-                global.xrAccess.animationLoop = func;
+                global.test_rendererAccess.animationLoop = func;
             }
             this.xr = global.navigator.xr;
             this.render = function (scene, camera) {
-                global.xrAccess.lastRender = { scene, camera };
+                global.test_rendererAccess.lastRender = { scene, camera };
             }
         },
         ImageLoader: function () {

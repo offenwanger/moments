@@ -8,6 +8,13 @@ export function testmodel() {
     return Data.StoryModel.fromObject(JSON.parse(global.fileSystem[storyFile]))
 }
 
+export async function canvaspointerdown(x, y) {
+    await document.querySelector("#main-canvas").eventListeners.pointerdown({
+        clientX: x,
+        clientY: y
+    });
+}
+
 export async function pointermove(x, y) {
     if (!window.callbacks.pointermove) console.error("No callbacks registered for pointermove");
     for (let cb of window.callbacks.pointermove)
@@ -141,7 +148,7 @@ export async function startXR() {
     c0.eventListeners.connected({ data: { handedness: c0.handedness } });
     let c1 = global.navigator.xr.getController(1)
     c1.eventListeners.connected({ data: { handedness: c1.handedness } });
-    await global.xrAccess.animationLoop();
+    await global.test_rendererAccess.animationLoop();
 }
 
 export async function stopXR() {
@@ -151,13 +158,21 @@ export async function stopXR() {
 }
 
 export async function moveHead(x, y, z) {
-    let camera = global.xrAccess.lastRender.camera;
+    await global.test_rendererAccess.animationLoop();
+    let camera = global.test_rendererAccess.lastRender.camera;
+    camera.updateWorldMatrix()
     camera.position.set(x, y, z);
+    camera.updateWorldMatrix()
+    await global.test_rendererAccess.animationLoop();
 }
 
 export async function lookHead(x, y, z) {
-    let camera = global.xrAccess.lastRender.camera;
+    await global.test_rendererAccess.animationLoop();
+    let camera = global.test_rendererAccess.lastRender.camera;
+    camera.updateWorldMatrix()
     camera.lookAt(x, y, z);
+    camera.updateWorldMatrix()
+    await global.test_rendererAccess.animationLoop();
 }
 
 export async function moveXRController(left, x, y, z) {
@@ -169,7 +184,7 @@ export async function moveXRController(left, x, y, z) {
     let pos = new THREE.Vector3(x + (left ? - 0.005 : 0.005), y, z + 0.03);
     let moveTransform = pos.sub(v);
     controller.position.add(moveTransform);
-    await global.xrAccess.animationLoop();
+    await global.test_rendererAccess.animationLoop();
 }
 
 export async function pressXRTrigger(left) {
@@ -177,7 +192,7 @@ export async function pressXRTrigger(left) {
         .find(s => s.handedness == (left ? 'left' : 'right'));
     controller.gamepad.buttons[0].pressed = true;
     await global.navigator.xr.getSession().eventListeners.selectstart();
-    await global.xrAccess.animationLoop();
+    await global.test_rendererAccess.animationLoop();
 }
 
 export async function releaseXRTrigger(left) {
@@ -185,19 +200,19 @@ export async function releaseXRTrigger(left) {
         .find(s => s.handedness == (left ? 'left' : 'right'));
     controller.gamepad.buttons[0].pressed = false;
     await global.navigator.xr.getSession().eventListeners.selectend();
-    await global.xrAccess.animationLoop();
+    await global.test_rendererAccess.animationLoop();
 }
 
 export async function pushXRToggle(left, axes) {
     let controller = global.navigator.xr.getSession().inputSources
         .find(s => s.handedness == (left ? 'left' : 'right'));
     controller.gamepad.axes = axes;
-    await global.xrAccess.animationLoop();
+    await global.test_rendererAccess.animationLoop();
 }
 
 export async function releaseXRToggle(left) {
     let controller = global.navigator.xr.getSession().inputSources
         .find(s => s.handedness == (left ? 'left' : 'right'));
     controller.gamepad.axes = [0, 0, 0, 0];
-    await global.xrAccess.animationLoop();
+    await global.test_rendererAccess.animationLoop();
 }

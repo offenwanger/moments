@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { Data } from "../../data.js";
 import { SceneUtil } from '../../utils/scene_util.js';
-import { PoseableAssetWrapper } from "./poseable_asset_wrapper.js";
-import { PictureWrapper } from "./picture_wrapper.js";
 import { AudioWrapper } from './audio_wrapper.js';
 import { PhotosphereWrapper } from './photosphere_wrapper.js';
+import { PictureWrapper } from "./picture_wrapper.js";
+import { PoseableAssetWrapper } from "./poseable_asset_wrapper.js";
 
 export function MomentWrapper(parent) {
     let mModel = new Data.StoryModel();
@@ -62,10 +62,6 @@ export function MomentWrapper(parent) {
 
     }
 
-    function userMove(globalPosition) {
-        // maybe pass this on to children?
-    }
-
     function globalToLocalPosition(globalPosition) {
         return globalPosition;
     }
@@ -83,6 +79,5 @@ export function MomentWrapper(parent) {
 
     this.update = update;
     this.render = render;
-    this.userMove = userMove;
     this.getTargets = getTargets;
 }

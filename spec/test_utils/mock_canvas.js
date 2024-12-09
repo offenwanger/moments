@@ -6,8 +6,8 @@ let fileCount = 0;
 
 export function createCanvas() {
     let canvas = createCan(1, 1);
-    canvas.screenx = 1;
-    canvas.screeny = 1;
+    canvas.screenx = 0;
+    canvas.screeny = 0;
 
     canvas.internalGetContext = canvas.getContext;
 
@@ -27,15 +27,19 @@ export function createCanvas() {
     }
     canvas.attrs = {}
     canvas.style = {}
-    canvas.setAttribute = function (attr, val) { canvas.attrs[attr] = val }
+    canvas.setAttribute = function (attr, val) {
+        canvas.attrs[attr] = val
+        if (attr == 'width') canvas.width = val;
+        if (attr == 'height') canvas.height = val;
+    }
     canvas.getAttribute = function (attr) { return canvas.attrs[attr] }
     canvas.toBlob = function (callback) { callback(canvas); };
     canvas.getBoundingClientRect = () => {
         return {
             x: canvas.screenx,
             y: canvas.screeny,
-            height: canvas.height,
             width: canvas.width,
+            height: canvas.height,
         }
     };
 

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Data } from '../../data.js';
-import { OtherUserWrapper } from '../scene_objects/other_user_wrapper.js';
 import { MomentWrapper } from '../scene_objects/moment_wrapper.js';
+import { OtherUserWrapper } from '../scene_objects/other_user_wrapper.js';
 
 export function SceneController() {
     let mScene = new THREE.Scene();
@@ -18,10 +18,6 @@ export function SceneController() {
     mScene.add(new THREE.DirectionalLight(0xffffff, 0.9));
 
     let mEnvironmentBox;
-
-    function userMove(globalPosition) {
-        mMomentWrapper.userMove(globalPosition)
-    }
 
     function updateOtherUser(id, head, handR, handL) {
         let otherUser = mOtherUsers.find(o => o.getId() == id);
@@ -79,7 +75,6 @@ export function SceneController() {
     this.updateModel = updateModel;
     this.setCurrentMoment = setCurrentMoment;
     this.getTargets = getTargets;
-    this.userMove = userMove;
     this.toSceneCoordinates = toSceneCoordinates;
     this.setScale = setScale;
     this.updateOtherUser = updateOtherUser;

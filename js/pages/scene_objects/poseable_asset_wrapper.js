@@ -42,21 +42,22 @@ export function PoseableAssetWrapper(parent) {
                 mTargets = []
                 let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(mGLTF.scene);
                 targets.forEach(target => {
+                    if (!target.isMesh && target.type != "Bone") { console.error("Unexpected target type!", target); return; }
+
+                    let pose = mPoses.find(p => p.name == target.name);
+                    if (!pose) {
+                        console.error("Cannot find PoseableAsset for item in asset: " + target.name);
+                        return;
+                    }
+
                     if (target.isMesh) {
-                        let pose = mPoses.find(p => p.name == target.name);
-                        if (!pose) { console.error("Mismatched PoseableAsset and asset!"); return; }
                         target.userData.poseId = pose.id;
                         if (!target.material) { target.material = new THREE.MeshBasicMaterial() }
                         target.userData.originalColor = target.material.color.getHex();
-
                         mTargets.push(target)
                     } else if (target.type == "Bone") {
-                        let pose = mPoses.find(p => p.name == target.name);
-                        if (!pose) { console.error("Mismatched PoseableAsset and asset!"); return; }
                         let targetGroup = attachBoneTarget(target, pose.id);
                         mTargets.push(targetGroup);
-                    } else {
-                        console.error("Unexpected target type!", target);
                     }
                 })
 

@@ -70,7 +70,7 @@ export function XRInputController(sceneContainer) {
     mLeftMenuContainer.scale.set(0.1, 0.1, 0.1)
     mLeftMenuContainer.position.set(-0.075, 0, 0.1);
     mLeftMenuContainer.rotateX(-Math.PI / 4);
-    const mRightMenuContainer = new THREE.Group();
+    const mRightMenuContainer = mLeftMenuContainer.clone();
 
 
     function setupControllers(xr) {

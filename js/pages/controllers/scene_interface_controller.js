@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { InteractionType, ItemButtons, MenuNavButtons, ToolButtons } from "../../constants.js";
+import { BrushToolButtons, InteractionType, ItemButtons, MenuNavButtons, SurfaceToolButtons, ToolButtons } from "../../constants.js";
 import { Data } from "../../data.js";
 import { IdUtil } from "../../utils/id_util.js";
 import { Util } from "../../utils/utility.js";
@@ -196,8 +196,21 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             }
             mToolMode.tool = buttonId;
             mMenuController.setToolMode(mToolMode);
+            if (mToolMode.tool == ToolButtons.BRUSH) {
+                mMenuController.showSubMenu(ToolButtons.BRUSH);
+            } else if (mToolMode.tool == ToolButtons.SURFACE) {
+                mMenuController.showSubMenu(ToolButtons.SURFACE);
+            } else {
+                mMenuController.showSubMenu(null);
+            }
+        } else if (Object.values(BrushToolButtons).includes(buttonId)) {
+            mToolMode.brushSettings.mode = buttonId;
+            mMenuController.setToolMode(mToolMode);
+        } else if (Object.values(SurfaceToolButtons).includes(buttonId)) {
+            mToolMode.surfaceSettings.mode = buttonId;
+            mMenuController.setToolMode(mToolMode);
         } else if (Object.values(MenuNavButtons).includes(buttonId)) {
-            mMenuController.navigate(buttonId);
+            mMenuController.showMenu(buttonId);
         } else if (Object.values(ItemButtons).includes(buttonId)) {
             console.error("Impliment me!")
         } else if (IdUtil.getClass(buttonId) == Data.Asset) {

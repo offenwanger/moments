@@ -3,6 +3,8 @@ import { MeshButton } from './mesh_button.js';
 
 export function ButtonMenu(id, width) {
     const PADDING = 0.1;
+    let mOnAfterUpdateCallback = () => { }
+    let mVOffset = 0
 
     let mId = id;
     // set of MeshButtons
@@ -18,10 +20,8 @@ export function ButtonMenu(id, width) {
         fontTexture: "../../../assets/menu_fonts/Roboto-msdf.png",
     });
     mContainer.onAfterUpdate = function () {
-        mContainer.position.set(
-            mContainer.getWidth() / 2 + PADDING / 2,
-            -mContainer.getHeight() / 2 - PADDING / 2,
-            0);
+        updatePosition();
+        mOnAfterUpdateCallback()
     }
 
     function layout() {
@@ -42,6 +42,18 @@ export function ButtonMenu(id, width) {
         }
 
         mContainer.update(false, true, false);
+    }
+
+    function setVOffset(offset) {
+        mVOffset = offset + PADDING;
+        updatePosition();
+    }
+
+    function updatePosition() {
+        mContainer.position.set(
+            mContainer.getWidth() / 2 + PADDING / 2,
+            -mContainer.getHeight() / 2 - PADDING / 2 - mVOffset,
+            0);
     }
 
     /**
@@ -67,4 +79,6 @@ export function ButtonMenu(id, width) {
     this.remove = remove;
     this.getObject = () => mContainer;
     this.getButtons = () => [...mButtons];
+    this.onAfterUpdate = (func) => mOnAfterUpdateCallback = func;
+    this.setVOffset = setVOffset;
 }

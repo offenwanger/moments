@@ -243,7 +243,7 @@ class Audio extends DataItem {
 
 class Teleport extends DataItem {
     x = 0; y = 0; z = 0;
-    sceneId = null;
+    momentId = null;
     sceneX = 0; sceneY = 0; sceneZ = 0;
     sceneOrientation = [0, 0, 0, 1];
 }

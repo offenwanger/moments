@@ -5,6 +5,7 @@ import { AudioWrapper } from './audio_wrapper.js';
 import { PhotosphereWrapper } from './photosphere_wrapper.js';
 import { PictureWrapper } from "./picture_wrapper.js";
 import { PoseableAssetWrapper } from "./poseable_asset_wrapper.js";
+import { TeleportWrapper } from './teleport_wrapper.js';
 
 export function MomentWrapper(parent) {
     let mModel = new Data.StoryModel();
@@ -15,6 +16,7 @@ export function MomentWrapper(parent) {
     let mPoseableAssetWrappers = [];
     let mPictureWrappers = [];
     let mAudioWrappers = [];
+    let mTeleportWrappers = [];
 
     async function update(momentId, model, assetUtil) {
         mModel = model;
@@ -55,6 +57,15 @@ export function MomentWrapper(parent) {
                     let newAudioWrapper = new AudioWrapper(mStoryGroup);
                     return newAudioWrapper;
                 });
+
+            await SceneUtil.updateWrapperArray(mTeleportWrappers,
+                mModel.teleports.filter(a => moment.teleportIds.includes(a.id)),
+                mModel,
+                assetUtil,
+                async (teleport) => {
+                    let newTeleportWrapper = new TeleportWrapper(mStoryGroup);
+                    return newTeleportWrapper;
+                });
         }
     }
 
@@ -74,6 +85,8 @@ export function MomentWrapper(parent) {
         return [
             ...mPoseableAssetWrappers.map(w => w.getTargets(ray, toolMode)).flat(),
             ...mPictureWrappers.map(w => w.getTargets(ray, toolMode)).flat(),
+            ...mTeleportWrappers.map(w => w.getTargets(ray, toolMode)).flat(),
+            ...mAudioWrappers.map(w => w.getTargets(ray, toolMode)).flat(),
             ...mPhotosphereWrapper.getTargets(ray, toolMode),
         ]
     }

@@ -258,6 +258,29 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             } else {
                 console.error("not implimented!!");
             }
+        } else if (IdUtil.getClass(buttonId) == Data.Moment) {
+            if (menuId == MenuNavButtons.ADD_TELEPORT) {
+                let parentMoment = mModel.moments.find(m => m.id == mMomentId);
+                if (!parentMoment) { console.error("invalid moment id: " + mMomentId); return; }
+                let point = target.getIntersection().point;
+                let targetMoment = buttonId;
+                let id = IdUtil.getUniqueId(Data.Teleport);
+                parentMoment.teleportIds.push(id);
+
+                await mModelUpdateCallback([
+                    new ModelUpdate({
+                        id,
+                        momentId: targetMoment,
+                        x: point.x, y: point.y, z: point.z,
+                    }),
+                    new ModelUpdate({
+                        id: parentMoment.id,
+                        teleportIds: parentMoment.teleportIds,
+                    })],
+                );
+            } else {
+                console.error("not implimented!!");
+            }
         } else {
             console.error('Invalid button id: ' + buttonId);
         }

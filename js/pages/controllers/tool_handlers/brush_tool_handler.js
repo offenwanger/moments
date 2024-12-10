@@ -1,6 +1,4 @@
-import { InteractionType } from "../../../constants.js";
-import { Data } from "../../../data.js";
-import { IdUtil } from "../../../utils/id_util.js";
+import { ASSET_UPDATE, BrushToolButtons, InteractionType } from "../../../constants.js";
 
 function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
     if (interactionState.type == InteractionType.NONE) {
@@ -34,9 +32,9 @@ function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionCo
 function pointerDown(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
     let hovered = isPrimary ? interactionState.primaryHovered : interactionState.secondaryHovered;
     if (hovered) {
-        if (IdUtil.getClass(hovered.getId()) != Data.Photosphere) { console.error('Invalid hovered!'); return; }
         if (interactionState.type == InteractionType.NONE) {
             interactionState.type = InteractionType.BRUSHING;
+            interactionState.data = { target: hovered };
         } else {
             console.error("TODO: Handle this edge case");
         }
@@ -53,8 +51,22 @@ function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionCont
     let updates = []
 
     if (type == InteractionType.BRUSHING) {
-        // get the right canvas for the brush type then save it. 
-        // will probably need a new update type for this...
+        let canvas;
+        if (toolMode.brushSettings.mode == BrushToolButtons.BLUR ||
+            toolMode.brushSettings.mode == BrushToolButtons.UNBLUR) {
+            canvas = data.target.getBlurCanvas();
+        } else if (toolMode.brushSettings.mode == BrushToolButtons.COLOR) {
+            canvas = data.target.getColorCanvas();
+        } else {
+            console.error('Invalid brushing state: ' + JSON.stringify(toolMode));
+            return [];
+        }
+        let assetId = data.target.getId();
+        updates.push({
+            command: ASSET_UPDATE,
+            id: assetId,
+            dataPromise: new Promise(resolve => canvas.toBlob(resolve))
+        });
     }
 
     return updates;

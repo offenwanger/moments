@@ -3,6 +3,7 @@ import * as THREE from "three";
 export class InteractionTargetInterface {
     getId = () => { return "No ID" };
 
+    // For PosableAssets and Pictures, audio, etc. 
     getLocalPosition = () => { return new THREE.Vector3(); }
     getWorldPosition = () => { return new THREE.Vector3(); }
     setWorldPosition = (worldPosition) => { }
@@ -11,6 +12,10 @@ export class InteractionTargetInterface {
 
     getScale = () => { return 1 }
     setScale = (scale) => { }
+
+    // For Photosphere
+    getBlurCanvas = () => { return document.createElement('canvas'); }
+    getColorCanvas = () => { return document.createElement('canvas'); }
 
     // update visual state
     highlight = (toolMode) => { };

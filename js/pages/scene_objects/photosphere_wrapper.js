@@ -167,11 +167,28 @@ export function PhotosphereWrapper(parent) {
             return []
         }
 
+        let targetedAssetId;
+        if (toolMode.tool == ToolButtons.BRUSH) {
+            if (toolMode.brushSettings.mode == BrushToolButtons.BLUR ||
+                toolMode.brushSettings.mode == BrushToolButtons.UNBLUR) {
+                targetedAssetId = mPhotosphere.blurAssetId;
+            } else if (toolMode.brushSettings.mode == BrushToolButtons.COLOR) {
+                targetedAssetId = mPhotosphere.colorAssetId;
+            } else {
+                console.error('Unhandled mode: ' + toolMode.brushSettings.mode);
+            }
+        } else {
+            // it's complicated.
+            console.error("Impliment me!");
+            return [];
+        }
+
         let intersect = ray.intersectObject(mSphere);
         if (intersect.length == 0) return [];
         intersect = intersect[0];
 
         mInteractionTarget.getIntersection = () => intersect;
+        mInteractionTarget.getId = () => targetedAssetId;
         mInteractionTarget.highlight = function (toolMode) {
             if (toolMode.tool == ToolButtons.BRUSH) {
                 if (toolMode.brushSettings.mode == BrushToolButtons.UNBLUR) {
@@ -214,10 +231,9 @@ export function PhotosphereWrapper(parent) {
     function drawBlur(u, v, brushWidth, blur) {
         mBlurCtx.save();
         mBlurCtx.filter = "blur(16px)";
+        mBlurCtx.fillStyle = 'black';
         if (blur) {
-            mBlurCtx.fillStyle = '#00000000';
-        } else {
-            mBlurCtx.fillStyle = 'black';
+            mBlurCtx.globalCompositeOperation = "destination-out"
         }
         drawWrappedCircle(u, v, brushWidth, mBlur, mBlurCtx);
         mBlurCtx.restore();
@@ -258,7 +274,8 @@ export function PhotosphereWrapper(parent) {
     function createInteractionTarget() {
         let target = new InteractionTargetInterface();
         target.getObject3D = () => { return mSphere; }
-        target.getId = () => mPhotosphere.id;
+        target.getBlurCanvas = () => mBlur;
+        target.getColorCanvas = () => mColor;
         return target;
     }
 

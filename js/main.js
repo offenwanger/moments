@@ -47,7 +47,7 @@ export async function main() {
             if (await folder.requestPermission({ mode: 'readwrite' }) === 'granted') {
                 await HandleStorage.setItem('folder', folder);
             }
-            UrlUtil.setParam("list", 'true');
+            UrlUtil.setParams({ list: 'true' });
             await updatePage();
         });
 
@@ -56,13 +56,13 @@ export async function main() {
             if (await folder.requestPermission({ mode: 'readwrite' }) !== 'granted') {
                 await HandleStorage.removeItem('folder');
             }
-            UrlUtil.setParam("list", 'true');
+            UrlUtil.setParams({ list: 'true' });
             await updatePage();
         });
 
         page.onOpenRemoteStory(async (storyId) => {
-            UrlUtil.setParam("story", storyId);
-            UrlUtil.setParam("remote", 'true');
+            UrlUtil.setParams({ remote: 'true' });
+            UrlUtil.setParams({ story: storyId }, true);
             await updatePage();
         });
     }
@@ -70,7 +70,7 @@ export async function main() {
     async function showListPage(workspaceManger) {
         let page = new ListPage(document.querySelector('#content'));
         page.setEditCallback(async (storyId) => {
-            UrlUtil.setParam("story", storyId);
+            UrlUtil.setParams({ story: storyId });
             await updatePage();
         });
 

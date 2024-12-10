@@ -218,14 +218,36 @@ export function EditorPage(parentContainer, mWebsocketController) {
     mWebsocketController.onNewAsset(async (name, buffer, type) => {
         let file = new File([buffer], name);
         let newFilename = await mWorkspace.storeAsset(file);
+        await mWebsocketController.uploadAsset(mModelController.getModel().id, newFilename, mWorkspace);
+
         let asset = null;
         if (type == AssetTypes.MODEL) {
             asset = await mAssetUtil.loadGLTFModel(newFilename);
         }
         let updates = await DataUtil.getAssetCreationUpdates(file.name, newFilename, type, asset);
         await mModelController.applyUpdates(updates);
+        updateModel();
+    })
 
-        await mWebsocketController.uploadAsset(mModelController.getModel().id, newFilename, mWorkspace);
+    mSceneInterface.onAssetUpdate(async (id, blob) => {
+        let asset = mModelController.getModel().find(id);
+        if (!asset) { console.error('Invalid id: ' + id); }
+        let file = new File([blob], asset.filename);
+        if (!mWorkspace) {
+            mWebsocketController.updateAsset(id, file);
+        } else {
+            await mWorkspace.updateAsset(file);
+            await mWebsocketController.uploadAsset(mModelController.getModel().id, asset.filename, mWorkspace);
+            await mModelController.applyUpdates([new ModelUpdate({ id, updated: Date.now() })]);
+            await updateModel();
+        }
+    });
+
+    mWebsocketController.onUpdateAsset(async (id, name, buffer) => {
+        let file = new File([buffer], name);
+        await mWorkspace.updateAsset(file);
+        await mWebsocketController.uploadAsset(mModelController.getModel().id, name, mWorkspace);
+        await mModelController.applyUpdates([new ModelUpdate({ id, updated: Date.now() })]);
         updateModel();
     })
 
@@ -249,16 +271,12 @@ export function EditorPage(parentContainer, mWebsocketController) {
 
             mModelController = new ModelController(model);
 
-            let workspace = {
-                downloads: {},
+            mAssetUtil = new AssetUtil({
                 getAssetAsDataURI: async function (filename) {
-                    if (this.downloads[filename]) return this.downloads[filename];
-                    let file = await (await fetch('uploads/' + storyId + "/" + filename)).text();
-                    this.downloads[filename] = file;
-                    return file;
+                    let file = await fetch('uploads/' + storyId + "/" + filename);
+                    return await file.text();
                 }
-            }
-            mAssetUtil = new AssetUtil(workspace);
+            });
         } else {
             let story = await mWorkspace.getStory(storyId);
             if (!story) throw Error("Invalid workspace!");
@@ -308,19 +326,18 @@ export function EditorPage(parentContainer, mWebsocketController) {
     }
 
     async function setCurrentMoment(momentId) {
-        if (!momentId) { UrlUtil.setParam('moment', null); }
+        if (!momentId) { UrlUtil.setParams({ 'moment': null }); }
 
         let model = mModelController.getModel();
         let moment = model.find(momentId);
         if (moment) {
-            UrlUtil.setParam('moment', momentId);
+            UrlUtil.setParams({ 'moment': momentId });
             await mSceneInterface.setCurrentMoment(momentId);
             await mSidebarController.navigate(momentId);
         } else {
-            UrlUtil.setParam('moment', null);
+            UrlUtil.setParams({ 'moment': null });
             await mSidebarController.navigate(model.id);
         }
-
     }
 
     mWindowEventManager.onResize(resize);

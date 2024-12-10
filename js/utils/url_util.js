@@ -1,11 +1,16 @@
-function setParam(name, value = null) {
+function setParams(params) {
     const url = new URL(window.location.href);
-    if (value == null) {
-        url.searchParams.delete(name);
-    } else {
-        url.searchParams.set(name, value);
+    for (let name of Object.keys(params)) {
+        let value = params[name];
+        if (value == null) {
+            url.searchParams.delete(name);
+        } else {
+            url.searchParams.set(name, value);
+        }
     }
-    window.history.replaceState(null, null, url);
+    if (window.location.href != url.href) {
+        window.history.pushState(null, null, url);
+    }
 }
 
 function getParam(name) {
@@ -17,7 +22,7 @@ function reloadPage() {
 }
 
 export const UrlUtil = {
-    setParam,
+    setParams,
     getParam,
     reloadPage,
 }

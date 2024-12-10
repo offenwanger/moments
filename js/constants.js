@@ -35,6 +35,7 @@ export const ServerMessage = {
     UPDATE_STORY: 'updatestory',
     UPDATE_PARTICIPANT: 'updateparticipant',
     NEW_ASSET: 'newasset',
+    UPDATE_ASSET: 'updateasset',
     ERROR: 'error',
 }
 
@@ -100,3 +101,4 @@ export const ModelUpdateCommands = {
 }
 
 export const MENU_WIDTH = 1.5;
+export const ASSET_UPDATE = 'assetUpdate'

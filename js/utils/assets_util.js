@@ -10,25 +10,64 @@ export function AssetUtil(workspace) {
     let mModel = new Data.StoryModel();
 
     let mLoadedAssets = {};
+    let mAssetAges = {};
 
     function updateModel(model) {
         let newAssetIds = model.assets.map(a => a.id);
         Object.keys(mLoadedAssets).forEach(id => {
             if (!newAssetIds.includes(id)) { delete mLoadedAssets[id]; }
         })
+        model.assets.forEach(a => {
+            if (mAssetAges[a.id] && a.updated > mAssetAges[a.id]) {
+                // if the file has been updated remove this from the cache. 
+                delete mLoadedAssets[a.id];
+                delete mAssetAges[a.id];
+            }
+        })
         mModel = model;
     }
 
     async function loadEnvironmentCube(assetId) {
-        let asset = mModel.getAsset(assetId);
-        if (!asset || asset.type != AssetTypes.BOX) { console.error("Invalid cube asset!", assetId, asset); return loadDefaultEnvironmentCube(); }
-        let files = [];
-        for (const prefix of BOX_ASSET_PREFIXES) {
-            let filename = prefix + asset.filename;
-            files.push(await mWorkspace.getAssetAsDataURI(filename))
+        if (!mLoadedAssets[assetId]) {
+            let asset = mModel.getAsset(assetId);
+            if (!asset || asset.type != AssetTypes.BOX) { console.error("Invalid cube asset!", assetId, asset); return loadDefaultEnvironmentCube(); }
+            let files = [];
+            for (const prefix of BOX_ASSET_PREFIXES) {
+                let filename = prefix + asset.filename;
+                files.push(await mWorkspace.getAssetAsDataURI(filename))
+            }
+            let cubeLoader = new THREE.CubeTextureLoader();
+            mLoadedAssets[assetId] = cubeLoader.load(files)
+            mAssetAges[assetId] = asset.updated;
         }
-        let cubeLoader = new THREE.CubeTextureLoader();
-        return cubeLoader.load(files)
+        if (!mLoadedAssets[assetId]) { console.error('Failed to load asset: ' + assetId); return null; }
+        return mLoadedAssets[assetId];
+    }
+
+    async function loadImage(assetId) {
+        if (!mLoadedAssets[assetId]) {
+            let asset = mModel.find(assetId);
+            if (!asset) { console.error("Invalid image asset: " + assetId, asset); throw new Error("Invalid model asset: " + assetId); }
+            const imageLoader = new THREE.ImageLoader();
+            let uri = await mWorkspace.getAssetAsDataURI(asset.filename);
+            let image = await imageLoader.loadAsync(uri, null, null, function (error) { console.error('Error loading image', error); });
+            mLoadedAssets[assetId] = image;
+            mAssetAges[assetId] = asset.updated;
+        }
+        if (!mLoadedAssets[assetId]) { console.error('Failed to load asset: ' + assetId); return null; }
+        return mLoadedAssets[assetId];
+    }
+
+    async function loadAssetModel(assetId) {
+        if (!mLoadedAssets[assetId]) {
+            let asset = mModel.find(assetId);
+            if (!asset || asset.type != AssetTypes.MODEL) { console.error("Bad asset", assetId, asset); throw new Error("Invalid model asset: " + assetId); }
+            let model = await loadGLTFModel(asset.filename);
+            mLoadedAssets[assetId] = model;
+            mAssetAges[assetId] = asset.updated;
+        }
+        if (!mLoadedAssets[assetId]) { console.error('Failed to load asset: ' + assetId); return null; }
+        return mLoadedAssets[assetId];
     }
 
     async function loadDefaultEnvironmentCube() {
@@ -42,15 +81,6 @@ export function AssetUtil(workspace) {
         return mLoadedAssets['DEFAULT_ENV_BOX'];
     }
 
-    async function loadImage(assetId) {
-        let asset = mModel.find(assetId);
-        if (!asset) { console.error("Invalid image asset: " + assetId, asset); throw new Error("Invalid model asset: " + assetId); }
-        const imageLoader = new THREE.ImageLoader();
-        let uri = await mWorkspace.getAssetAsDataURI(asset.filename);
-        let image = await imageLoader.loadAsync(uri, null, null, function (error) { console.error('Error loading image', error); });
-        return image;
-    }
-
     async function loadTexture(file) {
         const texttureLoader = new THREE.TextureLoader();
         let texture = await texttureLoader.loadAsync('./assets/images/' + file);
@@ -61,13 +91,6 @@ export function AssetUtil(workspace) {
         const texttureLoader = new THREE.TextureLoader();
         let texture = texttureLoader.load('./assets/images/' + file);
         return texture;
-    }
-
-    async function loadAssetModel(assetId) {
-        let asset = mModel.find(assetId);
-        if (!asset || asset.type != AssetTypes.MODEL) { console.error("Bad asset", assetId, asset); throw new Error("Invalid model asset: " + assetId); }
-        let model = await loadGLTFModel(asset.filename);
-        return model;
     }
 
     async function loadGLTFModel(filename) {

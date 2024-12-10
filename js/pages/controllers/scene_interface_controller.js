@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BrushToolButtons, InteractionType, ItemButtons, MenuNavButtons, SurfaceToolButtons, ToolButtons } from "../../constants.js";
+import { ASSET_UPDATE, BrushToolButtons, InteractionType, ItemButtons, MenuNavButtons, SurfaceToolButtons, ToolButtons } from "../../constants.js";
 import { Data } from "../../data.js";
 import { IdUtil } from "../../utils/id_util.js";
 import { Util } from "../../utils/utility.js";
@@ -20,6 +20,7 @@ import { XRSessionController } from './xr_controllers/xr_session_controller.js';
  */
 export function SceneInterfaceController(parentContainer, mWebsocketController) {
     let mModelUpdateCallback = async () => { }
+    let mAssetUpdateCallback = async () => { }
 
     let isVR = false;
 
@@ -183,7 +184,13 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             mSceneController,
             mHelperPointController);
 
-        if (updates.length > 0) await mModelUpdateCallback(updates);
+        let modelUpdates = updates.filter(u => u instanceof ModelUpdate)
+        if (modelUpdates.length > 0) await mModelUpdateCallback(modelUpdates);
+
+        let assetUpdates = updates.filter(u => u.command == ASSET_UPDATE);
+        for (let update of assetUpdates) {
+            await mAssetUpdateCallback(update.id, await update.dataPromise)
+        };
     }
 
     async function menuButtonClicked(target) {
@@ -265,5 +272,6 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
     this.setCurrentMoment = setCurrentMoment;
     this.sessionStart = sessionStart;
     this.onModelUpdate = (func) => mModelUpdateCallback = func;
+    this.onAssetUpdate = (func) => mAssetUpdateCallback = func;
 }
 

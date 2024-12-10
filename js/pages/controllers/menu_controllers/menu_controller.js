@@ -101,7 +101,6 @@ export function MenuController() {
         mCurrentSubMenuId = buttonId;
 
         if (mSingleContainer && mCurrentSubMenu) {
-            console.log('herererere')
             mCurrentSubMenu.setVOffset(mCurrentMenu.getObject().getHeight())
         }
     }

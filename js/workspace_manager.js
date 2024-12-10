@@ -87,6 +87,13 @@ export function WorkspaceManager(folderHandle) {
         return newName;
     }
 
+    async function updateAsset(file) {
+        // this assumes we already have a good filename.
+        let arrayBuffer = await file.arrayBuffer();
+        let assetFolder = await mFolderHandle.getDirectoryHandle(ASSET_FOLDER, { create: true });
+        await FileUtil.writeFile(assetFolder, file.name, arrayBuffer);
+    }
+
     async function storeCanvas(name, canvas) {
         let blob = await new Promise(resolve => canvas.toBlob(resolve));
         name += "-" + Date.now() + ".png";
@@ -140,6 +147,7 @@ export function WorkspaceManager(folderHandle) {
     this.updateStory = updateStory;
     this.getStory = getStory;
     this.storeAsset = storeAsset;
+    this.updateAsset = updateAsset;
     this.storeCanvas = storeCanvas;
     this.getAssetAsDataURI = getAssetAsDataURI;
     this.loadStory = loadStory;

@@ -175,6 +175,7 @@ class Asset extends DataItem {
     name = "Asset";
     type = null;
     filename = null;
+    updated = Date.now();
     // the default poses for the model.
     poseIds = []
 }

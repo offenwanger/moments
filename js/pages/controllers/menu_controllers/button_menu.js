@@ -75,8 +75,15 @@ export function ButtonMenu(id, width) {
         layout();
     }
 
+    function empty(dynamic = false) {
+        if (dynamic) mButtons = mButtons.filter(b => !b.isDynamic());
+        else mButtons = [];
+        layout();
+    }
+
     this.add = add;
     this.remove = remove;
+    this.empty = empty;
     this.getObject = () => mContainer;
     this.getButtons = () => [...mButtons];
     this.onAfterUpdate = (func) => mOnAfterUpdateCallback = func;

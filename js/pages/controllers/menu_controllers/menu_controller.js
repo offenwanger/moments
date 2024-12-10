@@ -8,26 +8,95 @@ export function MenuController() {
     const BUTTON_SIZE = 0.4;
 
     let mToolMode = new ToolMode();
+    let mSingleContainer = true;
 
-    let mMainMenu = createMainMenu()
-    let mSphereSettingsMenu = createSphereMenu();
-    let mImageSelectMenu = createAssetSelectMenu('ImageSelectMenu');
-    let mAudioSelectMenu = createAssetSelectMenu('AudioSelectMenu');
-    let mModelSelectMenu = createAssetSelectMenu('ModelSelectMenu');
-    let mColorSelectMenu = createColorSelectMenu();
-    let mBrushSettingsMenu = createBrushSettingsMenu();
-    let mSurfaceSettingsMenu = createSurfaceSettingsMenu();
-
-    // needed to adjust the menu positioning
     let mMenuContainer = new ThreeMeshUI.Block({ width: 0.001, height: 0.001, });
-    let mCurrentMenuId = MenuNavButtons.MAIN_MENU;
-    let mCurrentMenu = mMainMenu;
-    mMenuContainer.add(mCurrentMenu.getObject());
+    let mCurrentMenuId = null;
+    let mCurrentMenu = null;
 
     let mSubMenuContainer = new ThreeMeshUI.Block({ width: 0.001, height: 0.001, });
     let mCurrentSubMenuId = null;
     let mCurrentSubMenu = null;
-    let mSingleContainer = true;
+
+    let mMenus = {};
+    let mSubMenus = {};
+    let mParentLinks = {}
+
+
+    mMenus[MenuNavButtons.MAIN_MENU] = createMenu(MenuNavButtons.MAIN_MENU, [
+        new MeshButton(ToolButtons.MOVE, 'Move', BUTTON_SIZE),
+        new MeshButton(ToolButtons.BRUSH, 'Brush', BUTTON_SIZE),
+        new MeshButton(ToolButtons.SURFACE, 'Surface', BUTTON_SIZE),
+        new MeshButton(ToolButtons.SCISSORS, 'Scissors', BUTTON_SIZE),
+        new MeshButton(ToolButtons.RECORD, 'Record', BUTTON_SIZE),
+        new MeshButton(ItemButtons.RECENTER, 'Recenter', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.SPHERE_SETTINGS, 'Sphere Settings', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.SETTINGS, 'Settings', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.ADD, 'Add', BUTTON_SIZE)
+    ]);
+    mCurrentMenuId = MenuNavButtons.MAIN_MENU;
+    mCurrentMenu = mMenus[MenuNavButtons.MAIN_MENU];
+    mMenuContainer.add(mCurrentMenu.getObject());
+
+    mMenus[MenuNavButtons.SPHERE_SETTINGS] = createMenu(MenuNavButtons.SPHERE_SETTINGS, [
+        new MeshButton(MenuNavButtons.BACK_BUTTON, 'Back', BUTTON_SIZE),
+        new MeshButton(AttributeButtons.SPHERE_TOGGLE, 'Toggle', BUTTON_SIZE),
+        new MeshButton(AttributeButtons.SPHERE_SCALE_UP, 'Scale Up', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.SPHERE_IMAGE, 'Image', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.SPHERE_COLOR, 'Color', BUTTON_SIZE),
+        new MeshButton(AttributeButtons.SPHERE_SCALE_DOWN, 'Scale Down', BUTTON_SIZE),
+    ]);
+    mParentLinks[MenuNavButtons.SPHERE_SETTINGS] = MenuNavButtons.MAIN_MENU;
+
+    mMenus[MenuNavButtons.SETTINGS] = createMenu(MenuNavButtons.SETTINGS, [
+        new MeshButton(MenuNavButtons.BACK_BUTTON, 'Back', BUTTON_SIZE),
+    ]);
+    mParentLinks[MenuNavButtons.SETTINGS] = MenuNavButtons.MAIN_MENU;
+
+    mMenus[MenuNavButtons.ADD] = createMenu(MenuNavButtons.ADD, [
+        new MeshButton(MenuNavButtons.BACK_BUTTON, 'Back', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.ADD_AUDIO, 'Audio', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.ADD_PICTURE, 'Picture', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.ADD_MODEL, 'Model', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.ADD_TELEPORT, 'Teleport', BUTTON_SIZE),
+    ]);
+    mParentLinks[MenuNavButtons.SETTINGS] = MenuNavButtons.MAIN_MENU;
+
+    // Submenus
+    mSubMenus[ToolButtons.BRUSH] = createMenu(ToolButtons.BRUSH, [
+        new MeshButton(BrushToolButtons.UNBLUR, 'Unblur', BUTTON_SIZE),
+        new MeshButton(BrushToolButtons.BLUR, 'Blur', BUTTON_SIZE),
+        new MeshButton(BrushToolButtons.COLOR, 'Color', BUTTON_SIZE),
+    ]);
+    mSubMenus[ToolButtons.SURFACE] = createMenu(ToolButtons.SURFACE, [
+        new MeshButton(SurfaceToolButtons.MOVE, 'Move', BUTTON_SIZE),
+        new MeshButton(SurfaceToolButtons.FLATTEN, 'Flatten', BUTTON_SIZE),
+        new MeshButton(SurfaceToolButtons.SELECT, 'Select', BUTTON_SIZE),
+    ]);
+
+    // Dynamic menus
+    let mImageSelectMenu = createSelectMenu('ImageSelectMenu');
+    let mAudioSelectMenu = createSelectMenu('AudioSelectMenu');
+    let mModelSelectMenu = createSelectMenu('ModelSelectMenu');
+    let mMomentSelectMenu = createSelectMenu('MomentSelectMenu');
+    mMomentSelectMenu.add(new MeshButton(ItemButtons.NEW_MOMENT, '+', BUTTON_SIZE));
+
+    mMenus[MenuNavButtons.SPHERE_IMAGE] = mImageSelectMenu;
+    mParentLinks[MenuNavButtons.SPHERE_IMAGE] = MenuNavButtons.SPHERE_SETTINGS;
+
+    mMenus[MenuNavButtons.ADD_AUDIO] = mAudioSelectMenu;
+    mParentLinks[MenuNavButtons.ADD_AUDIO] = MenuNavButtons.ADD;
+
+    mMenus[MenuNavButtons.ADD_PICTURE] = mImageSelectMenu;
+    mParentLinks[MenuNavButtons.ADD_PICTURE] = MenuNavButtons.ADD;
+
+    mMenus[MenuNavButtons.ADD_MODEL] = mImageSelectMenu;
+    mParentLinks[MenuNavButtons.ADD_MODEL] = MenuNavButtons.ADD;
+
+    mMenus[MenuNavButtons.ADD_TELEPORT] = mMomentSelectMenu;
+    mParentLinks[MenuNavButtons.ADD_TELEPORT] = MenuNavButtons.ADD;
+
+
 
     function setContainer(container1, container2) {
         container1.add(mMenuContainer);
@@ -40,79 +109,50 @@ export function MenuController() {
         }
     }
 
-    function setToolMode(toolMode) {
-        mMainMenu.getButtons().find(b => b.getId() == mToolMode.tool)?.deactivate();
-        mBrushSettingsMenu.getButtons().find(b => b.getId() == mToolMode.brushSettings.mode)?.deactivate();
-        mSurfaceSettingsMenu.getButtons().find(b => b.getId() == mToolMode.surfaceSettings.mode)?.deactivate();
-
-        mToolMode = toolMode.clone();
-
-        mMainMenu.getButtons().find(b => b.getId() == mToolMode.tool)?.activate();
-        mBrushSettingsMenu.getButtons().find(b => b.getId() == mToolMode.brushSettings.mode)?.activate();
-        mSurfaceSettingsMenu.getButtons().find(b => b.getId() == mToolMode.surfaceSettings.mode)?.activate();
-    }
-
-    function showMenu(buttonId) {
+    function showMenu(menuId) {
         mMenuContainer.remove(mCurrentMenu.getObject());
-        if (buttonId == MenuNavButtons.SPHERE_SETTINGS) {
-            mCurrentMenu = mSphereSettingsMenu;
-        } else if (buttonId == MenuNavButtons.SPHERE_IMAGE) {
-            mCurrentMenu = mImageSelectMenu;
-        } else if (buttonId == MenuNavButtons.SPHERE_COLOR) {
-            mCurrentMenu = mColorSelectMenu;
-        } else if (buttonId == MenuNavButtons.SETTINGS) {
-            console.error('Show the settings menu.')
-        } else if (buttonId == MenuNavButtons.ADD) {
-            console.error('Show the add menu.')
-        } else if (buttonId == MenuNavButtons.MAIN_MENU) {
-            mCurrentMenu = mMainMenu;
-        } else if (buttonId == MenuNavButtons.BACK_BUTTON) {
-            if (mCurrentMenuId == MenuNavButtons.SPHERE_IMAGE || mCurrentMenuId == MenuNavButtons.SPHERE_COLOR) {
-                mCurrentMenu = mSphereSettingsMenu;
-            } else {
-                console.error('Back not implimented for ' + mCurrentMenuId);
-                mCurrentMenu = mMainMenu;
-            }
-        } else {
-            console.error('Invalid menu! ' + buttonId);
-            mCurrentMenu = mMainMenu;
+
+        if (menuId == MenuNavButtons.BACK_BUTTON) {
+            menuId = mParentLinks[mCurrentMenuId];
+            if (!menuId) { console.error('No parent specified for ' + mCurrentMenuId); }
         }
+
+        mCurrentMenuId = menuId
+        mCurrentMenu = mMenus[menuId];
+
+        if (!mCurrentMenu) {
+            console.error("No menu for " + menuId);
+            mCurrentMenuId = menuId
+            mCurrentMenu = mMenus[MenuNavButtons.MAIN_MENU];
+        }
+
         mMenuContainer.add(mCurrentMenu.getObject());
-        mCurrentMenuId = buttonId;
+        mCurrentMenuId = menuId;
         if (mSingleContainer && mCurrentSubMenu) {
             mCurrentSubMenu.setVOffset(menu.getObject().getHeight())
         }
     }
 
-    function showSubMenu(buttonId) {
+    function showSubMenu(menuId) {
         if (mCurrentSubMenu) mSubMenuContainer.remove(mCurrentSubMenu.getObject());
-        mCurrentSubMenu = null;
-        if (buttonId == ToolButtons.BRUSH) {
-            mCurrentSubMenu = mBrushSettingsMenu;
-        } else if (buttonId == ToolButtons.SURFACE) {
-            mCurrentSubMenu = mSurfaceSettingsMenu;
-        } else if (!buttonId) {
-            // clearing the menu.
-        } else {
-            console.error("Invalid SubMenu");
+
+        mCurrentSubMenuId = menuId;
+        mCurrentSubMenu = mSubMenus[menuId];
+        if (!mCurrentSubMenu) {
+            mCurrentSubMenu = null
+            mCurrentSubMenuId = null;
         }
 
         if (mCurrentSubMenu) mSubMenuContainer.add(mCurrentSubMenu.getObject());
-        mCurrentSubMenuId = buttonId;
-
         if (mSingleContainer && mCurrentSubMenu) {
             mCurrentSubMenu.setVOffset(mCurrentMenu.getObject().getHeight())
         }
     }
 
     async function updateModel(model, assetUtil) {
-        for (let menu of [mImageSelectMenu, mAudioSelectMenu, mModelSelectMenu]) {
-            menu.getButtons().forEach(b => {
-                if (!Object.values(MenuNavButtons).includes(b.getId())) {
-                    mImageSelectMenu.remove(b);
-                }
-            });
-        }
+        mImageSelectMenu.empty(true)
+        mAudioSelectMenu.empty(true)
+        mModelSelectMenu.empty(true)
         for (let asset of model.assets) {
             let menu;
             if (asset.type == AssetTypes.MODEL) {
@@ -128,9 +168,26 @@ export function MenuController() {
                 console.error('Invalid type: ' + asset.type);
                 continue;
             }
-            let button = new MeshButton(asset.id, asset.name, BUTTON_SIZE);
+            let button = new MeshButton(asset.id, asset.name, BUTTON_SIZE, true);
             menu.add(button);
         }
+        mMomentSelectMenu.empty(true)
+        for (let moment of model.moments) {
+            let button = new MeshButton(moment.id, moment.name, BUTTON_SIZE, true);
+            mMomentSelectMenu.add(button);
+        }
+    }
+
+    function setToolMode(toolMode) {
+        mMenus[MenuNavButtons.MAIN_MENU].getButtons().find(b => b.getId() == mToolMode.tool)?.deactivate();
+        mSubMenus[ToolButtons.BRUSH].getButtons().find(b => b.getId() == mToolMode.brushSettings.mode)?.deactivate();
+        mSubMenus[ToolButtons.SURFACE].getButtons().find(b => b.getId() == mToolMode.surfaceSettings.mode)?.deactivate();
+
+        mToolMode = toolMode.clone();
+
+        mMenus[MenuNavButtons.MAIN_MENU].getButtons().find(b => b.getId() == mToolMode.tool)?.activate();
+        mSubMenus[ToolButtons.BRUSH].getButtons().find(b => b.getId() == mToolMode.brushSettings.mode)?.activate();
+        mSubMenus[ToolButtons.SURFACE].getButtons().find(b => b.getId() == mToolMode.surfaceSettings.mode)?.activate();
     }
 
     function render() {
@@ -155,85 +212,23 @@ export function MenuController() {
         return [];
     }
 
-    function createMainMenu() {
-        let menu = new ButtonMenu(MenuNavButtons.MAIN_MENU, MENU_WIDTH);
-        menu.onAfterUpdate(() => { afterUpdate(menu); })
-        menu.add(
-            new MeshButton(ToolButtons.MOVE, 'Move', BUTTON_SIZE),
-            new MeshButton(ToolButtons.BRUSH, 'Brush', BUTTON_SIZE),
-            new MeshButton(ToolButtons.SURFACE, 'Surface', BUTTON_SIZE),
-            new MeshButton(ToolButtons.SCISSORS, 'Scissors', BUTTON_SIZE),
-            new MeshButton(ToolButtons.RECORD, 'Record', BUTTON_SIZE),
-            new MeshButton(ItemButtons.RECENTER, 'Recenter', BUTTON_SIZE),
-            new MeshButton(MenuNavButtons.SPHERE_SETTINGS, 'Sphere Settings', BUTTON_SIZE),
-            new MeshButton(MenuNavButtons.SETTINGS, 'Settings', BUTTON_SIZE),
-            new MeshButton(MenuNavButtons.ADD, 'Add', BUTTON_SIZE)
-        );
-        return menu;
-    }
-
-    function createSphereMenu() {
-        let menu = new ButtonMenu(MenuNavButtons.SPHERE_SETTINGS, MENU_WIDTH);
-        menu.onAfterUpdate(() => { afterUpdate(menu); })
-        menu.add(
-            new MeshButton(MenuNavButtons.MAIN_MENU, 'Back', BUTTON_SIZE),
-            new MeshButton(AttributeButtons.SPHERE_TOGGLE, 'Toggle', BUTTON_SIZE),
-            new MeshButton(AttributeButtons.SPHERE_SCALE_UP, 'Scale Up', BUTTON_SIZE),
-            new MeshButton(MenuNavButtons.SPHERE_IMAGE, 'Image', BUTTON_SIZE),
-            new MeshButton(MenuNavButtons.SPHERE_COLOR, 'Color', BUTTON_SIZE),
-            new MeshButton(AttributeButtons.SPHERE_SCALE_DOWN, 'Scale Down', BUTTON_SIZE),
-        );
-        return menu;
-    }
-
-    function createAssetSelectMenu(id) {
-        let menu = new ButtonMenu(id, MENU_WIDTH);
-        menu.onAfterUpdate(() => { afterUpdate(menu); })
-        menu.add(
+    function createSelectMenu(id) {
+        return createMenu(id, [
             new MeshButton(MenuNavButtons.BACK_BUTTON, 'Back', BUTTON_SIZE),
             new MeshButton(MenuNavButtons.PREVIOUS_BUTTON, 'Prev', BUTTON_SIZE),
             new MeshButton(MenuNavButtons.NEXT_BUTTON, 'Next', BUTTON_SIZE),
-        );
-        return menu;
+        ]);
     }
 
-    function createColorSelectMenu() {
-        let menu = new ButtonMenu(MenuNavButtons.SPHERE_COLOR, MENU_WIDTH);
-        menu.add(
-            new MeshButton(MenuNavButtons.SPHERE_SETTINGS, 'Back', BUTTON_SIZE),
-            new MeshButton(MenuNavButtons.PREVIOUS_BUTTON, 'Prev', BUTTON_SIZE),
-            new MeshButton(MenuNavButtons.NEXT_BUTTON, 'Next', BUTTON_SIZE),
-            // add color button
-        );
-        return menu;
-    }
-
-    function createBrushSettingsMenu() {
-        let menu = new ButtonMenu(MenuNavButtons.SPHERE_COLOR, MENU_WIDTH);
-        menu.add(
-            new MeshButton(BrushToolButtons.UNBLUR, 'Unblur', BUTTON_SIZE),
-            new MeshButton(BrushToolButtons.BLUR, 'Blur', BUTTON_SIZE),
-            new MeshButton(BrushToolButtons.COLOR, 'Color', BUTTON_SIZE),
-        );
-        return menu;
-    }
-
-    function createSurfaceSettingsMenu() {
-        let menu = new ButtonMenu(MenuNavButtons.SPHERE_COLOR, MENU_WIDTH);
-        menu.add(
-            new MeshButton(SurfaceToolButtons.MOVE, 'Move', BUTTON_SIZE),
-            new MeshButton(SurfaceToolButtons.FLATTEN, 'Flatten', BUTTON_SIZE),
-            new MeshButton(SurfaceToolButtons.SELECT, 'Select', BUTTON_SIZE),
-        );
-        return menu;
-    }
-
-    function afterUpdate(menu) {
-        if (mSingleContainer && menu == mCurrentMenu) {
-            if (mCurrentSubMenu) {
+    function createMenu(id, buttons) {
+        let menu = new ButtonMenu(id, MENU_WIDTH);
+        menu.add(...buttons);
+        menu.onAfterUpdate(() => {
+            if (mSingleContainer && menu == mCurrentMenu && mCurrentSubMenu) {
                 mCurrentSubMenu.setVOffset(menu.getObject().getHeight())
             }
-        }
+        })
+        return menu;
     }
 
     this.setContainer = setContainer;

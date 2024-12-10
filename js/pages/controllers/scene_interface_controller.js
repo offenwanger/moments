@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { ASSET_UPDATE, BrushToolButtons, InteractionType, ItemButtons, MenuNavButtons, SurfaceToolButtons, ToolButtons } from "../../constants.js";
+import { ASSET_UPDATE, AttributeButtons, BrushToolButtons, InteractionType, ItemButtons, MenuNavButtons, SurfaceToolButtons, ToolButtons } from "../../constants.js";
 import { Data } from "../../data.js";
 import { IdUtil } from "../../utils/id_util.js";
 import { Util } from "../../utils/utility.js";
@@ -220,11 +220,41 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             mMenuController.showMenu(buttonId);
         } else if (Object.values(ItemButtons).includes(buttonId)) {
             console.error("Impliment me!")
+        } else if (buttonId == AttributeButtons.SPHERE_SCALE_UP) {
+            let moment = mModel.moments.find(m => m.id == mMomentId);
+            if (!moment) { console.error("invalid moment id: " + mMomentId); return; }
+            let photosphere = mModel.photospheres.find(p => p.id == moment.photosphereId);
+            if (!photosphere) { console.error("invalid photosphere id: " + moment.photosphereId); return; }
+            await mModelUpdateCallback([new ModelUpdate({
+                id: moment.photosphereId,
+                scale: Math.min(photosphere.scale + 0.1, 5),
+            })]);
+        } else if (buttonId == AttributeButtons.SPHERE_SCALE_DOWN) {
+            let moment = mModel.moments.find(m => m.id == mMomentId);
+            if (!moment) { console.error("invalid moment id: " + mMomentId); return; }
+            let photosphere = mModel.photospheres.find(p => p.id == moment.photosphereId);
+            if (!photosphere) { console.error("invalid photosphere id: " + moment.photosphereId); return; }
+            await mModelUpdateCallback([new ModelUpdate({
+                id: moment.photosphereId,
+                scale: Math.max(photosphere.scale - 0.1, 0.5),
+            })]);
+        } else if (buttonId == AttributeButtons.SPHERE_TOGGLE) {
+            let moment = mModel.moments.find(m => m.id == mMomentId);
+            if (!moment) { console.error("invalid moment id: " + mMomentId); return; }
+            let photosphere = mModel.photospheres.find(p => p.id == moment.photosphereId);
+            if (!photosphere) { console.error("invalid photosphere id: " + moment.photosphereId); return; }
+            await mModelUpdateCallback([new ModelUpdate({
+                id: moment.photosphereId,
+                enabled: !photosphere.enabled
+            })]);
         } else if (IdUtil.getClass(buttonId) == Data.Asset) {
             if (menuId == MenuNavButtons.SPHERE_IMAGE) {
                 let moment = mModel.moments.find(m => m.id == mMomentId);
                 if (!moment) { console.error("invalid moment id: " + mMomentId); return; }
-                await mModelUpdateCallback([new ModelUpdate({ id: moment.photosphereId, imageAssetId: buttonId })]);
+                await mModelUpdateCallback([new ModelUpdate({
+                    id: moment.photosphereId,
+                    imageAssetId: buttonId
+                })]);
             } else {
                 console.error("not implimented!!");
             }

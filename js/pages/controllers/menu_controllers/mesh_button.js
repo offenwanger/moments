@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import * as ThreeMeshUI from 'three-mesh-ui';
 import { InteractionTargetInterface } from '../../scene_objects/interaction_target_interface.js';
 
-export function MeshButton(id, label, size) {
+export function MeshButton(id, label, size, dynamic = false) {
+    let mDynamic = dynamic;
     const mButton = new ThreeMeshUI.Block({
         padding: 0.05,
         width: size,
@@ -76,6 +77,7 @@ export function MeshButton(id, label, size) {
     this.getObject = () => mButton;
     this.getTarget = getTarget;
     this.getId = () => id;
+    this.isDynamic = () => mDynamic;
     this.deactivate = deactivate;
     this.activate = activate;
 }

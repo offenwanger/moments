@@ -82,11 +82,15 @@ export const MenuNavButtons = {
     NEXT_BUTTON: 'nextButton',
     SPHERE_IMAGE: 'chooseSphereImage',
     SPHERE_COLOR: 'chooseSphereColor',
+    ADD_AUDIO: 'addAudio',
+    ADD_PICTURE: 'addPicture',
+    ADD_MODEL: 'addModel',
+    ADD_TELEPORT: 'addTeleport',
 }
 
 export const ItemButtons = {
     RECENTER: 'recenter',
-    TELEPORT: 'teleport',
+    NEW_MOMENT: 'newMoment',
 }
 
 export const AttributeButtons = {

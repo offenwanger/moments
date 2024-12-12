@@ -244,8 +244,12 @@ class Audio extends DataItem {
 class Teleport extends DataItem {
     x = 0; y = 0; z = 0;
     momentId = null;
-    sceneX = 0; sceneY = 0; sceneZ = 0;
-    sceneOrientation = [0, 0, 0, 1];
+    sceneX = 0;
+    sceneY = 0;
+    sceneZ = 0;
+    sceneDirX = 0;
+    sceneDirY = 0;
+    sceneDirZ = -1;
 }
 
 export const Data = {

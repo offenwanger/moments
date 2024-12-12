@@ -1,10 +1,10 @@
 import { Data } from "../data.js";
+import { Util } from "../utils/utility.js";
 
 export function ListPage(parentContainer) {
     let mEditCallback = async () => { };
 
     let mWorkspace;
-
 
     let h3 = document.createElement('h3');
     h3.textContent = "Stories";
@@ -19,7 +19,10 @@ export function ListPage(parentContainer) {
     mNewStoryButton.style['margin-left'] = "40px";
     mNewStoryButton.textContent = "New Story";
     mNewStoryButton.addEventListener('click', async () => {
+        if (!mWorkspace) { console.error('Workspace needed.'); return; }
         let newStory = new Data.StoryModel();
+        let stories = await mWorkspace.getStoryList();
+        newStory.name = Util.getNextName('Story', stories.map(s => s.name))
         await mWorkspace.newStory(newStory.id)
         await mWorkspace.updateStory(newStory);
         await show(mWorkspace);

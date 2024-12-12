@@ -1,4 +1,4 @@
-import { ASSET_UPDATE, BrushToolButtons, InteractionType } from "../../../constants.js";
+import { ASSET_UPDATE_COMMAND, BrushToolButtons, InteractionType } from "../../../constants.js";
 
 function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
     if (interactionState.type == InteractionType.NONE) {
@@ -63,7 +63,7 @@ function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionCont
         }
         let assetId = data.target.getId();
         updates.push({
-            command: ASSET_UPDATE,
+            command: ASSET_UPDATE_COMMAND,
             id: assetId,
             dataPromise: new Promise(resolve => canvas.toBlob(resolve))
         });

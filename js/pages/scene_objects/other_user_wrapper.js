@@ -6,31 +6,29 @@ export function OtherUserWrapper(parent, id) {
     let mHandRIn = false;
     let mHandLIn = false;
 
-    const mMaterial = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(Math.random(), Math.random(), Math.random)
-    });
 
     const mGeometry = new THREE.SphereGeometry(0.2, 16, 8);
+
+    const mMaterial = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(Math.random(), Math.random(), Math.random),
+        transparent: true,
+        opacity: 1,
+    });
     const mSphere = new THREE.Mesh(
         mGeometry,
         mMaterial
     );
 
-    const mEye1 = new THREE.Mesh(
-        mGeometry,
-        new THREE.MeshBasicMaterial({
-            color: new THREE.Color(0, 0, 0)
-        })
-    );
+    const mEyeMaterial = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(0, 0, 0),
+        transparent: true,
+        opacity: 1,
+    })
+    const mEye1 = new THREE.Mesh(mGeometry, mEyeMaterial);
     mEye1.scale.set(0.1, 0.3, 0.1)
     mEye1.position.set(-0.05, 0, -0.2)
 
-    const mEye2 = new THREE.Mesh(
-        mGeometry,
-        new THREE.MeshBasicMaterial({
-            color: new THREE.Color(0, 0, 0)
-        })
-    );
+    const mEye2 = new THREE.Mesh(mGeometry, mEyeMaterial);
     mEye2.scale.set(0.1, 0.3, 0.1)
     mEye2.position.set(0.05, 0, -0.2)
 
@@ -52,7 +50,7 @@ export function OtherUserWrapper(parent, id) {
         mMaterial
     );
 
-    async function update(head, handR = null, handL = null) {
+    async function update(head, handR = null, handL = null, solid = false) {
         mHead.position.set(head.x, head.y, head.z);
         mHead.quaternion.set(...head.orientation);
         if (handR) {
@@ -65,6 +63,14 @@ export function OtherUserWrapper(parent, id) {
             if (!mHandLIn) { mParent.add(mHandL); mHandLIn = true; }
             mHandL.position.set(handL.x, handL.y, handL.z);
             mHandL.quaternion.set(...handL.orientation);
+        }
+
+        if (!solid) {
+            mMaterial.opacity = 0.1;
+            mEyeMaterial.opacity = 0.1;
+        } else {
+            mMaterial.opacity = 1;
+            mEyeMaterial.opacity = 1;
         }
     }
 

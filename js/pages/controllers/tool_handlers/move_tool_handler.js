@@ -1,10 +1,27 @@
 import * as THREE from "three";
-import { InteractionType } from "../../../constants.js";
+import { TELEPORT_COMMAND, InteractionType } from "../../../constants.js";
 import { Util } from "../../../utils/utility.js";
 import { ModelUpdate } from "../model_controller.js";
+import { IdUtil } from "../../../utils/id_util.js";
+import { Data } from "../../../data.js";
+import { InteractionTargetInterface } from "../../scene_objects/interaction_target_interface.js";
 
 let mIKSolver;
 let mCCDIKHelper;
+
+const TELEPORT_TARGET = 'teleportTarget';
+
+let mTeleportTargetDistance = 1;
+const mTeleportTarget = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 32, 16),
+    new THREE.MeshBasicMaterial({
+        color: 0xffff00,
+        side: THREE.BackSide,
+        depthTest: false,
+    }));
+mTeleportTarget.renderOrder = 999;
+const mTeleportTargetInteractionWrapper = new InteractionTargetInterface();
+mTeleportTargetInteractionWrapper.getId = () => TELEPORT_TARGET;
 
 function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
     if (!raycaster) {
@@ -12,32 +29,23 @@ function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionCo
         return;
     }
 
-    if (interactionState.type == InteractionType.NONE ||
-        (interactionState.type == InteractionType.ONE_HAND_MOVE && !isPrimary)) {
-        let targets = sceneController.getTargets(raycaster, toolMode)
-
-        if (interactionState.type == InteractionType.ONE_HAND_MOVE) {
-            // If we are already moving something, then the only valid targets
-            // the dragged object or bones belonging to it. 
-            targets = targets.filter(t =>
-                t.getRoot().getId() == interactionState.data.rootTarget.getId());
-        }
-
-        if (targets.length == 0) {
-            sessionController.hovered(false, isPrimary)
-        } else {
-            let closest = Util.getClosestTarget(raycaster.ray, targets);
-            closest.highlight(toolMode);
-            helperPointController.showPoint(isPrimary, closest.getIntersection().point);
-            if (isPrimary) {
-                interactionState.primaryHovered = closest;
+    if (interactionState.type == InteractionType.NONE) {
+        if (isPrimary) {
+            let targets = sceneController.getTargets(raycaster, toolMode)
+            if (targets.length == 0) {
+                sessionController.hovered(false, isPrimary)
             } else {
-                interactionState.secondaryHovered = closest;
+                let closest = Util.getClosestTarget(raycaster.ray, targets);
+                closest.highlight(toolMode);
+                helperPointController.showPoint(isPrimary, closest.getIntersection().point);
+                interactionState.primaryHovered = closest;
+                sessionController.hovered(true, isPrimary)
             }
-            sessionController.hovered(true, isPrimary)
+        } else {
+            // do nothing.
         }
-    } else if (interactionState.type == InteractionType.ONE_HAND_MOVE) {
-
+    } else if (interactionState.type == InteractionType.ONE_HAND_MOVE && isPrimary) {
+        // Move the moving thing. 
         let fromRay = interactionState.data.startRay;
         let toRay = raycaster.ray;
 
@@ -49,6 +57,38 @@ function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionCo
 
         interactionState.data.rootTarget.setWorldPosition(newPosition);
         interactionState.data.rootTarget.setLocalOrientation(newOrientation);
+
+        let moveClass = IdUtil.getClass(interactionState.data.rootTarget.getId());
+        let targets = [];
+        if (moveClass == Data.Teleport) {
+            // TODO: Update this to check if an item has a teleport attached. 
+            let target = getTeleportDropTarget(raycaster);
+            if (target) targets = [target];
+            updateTeleportTarget(raycaster, sceneController);
+        }
+
+        if (targets.length == 0) {
+            targets = getDropTargets(raycaster, toolMode, moveClass, sceneController);
+            if (targets.length > 0) {
+                let closest = Util.getClosestTarget(raycaster.ray, targets);
+                closest.highlight(toolMode);
+                helperPointController.showPoint(isPrimary, closest.getIntersection().point);
+                interactionState.primaryHovered = closest;
+                sessionController.hovered(true, isPrimary)
+            }
+        }
+    } else if (interactionState.type == InteractionType.ONE_HAND_MOVE && !isPrimary) {
+        // highlight 2 handed interactions
+        let targets = sceneController.getTargets(raycaster, toolMode)
+        // the only valid targets are the dragged object or bones belonging to it. 
+        targets = targets.filter(t => t.getRoot().getId() == interactionState.data.rootTarget.getId());
+        if (targets.length > 0) {
+            let closest = Util.getClosestTarget(raycaster.ray, targets);
+            closest.highlight(toolMode);
+            helperPointController.showPoint(isPrimary, closest.getIntersection().point);
+            interactionState.secondaryHovered = closest;
+            sessionController.hovered(true, isPrimary)
+        }
     } else if (interactionState.type == InteractionType.TWO_HAND_MOVE) {
         if (isPrimary) {
             let fromRay = interactionState.data.primaryStartRay;
@@ -120,7 +160,7 @@ function pointerDown(raycaster, isPrimary, interactionState, toolMode, sessionCo
     let hovered = isPrimary ? interactionState.primaryHovered : interactionState.secondaryHovered;
     if (hovered) {
         if (interactionState.type == InteractionType.NONE) {
-            startOneHandMove(raycaster.ray, hovered, interactionState)
+            startOneHandMove(raycaster, hovered, interactionState, sceneController)
         } else if (interactionState.type == InteractionType.ONE_HAND_MOVE) {
             if (interactionState.data.target.getId() == hovered.getId()) {
                 startTwoHandMove(raycaster.ray, hovered);
@@ -143,15 +183,42 @@ function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionCont
     let updates = []
 
     if (type == InteractionType.ONE_HAND_MOVE) {
+        let moveClass = IdUtil.getClass(data.rootTarget.getId());
+        let targets = [];
+        if (moveClass == Data.Teleport) {
+            // TODO: Update this to check if an item has a teleport attached. 
+            let target = getTeleportDropTarget(raycaster);
+            if (target) targets = [target];
+            updates = [{
+                command: TELEPORT_COMMAND,
+                id: data.rootTarget.getId(),
+            }]
+        }
 
-        let newPosition = data.rootTarget.getLocalPosition();
-        updates = [new ModelUpdate({
-            id: data.rootTarget.getId(),
-            x: newPosition.x,
-            y: newPosition.y,
-            z: newPosition.z,
-            //TODO: orientation = ...
-        })]
+        if (targets.length == 0) {
+            targets = getDropTargets(raycaster, toolMode, moveClass, sceneController);
+            if (targets.length > 0) {
+                let closest = Util.getClosestTarget(raycaster.ray, targets);
+                let update = { id: closest.getId() }
+                if (moveClass == Data.Teleport) {
+                    update.teleportId = data.rootTarget.getId();
+                } else if (moveClass == Data.Audio) {
+                    update.audioId = data.rootTarget.getId();
+                }
+                updates = [new ModelUpdate(update)]
+            }
+        }
+
+        if (targets.length == 0) {
+            let newPosition = data.rootTarget.getLocalPosition();
+            updates = [new ModelUpdate({
+                id: data.rootTarget.getId(),
+                x: newPosition.x,
+                y: newPosition.y,
+                z: newPosition.z,
+                //TODO: orientation = ...
+            })]
+        }
     } else if (type == InteractionType.TWO_HAND_MOVE) {
         let newPosition = data.rootTarget.getLocalPosition();
         updates = [new ModelUpdate({
@@ -194,19 +261,35 @@ function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionCont
         mCCDIKHelper = null;
     }
 
+    sceneController.getScene().remove(mTeleportTarget)
+
     return updates;
 }
 
 
-function startOneHandMove(ray, target, interactionState) {
+function startOneHandMove(raycaster, target, interactionState, sceneController) {
     interactionState.type = InteractionType.ONE_HAND_MOVE;
     let rootTarget = target.getRoot();
     interactionState.data = {
         target,
         rootTarget,
-        startRay: new THREE.Ray().copy(ray),
+        startRay: new THREE.Ray().copy(raycaster.ray),
         startOrientation: rootTarget.getLocalOrientation(),
         startPosition: rootTarget.getWorldPosition(),
+    }
+
+    let moveClass = IdUtil.getClass(interactionState.data.rootTarget.getId());
+    // TODO: check for attached teleporter
+    if (moveClass == Data.Teleport) {
+        sceneController.getScene().add(mTeleportTarget);
+        let targetPosision = rootTarget.getWorldPosition();
+        mTeleportTargetDistance = targetPosision.distanceTo(raycaster.ray.origin) / 2;
+
+        mTeleportTarget.position.crossVectors(raycaster.ray.direction, new THREE.Vector3(0, 1, 0));
+        if (mTeleportTarget.position.length() == 0) { mTeleportTarget.position.set(1, 0, 0); }
+        mTeleportTarget.position.multiplyScalar(mTeleportTargetDistance);
+        mTeleportTarget.position.add(targetPosision);
+        updateTeleportTarget(raycaster, sceneController);
     }
 }
 
@@ -275,6 +358,41 @@ function startTwoHandPose() {
     //     affectedTargets,
     //     targetPositionOffset,
     // }
+}
+
+function getTeleportDropTarget(raycaster) {
+    let intersect = raycaster.intersectObject(mTeleportTarget);
+    if (intersect[0]) {
+        mTeleportTargetInteractionWrapper.getIntersection = () => intersect[0];
+        return mTeleportTargetInteractionWrapper;
+    } else return null
+}
+
+function getDropTargets(raycaster, toolMode, moveClass, sceneController) {
+    if (moveClass == Data.Teleport || moveClass == Data.Audio) {
+        let targets = sceneController.getTargets(raycaster, toolMode);
+        targets = targets.filter(t => {
+            // right now both audio and teleport have the 
+            // same drop targets other than the teleport target.
+            let dropClass = IdUtil.getClass(t.getId())
+            if (dropClass == Data.PoseableAsset) return true;
+            if (dropClass == Data.Picture) return true;
+            return false;
+        });
+        return targets;
+    } else {
+        // not a dropable move item
+        return [];
+    }
+}
+
+function updateTeleportTarget(raycaster, sceneController) {
+    let distanceToTarget = raycaster.ray.distanceToPoint(mTeleportTarget.position);
+    let unitDist = distanceToTarget / mTeleportTargetDistance;
+    let scale = Math.min(1 / (unitDist * unitDist), 100);
+    mTeleportTarget.scale.set(scale, scale, scale);
+    if (unitDist > 1.5) sceneController.getScene().remove(mTeleportTarget);
+
 }
 
 export const MoveToolHandler = {

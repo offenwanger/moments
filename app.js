@@ -143,6 +143,14 @@ sockserver.on('connection', client => {
         emitToId(story.host, ServerMessage.UPDATE_ASSET, data)
     });
 
+    client.on(ServerMessage.CREATE_MOMENT, data => {
+        if (!client.clientId) { console.error('Invalid init state!'); return; }
+        // sending asset update
+        let story = sharedStories.find(s => s.participants.includes(client.clientId));
+        if (!story) { console.error("No story found to updated asset to!"); return; }
+        emitToId(story.host, ServerMessage.CREATE_MOMENT, data)
+    });
+
     client.on(ServerMessage.UPDATE_PARTICIPANT, data => {
         if (!client.clientId) { console.error('Invalid init state!'); return; }
 

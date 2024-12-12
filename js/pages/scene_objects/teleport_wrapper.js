@@ -26,7 +26,7 @@ export function TeleportWrapper(parent) {
 
     async function update(teleport, model, assetUtil) {
         if (true /* teleport is not attached */) {
-            parent.add(mSphere);
+            mParent.add(mSphere);
             mSphere.position.set(teleport.x, teleport.y, teleport.z);
         } else {
             // Put teleport icon on connected object.
@@ -39,7 +39,7 @@ export function TeleportWrapper(parent) {
     }
 
     function remove() {
-
+        mParent.remove(mSphere);
     }
 
     function getTargets(ray, toolMode) {

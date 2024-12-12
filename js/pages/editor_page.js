@@ -1,4 +1,5 @@
 
+import * as THREE from 'three';
 import { AssetTypes, ModelUpdateCommands } from '../constants.js';
 import { Data } from '../data.js';
 import { AssetUtil } from '../utils/assets_util.js';
@@ -165,7 +166,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
                 await mModelController.applyUpdates(updates);
             }
         } else if (itemClass == Data.Moment) {
-            console.error('impliment me!');
+            await createMoment();
         } else if (itemClass == Data.Asset) {
             await mAssetPicker.showOpenAssetPicker();
         } else {
@@ -243,12 +244,28 @@ export function EditorPage(parentContainer, mWebsocketController) {
         }
     });
 
+    mSceneInterface.onTeleport(async (id) => {
+        let teleport = mModelController.getModel().find(id);
+        if (!teleport) { console.error('Invalid id: ' + id); }
+        let pos = new THREE.Vector3(teleport.sceneX, teleport.sceneY, teleport.sceneZ)
+        let direction = new THREE.Vector3(teleport.sceneDirX, teleport.sceneDirY, teleport.sceneDirZ);
+        setCurrentMoment(teleport.momentId, pos, direction);
+    });
+
+    mSceneInterface.onCreateMoment(async () => {
+        await createMoment();
+    });
+
     mWebsocketController.onUpdateAsset(async (id, name, buffer) => {
         let file = new File([buffer], name);
         await mWorkspace.updateAsset(file);
         await mWebsocketController.uploadAsset(mModelController.getModel().id, name, mWorkspace);
         await mModelController.applyUpdates([new ModelUpdate({ id, updated: Date.now() })]);
         updateModel();
+    })
+
+    mWebsocketController.onCreateMoment(async () => {
+        await createMoment();
     })
 
     async function show(workspace = null) {
@@ -286,13 +303,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
             mAssetUtil = new AssetUtil(mWorkspace);
 
             if (story.moments.length == 0) {
-                let canvas = document.createElement('canvas');
-                canvas.height = 256;
-                canvas.width = 512;
-                let blurFileName = await mWorkspace.storeCanvas('sphereblur', canvas);
-                let colorFileName = await mWorkspace.storeCanvas('spherecolor', canvas);
-                let updates = await DataUtil.getMomentCreationUpdates(blurFileName, colorFileName);
-                await mModelController.applyUpdates(updates);
+                await createMoment();
             }
         }
 
@@ -325,18 +336,34 @@ export function EditorPage(parentContainer, mWebsocketController) {
         }
     }
 
-    async function setCurrentMoment(momentId) {
+    async function setCurrentMoment(momentId, position = new THREE.Vector3(), direction = new THREE.Vector3(0, 0, -1)) {
         if (!momentId) { UrlUtil.setParams({ 'moment': null }); }
 
         let model = mModelController.getModel();
         let moment = model.find(momentId);
         if (moment) {
             UrlUtil.setParams({ 'moment': momentId });
-            await mSceneInterface.setCurrentMoment(momentId);
+            await mSceneInterface.setCurrentMoment(momentId, position, direction);
             await mSidebarController.navigate(momentId);
         } else {
             UrlUtil.setParams({ 'moment': null });
             await mSidebarController.navigate(model.id);
+        }
+    }
+
+    async function createMoment() {
+        if (!mWorkspace) {
+            mWebsocketController.createMoment();
+        } else {
+            let canvas = document.createElement('canvas');
+            canvas.height = 256;
+            canvas.width = 512;
+            let blurFileName = await mWorkspace.storeCanvas('sphereblur', canvas);
+            let colorFileName = await mWorkspace.storeCanvas('spherecolor', canvas);
+            let nextName = Util.getNextName('Moment', mModelController.getModel().moments.map(m => m.name))
+            let updates = await DataUtil.getMomentCreationUpdates(blurFileName, colorFileName, nextName);
+            await mModelController.applyUpdates(updates);
+            updateModel();
         }
     }
 

@@ -14,7 +14,7 @@ import { Util } from './utility.js';
  * @param {*} colorFileName filename to create specific asset for
  * @returns 
  */
-async function getMomentCreationUpdates(blurFileName, colorFileName) {
+async function getMomentCreationUpdates(blurFileName, colorFileName, name = 'Moment') {
     let updates = [];
 
     let blurUpdate = new ModelUpdate({
@@ -59,6 +59,7 @@ async function getMomentCreationUpdates(blurFileName, colorFileName) {
     updates.push(new ModelUpdate({
         id: momentId,
         photosphereId,
+        name
     }))
 
     return updates;

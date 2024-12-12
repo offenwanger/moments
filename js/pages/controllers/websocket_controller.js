@@ -31,6 +31,7 @@ export function WebsocketController() {
     let mStoryUpdateCallback = async () => { }
     let mNewAssetCallback = async () => { }
     let mUpdateAssetCallback = async () => { }
+    let mCreateMomentCallback = async () => { }
     let mParticipantUpdateCallback = () => { }
 
     const mWebSocket = io();
@@ -75,8 +76,12 @@ export function WebsocketController() {
         await mUpdateAssetCallback(data.id, data.name, data.buffer);
     });
 
+    mWebSocket.on(ServerMessage.CREATE_MOMENT, async (data) => {
+        await mCreateMomentCallback();
+    });
+
     mWebSocket.on(ServerMessage.UPDATE_PARTICIPANT, (data) => {
-        mParticipantUpdateCallback(data.id, data.head, data.handR, data.handL);
+        mParticipantUpdateCallback(data.id, data.head, data.handR, data.handL, data.momentId);
     });
 
     mWebSocket.on(ServerMessage.ERROR, (message) => {
@@ -155,9 +160,13 @@ export function WebsocketController() {
         mWebSocket.emit(ServerMessage.UPDATE_ASSET, { id, name: file.name, buffer })
     }
 
-    function updateParticipant(head, handR = null, handL = null) {
+    function updateParticipant(head, handR = null, handL = null, momentId = null) {
         if (!mConnectedToStory) return;
-        mWebSocket.emit(ServerMessage.UPDATE_PARTICIPANT, { head, handR, handL })
+        mWebSocket.emit(ServerMessage.UPDATE_PARTICIPANT, { head, handR, handL, momentId })
+    }
+
+    function createMoment() {
+        mWebSocket.emit(ServerMessage.CREATE_MOMENT, {})
     }
 
     this.shareStory = shareStory;
@@ -167,10 +176,12 @@ export function WebsocketController() {
     this.updateParticipant = updateParticipant;
     this.newAsset = newAsset;
     this.updateAsset = updateAsset;
+    this.createMoment = createMoment;
     this.onSharedStories = (func) => mSharedStoriesUpdatedCallback = func;
     this.onStoryConnect = (func) => mStoryConnectCallback = func;
     this.onStoryUpdate = (func) => mStoryUpdateCallback = func;
     this.onNewAsset = (func) => mNewAssetCallback = func;
     this.onUpdateAsset = (func) => mUpdateAssetCallback = func;
+    this.onCreateMoment = (func) => mCreateMomentCallback = func;
     this.onParticipantUpdate = (func) => mParticipantUpdateCallback = func;
 }

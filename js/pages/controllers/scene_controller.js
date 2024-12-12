@@ -19,10 +19,10 @@ export function SceneController() {
 
     let mEnvironmentBox;
 
-    function updateOtherUser(id, head, handR, handL) {
+    function updateOtherUser(id, head, handR, handL, momentId) {
         let otherUser = mOtherUsers.find(o => o.getId() == id);
         if (!otherUser) console.error("User not found!", id);
-        otherUser.update(head, handR, handL);
+        otherUser.update(head, handR, handL, momentId == mCurrentMomentId);
     }
 
     function removeOtherUser(id) {
@@ -31,9 +31,9 @@ export function SceneController() {
         otherUser.remove();
     }
 
-    function addOtherUser(id, head, handR, handL) {
+    function addOtherUser(id, head, handR, handL, momentId) {
         let otherUser = new OtherUserWrapper(mScene, id);
-        otherUser.update(head, handR, handL);
+        otherUser.update(head, handR, handL, momentId == mCurrentMomentId);
         mOtherUsers.push(otherUser);
     }
 

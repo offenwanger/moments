@@ -36,6 +36,7 @@ export const ServerMessage = {
     UPDATE_PARTICIPANT: 'updateparticipant',
     NEW_ASSET: 'newasset',
     UPDATE_ASSET: 'updateasset',
+    CREATE_MOMENT: 'createMoment',
     ERROR: 'error',
 }
 
@@ -103,6 +104,7 @@ export const ModelUpdateCommands = {
     DELETE: 'delete',
     CREATE_OR_UPDATE: 'createOrUpdate',
 }
+export const ASSET_UPDATE_COMMAND = 'assetUpdate'
+export const TELEPORT_COMMAND = 'updateCurrentMoment'
 
 export const MENU_WIDTH = 1.5;
-export const ASSET_UPDATE = 'assetUpdate'

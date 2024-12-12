@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { ASSET_UPDATE, AttributeButtons, BrushToolButtons, InteractionType, ItemButtons, MenuNavButtons, SurfaceToolButtons, ToolButtons } from "../../constants.js";
+import { ASSET_UPDATE_COMMAND, AttributeButtons, BrushToolButtons, InteractionType, ItemButtons, MenuNavButtons, SurfaceToolButtons, TELEPORT_COMMAND, ToolButtons } from "../../constants.js";
 import { Data } from "../../data.js";
 import { IdUtil } from "../../utils/id_util.js";
 import { Util } from "../../utils/utility.js";
@@ -21,6 +21,8 @@ import { XRSessionController } from './xr_controllers/xr_session_controller.js';
 export function SceneInterfaceController(parentContainer, mWebsocketController) {
     let mModelUpdateCallback = async () => { }
     let mAssetUpdateCallback = async () => { }
+    let mTeleportCallback = async () => { }
+    let mCreateMomentCallback = async () => { }
 
     let isVR = false;
 
@@ -33,7 +35,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
 
     let mModel = new Data.StoryModel();
     let mToolMode = new ToolMode();
-    let mMomentId = null;
+    let mCurrentMomentId = null;
 
     let mSceneController = new SceneController();
     let mMenuController = new MenuController();
@@ -84,17 +86,17 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
         }
     })
 
-    mWebsocketController.onParticipantUpdate((id, head, handR, handL) => {
+    mWebsocketController.onParticipantUpdate((id, head, handR, handL, momentId) => {
         try {
             if (mOtherUsers[id]) {
                 if (head) {
-                    mSceneController.updateOtherUser(id, head, handR, handL);
+                    mSceneController.updateOtherUser(id, head, handR, handL, momentId);
                 } else {
                     mSceneController.removeOtherUser(id);
                 }
             } else {
                 if (head) {
-                    mSceneController.addOtherUser(id, head, handR, handL);
+                    mSceneController.addOtherUser(id, head, handR, handL, momentId);
                     mOtherUsers[id] = true;
                 }
             }
@@ -104,10 +106,10 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
     })
 
     mXRSessionController.onUserMoved((head, handR, handL) => {
-        mWebsocketController.updateParticipant(head, handR, handL);
+        mWebsocketController.updateParticipant(head, handR, handL, mCurrentMomentId);
     })
     mPageSessionController.onUserMoved((head) => {
-        mWebsocketController.updateParticipant(head);
+        mWebsocketController.updateParticipant(head, null, null, mCurrentMomentId);
     })
 
     mPageSessionController.onPointerMove(onPointerMove);
@@ -187,10 +189,17 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
         let modelUpdates = updates.filter(u => u instanceof ModelUpdate)
         if (modelUpdates.length > 0) await mModelUpdateCallback(modelUpdates);
 
-        let assetUpdates = updates.filter(u => u.command == ASSET_UPDATE);
+        let assetUpdates = updates.filter(u => u.command == ASSET_UPDATE_COMMAND);
         for (let update of assetUpdates) {
             await mAssetUpdateCallback(update.id, await update.dataPromise)
         };
+
+        let teleportCommand = updates.filter(u => u.command == TELEPORT_COMMAND);
+        if (teleportCommand[0]) {
+            if (teleportCommand.length > 1) { console.error('Cant teleport more than once!'); }
+            teleportCommand = teleportCommand[0];
+            await mTeleportCallback(teleportCommand.id);
+        }
     }
 
     async function menuButtonClicked(target) {
@@ -218,11 +227,13 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             mMenuController.setToolMode(mToolMode);
         } else if (Object.values(MenuNavButtons).includes(buttonId)) {
             mMenuController.showMenu(buttonId);
+        } else if (buttonId == ItemButtons.NEW_MOMENT) {
+            await mCreateMomentCallback()
         } else if (Object.values(ItemButtons).includes(buttonId)) {
             console.error("Impliment me!")
         } else if (buttonId == AttributeButtons.SPHERE_SCALE_UP) {
-            let moment = mModel.moments.find(m => m.id == mMomentId);
-            if (!moment) { console.error("invalid moment id: " + mMomentId); return; }
+            let moment = mModel.moments.find(m => m.id == mCurrentMomentId);
+            if (!moment) { console.error("invalid moment id: " + mCurrentMomentId); return; }
             let photosphere = mModel.photospheres.find(p => p.id == moment.photosphereId);
             if (!photosphere) { console.error("invalid photosphere id: " + moment.photosphereId); return; }
             await mModelUpdateCallback([new ModelUpdate({
@@ -230,8 +241,8 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
                 scale: Math.min(photosphere.scale + 0.1, 5),
             })]);
         } else if (buttonId == AttributeButtons.SPHERE_SCALE_DOWN) {
-            let moment = mModel.moments.find(m => m.id == mMomentId);
-            if (!moment) { console.error("invalid moment id: " + mMomentId); return; }
+            let moment = mModel.moments.find(m => m.id == mCurrentMomentId);
+            if (!moment) { console.error("invalid moment id: " + mCurrentMomentId); return; }
             let photosphere = mModel.photospheres.find(p => p.id == moment.photosphereId);
             if (!photosphere) { console.error("invalid photosphere id: " + moment.photosphereId); return; }
             await mModelUpdateCallback([new ModelUpdate({
@@ -239,8 +250,8 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
                 scale: Math.max(photosphere.scale - 0.1, 0.5),
             })]);
         } else if (buttonId == AttributeButtons.SPHERE_TOGGLE) {
-            let moment = mModel.moments.find(m => m.id == mMomentId);
-            if (!moment) { console.error("invalid moment id: " + mMomentId); return; }
+            let moment = mModel.moments.find(m => m.id == mCurrentMomentId);
+            if (!moment) { console.error("invalid moment id: " + mCurrentMomentId); return; }
             let photosphere = mModel.photospheres.find(p => p.id == moment.photosphereId);
             if (!photosphere) { console.error("invalid photosphere id: " + moment.photosphereId); return; }
             await mModelUpdateCallback([new ModelUpdate({
@@ -249,8 +260,8 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             })]);
         } else if (IdUtil.getClass(buttonId) == Data.Asset) {
             if (menuId == MenuNavButtons.SPHERE_IMAGE) {
-                let moment = mModel.moments.find(m => m.id == mMomentId);
-                if (!moment) { console.error("invalid moment id: " + mMomentId); return; }
+                let moment = mModel.moments.find(m => m.id == mCurrentMomentId);
+                if (!moment) { console.error("invalid moment id: " + mCurrentMomentId); return; }
                 await mModelUpdateCallback([new ModelUpdate({
                     id: moment.photosphereId,
                     imageAssetId: buttonId
@@ -260,8 +271,8 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             }
         } else if (IdUtil.getClass(buttonId) == Data.Moment) {
             if (menuId == MenuNavButtons.ADD_TELEPORT) {
-                let parentMoment = mModel.moments.find(m => m.id == mMomentId);
-                if (!parentMoment) { console.error("invalid moment id: " + mMomentId); return; }
+                let parentMoment = mModel.moments.find(m => m.id == mCurrentMomentId);
+                if (!parentMoment) { console.error("invalid moment id: " + mCurrentMomentId); return; }
                 let point = target.getIntersection().point;
                 let targetMoment = buttonId;
                 let id = IdUtil.getUniqueId(Data.Teleport);
@@ -313,9 +324,10 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
         mPageSessionController.resize(width, height);
     }
 
-    async function setCurrentMoment(momentId) {
+    async function setCurrentMoment(momentId, position, direction) {
         await mSceneController.setCurrentMoment(momentId);
-        mMomentId = momentId;
+        mCurrentSessionController.setUserPositionAndDirection(position, direction);
+        mCurrentMomentId = momentId;
     }
 
     setCurrentSession(mPageSessionController);
@@ -326,5 +338,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
     this.sessionStart = sessionStart;
     this.onModelUpdate = (func) => mModelUpdateCallback = func;
     this.onAssetUpdate = (func) => mAssetUpdateCallback = func;
+    this.onTeleport = (func) => mTeleportCallback = func;
+    this.onCreateMoment = (func) => mCreateMomentCallback = func;
 }
 

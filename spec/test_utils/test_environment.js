@@ -110,7 +110,7 @@ export async function setup() {
 
         },
         history: {
-            replaceState: function (something, somethingElse, url) {
+            pushState: function (something, somethingElse, url) {
                 window.location.href = url.href;
                 window.location.search = url.search;
             }

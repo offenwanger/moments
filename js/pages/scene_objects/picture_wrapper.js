@@ -35,6 +35,7 @@ export function PictureWrapper(parent) {
         mPlanes.position.set(picture.x, picture.y, picture.z);
         mPlanes.setRotationFromQuaternion(new THREE.Quaternion().fromArray(picture.orientation));
         mPlanes.scale.set(picture.scale, picture.scale * mRatio, picture.scale)
+        mPlanes.userData.id = picture.id;
         mPicture = picture;
     }
 

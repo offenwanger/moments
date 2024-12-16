@@ -53,7 +53,7 @@ export function AssetPicker(container) {
 
     let mCloseButton = new ButtonInput(mContent)
         .setId("dialog-close-button")
-        .setLabel("Cancel")
+        .setLabel("Close")
         .setOnClick(async () => {
             mDialog.close()
         });
@@ -72,22 +72,7 @@ export function AssetPicker(container) {
     async function showOpenAssetPicker(type = null) {
         mSelectionType = type;
         refreshList();
-
-        return new Promise((resolve, reject) => {
-            let listenFunc = () => {
-                let assetId = mSelectedAssetId;
-                mSelectedAssetId = null;
-                mSelectionType = null;
-                if (assetId) {
-                    resolve(assetId);
-                } else {
-                    reject("No asset selected.")
-                }
-                mDialog.removeEventListener('close', listenFunc);
-            }
-            mDialog.addEventListener('close', listenFunc);
-            mDialog.show();
-        })
+        mDialog.show();
     }
 
     function refreshList() {

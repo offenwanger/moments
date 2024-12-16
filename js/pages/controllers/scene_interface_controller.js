@@ -152,17 +152,17 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
 
     mPageSessionController.onPointerDown(onPointerDown);
     mXRSessionController.onPointerDown(onPointerDown);
-    function onPointerDown(raycaster, isPrimary = true) {
+    async function onPointerDown(raycaster, isPrimary = true) {
         let hovered = isPrimary ? mInteractionState.primaryHovered : mInteractionState.secondaryHovered;
         if (!hovered) {
             // nothing to do. 
             return;
         } else if (hovered.isButton()) {
-            menuButtonClicked(hovered);
+            await menuButtonClicked(hovered);
         } else {
             let handler = getToolHandler(mToolMode.tool)
             if (!handler) { console.error("Tool not handled: " + mToolMode.tool); return; }
-            handler.pointerDown(
+            await handler.pointerDown(
                 raycaster,
                 isPrimary,
                 mInteractionState,

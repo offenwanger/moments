@@ -76,6 +76,8 @@ export function PhotosphereWrapper(parent) {
         mColor.width = mOriginalColor.width
         resetColor();
 
+        mSphere.userData.id = photosphereId;
+
         drawTexture();
     }
 

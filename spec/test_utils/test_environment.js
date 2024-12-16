@@ -75,7 +75,6 @@ export async function setup() {
                 }
                 element.close = function () {
                     element.open = false;
-                    element.eventListeners.close();
                 }
                 element.removeEventListener = () => { }
             }

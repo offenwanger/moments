@@ -20,6 +20,7 @@ export function MeshButton(id, label, size, dynamic = false) {
         content: label,
         fontSize: 0.055
     }));
+    mButton.userData.id = id;
     const mInteractionTarget = createTarget();
 
     mButton.setupState({

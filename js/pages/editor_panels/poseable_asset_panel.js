@@ -6,7 +6,6 @@ import { TextInput } from "../components/text_input.js";
 export function PoseableAssetPanel(container) {
     let mUpdateAttributeCallback = async (id, attr, value) => { };
     let mDeleteCallback = async (id) => { };
-    let mSelectAsset = async () => { return false };
     let mNavigationCallback = async (id) => { };
 
     let mModel = null;
@@ -98,5 +97,4 @@ export function PoseableAssetPanel(container) {
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
     this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
-    this.setSelectAsset = (func) => mSelectAsset = func;
 }

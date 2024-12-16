@@ -6,7 +6,6 @@ export function ButtonMenu(id, width) {
     let mOnAfterUpdateCallback = () => { }
     let mVOffset = 0
 
-    let mId = id;
     // set of MeshButtons
     let mButtons = [];
     let mRows = []
@@ -19,6 +18,7 @@ export function ButtonMenu(id, width) {
         fontFamily: "../../../assets/menu_fonts/Roboto-msdf.json",
         fontTexture: "../../../assets/menu_fonts/Roboto-msdf.png",
     });
+    mContainer.userData.id = id;
     mContainer.onAfterUpdate = function () {
         updatePosition();
         mOnAfterUpdateCallback()

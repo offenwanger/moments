@@ -4,6 +4,9 @@ import * as THREE from 'three';
 import { createCanvas } from './mock_canvas.js';
 import { mockXRControllerModelFactory } from './mock_xr.js';
 
+let mForceId = null;
+export function forceIntercept(id) { mForceId = id; };
+
 export async function mockThreeSetup() {
     await td.replaceEsm('three', {
         ...THREE,
@@ -23,6 +26,40 @@ export async function mockThreeSetup() {
         ImageLoader: function () {
             this.loadAsync = () => { return createCanvas() }
         },
+        Raycaster: function () {
+            let interceptedCaster = new THREE.Raycaster();
+            let originalIntercept = interceptedCaster.intersectObjects;
+            interceptedCaster.intersectObject = function (object) {
+                return interceptedCaster.intersectObjects([object]);
+            }
+            interceptedCaster.intersectObjects = function (objects) {
+                return objects.map(object => {
+                    if (mForceId && object.userData.id == mForceId) {
+                        // first try to point the ray at the object and intercept it.
+                        interceptedCaster.ray.direction.subVectors(object.position, interceptedCaster.ray.origin).normalize()
+                        let intercept = originalIntercept.call(this, object)[0];
+                        if (!intercept) {
+                            // probably a button
+                            // fake the intercept
+                            intercept = {
+                                distance: 0,
+                                point: new THREE.Vector3().copy(object.position),
+                                face: null,
+                                faceIndex: null,
+                                object,
+                                uv: null,
+                                uv1: null,
+                                normal: null,
+                                instanceId: null,
+                            }
+                        }
+                        return intercept;
+                    }
+                    return originalIntercept.call(this, object)[0];
+                }).filter(i => i)
+            }
+            return interceptedCaster;
+        }
     });
 
     await td.replaceEsm('three/addons/loaders/DRACOLoader.js', { DRACOLoader: mockDRACOLoader });
@@ -57,6 +94,7 @@ function mockThreeMeshUI() {
         o.setState = () => { };
         o.set = () => { };
         o.update = () => { };
+        o.isBlock = true;
         list.push(o);
         return o;
     };

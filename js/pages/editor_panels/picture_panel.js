@@ -3,7 +3,6 @@ import { ButtonInput } from "../components/button_input.js";
 import { TextInput } from "../components/text_input.js";
 
 export function PicturePanel(container) {
-    let mAddCallback = async (parentId, itemClass, config) => { };
     let mUpdateAttributeCallback = async (id, attrs) => { };
     let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
@@ -104,7 +103,6 @@ export function PicturePanel(container) {
 
     this.show = show;
     this.hide = hide;
-    this.onAdd = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
     this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setEditPictureCallback = (func) => mEditPictureCallback = func;

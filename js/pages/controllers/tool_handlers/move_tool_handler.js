@@ -20,6 +20,8 @@ const mTeleportTarget = new THREE.Mesh(
         depthTest: false,
     }));
 mTeleportTarget.renderOrder = 999;
+mTeleportTarget.userData.id = 'teleportTarget';
+
 const mTeleportTargetInteractionWrapper = new InteractionTargetInterface();
 mTeleportTargetInteractionWrapper.getId = () => TELEPORT_TARGET;
 

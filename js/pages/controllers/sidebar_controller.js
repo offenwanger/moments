@@ -38,11 +38,11 @@ export function SidebarController(container) {
     const mPoseableAssetPanel = new PoseableAssetPanel(container);
     const mStoryPanel = new StoryPanel(container);
 
-    mStoryPanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
-    mPoseableAssetPanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
-    mMomentPanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
-    mPicturePanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
-    mAssetPanel.setNavigationCallback(async (id) => { navigate(id); await mNavigateCallback(id); });
+    mStoryPanel.setNavigationCallback(async (id) => { await navigate(id); await mNavigateCallback(id); });
+    mPoseableAssetPanel.setNavigationCallback(async (id) => { await navigate(id); await mNavigateCallback(id); });
+    mMomentPanel.setNavigationCallback(async (id) => { await navigate(id); await mNavigateCallback(id); });
+    mPicturePanel.setNavigationCallback(async (id) => { await navigate(id); await mNavigateCallback(id); });
+    mAssetPanel.setNavigationCallback(async (id) => { await navigate(id); await mNavigateCallback(id); });
 
     async function updateModel(model) {
         mModel = model;
@@ -89,14 +89,6 @@ export function SidebarController(container) {
         mStoryPanel.hide();
     }
 
-    function onAdd(func) {
-        mAssetPanel.onAdd(func);
-        mAudioPanel.onAdd(func);
-        mMomentPanel.onAdd(func);
-        mPicturePanel.onAdd(func);
-        mStoryPanel.onAdd(func);
-    }
-
     function setUpdateAttributeCallback(func) {
         mAssetPanel.setUpdateAttributeCallback(func);
         mAudioPanel.setUpdateAttributeCallback(func);
@@ -117,12 +109,11 @@ export function SidebarController(container) {
     this.updateModel = updateModel;
     this.navigate = navigate;
     this.resize = resize;
-    this.onAdd = onAdd;
+    this.onAddMoment = mStoryPanel.onAddMoment;
     this.setUpdateAttributeCallback = setUpdateAttributeCallback;
     this.setDeleteCallback = setDeleteCallback;
     this.setEditPictureCallback = (func) => mPicturePanel.setEditPictureCallback(func);
     this.setCloseEditPictureCallback = (func) => mPicturePanel.setCloseEditPictureCallback(func);
-    this.setSelectAsset = (func) => mPoseableAssetPanel.setSelectAsset(func);
     this.onNavigate = (func) => mNavigateCallback = func;
     this.onSessionStart = (func) => mVRButton.onSessionStart(func);
     this.onStartShare = (func) => mStartShareCallback = func;

@@ -133,13 +133,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
     })
 
     let mSidebarController = new SidebarController(mSidebarContainer);
-    mSidebarController.onAdd(async (parentId, itemClass, config) => {
-        if (itemClass == Data.Moment) {
-            await createMoment();
-        } else {
-            console.error("Parent + item class not supported", parentId, itemClass);
-            return;
-        }
+    mSidebarController.onAddMoment(async () => {
+        await createMoment();
         await updateModel();
     })
     mSidebarController.setUpdateAttributeCallback(async (id, attrs) => {
@@ -149,9 +144,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
     mSidebarController.setDeleteCallback(async (id) => {
         await mModelController.applyUpdates([new ModelUpdate({ id }, ModelUpdateCommands.DELETE)]);
         await updateModel();
-    })
-    mSidebarController.setSelectAsset(async () => {
-        return await mAssetPicker.showOpenAssetPicker();
     })
     mSidebarController.setEditPictureCallback(async (id) => {
         let picture = mModelController.getModel().find(id);
@@ -280,8 +272,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
         mModelController.addUpdateListener(mWebsocketController.updateStory);
 
         resize(mWidth, mHeight);
-
-        await mSidebarController.updateModel(mModelController.getModel());
 
         await updateModel();
 

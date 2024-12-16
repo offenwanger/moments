@@ -73,7 +73,10 @@ export function PoseableAssetWrapper(parent) {
             object.setRotationFromQuaternion(new THREE.Quaternion().fromArray(pose.orientation));
             object.position.set(pose.x, pose.y, pose.z);
             object.scale.set(pose.scale, pose.scale, pose.scale);
+            object.userData.id = pose.id;
         })
+
+        mGLTF.userData.id = poseableAsset.id;
     }
 
     function getId() {

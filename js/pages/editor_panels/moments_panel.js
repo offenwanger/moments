@@ -4,7 +4,6 @@ import { ButtonInput } from "../components/button_input.js";
 import { TextInput } from "../components/text_input.js";
 
 export function MomentPanel(container) {
-    let mAddCallback = async (parentId, itemClass, config) => { };
     let mUpdateAttributeCallback = async (id, attr, value) => { };
     let mNavigationCallback = async (id) => { };
     let mDeleteCallback = async (id) => { };
@@ -107,7 +106,6 @@ export function MomentPanel(container) {
     this.show = show;
     this.hide = hide;
 
-    this.onAdd = (func) => mAddCallback = func;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
     this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;

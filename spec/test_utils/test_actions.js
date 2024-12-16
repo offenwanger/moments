@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { Data } from '../../js/data.js';
 import { loadRealFile, mockFile, mockFileSystemDirectoryHandle } from './mock_filesystem.js';
+import { AssetTypes, MenuNavButtons } from '../../js/constants.js';
+import { forceIntercept } from './mock_three.js';
 
 export function testmodel() {
     let storyFile = Object.keys(global.fileSystem).find(k => k.startsWith('test/StoryModel_'))
@@ -41,17 +43,42 @@ export async function createAndOpenPoseableAsset() {
     await createAndEditStory();
 
     await loadRealFile('sample.glb')
-    window.files.push(new mockFile('sample.glb', global.fileSystem['sample.glb']));
-    let promise = clickButtonInput('#moment-poseable-asset-add-button');
+    window.files.push(new mockFile('sample.glb', "model/gltf-binary", global.fileSystem['sample.glb']));
+    await clickButtonInput('#asset-manager-button');
     await clickButtonInput('#asset-add-button');
+    await clickButtonInput('#dialog-close-button');
+
+    let assetId = testmodel().assets.find(a => a.type == AssetTypes.MODEL).id;
+
+    await canvasClickMenuButton(MenuNavButtons.ADD);
+    await canvasClickMenuButton(MenuNavButtons.ADD_MODEL);
+    await canvasClickMenuButton(assetId);
 
     expect(document.querySelector('#assets-container').children.length).toBeGreaterThan(0);
     document.querySelector('#assets-container').children[0].eventListeners.click();
 
-    await promise;
-
     expect(testmodel().moments[0].poseableAssetIds.length).toBe(1);
     await clickButtonInput('#poseable-asset-button-' + testmodel().moments[0].poseableAssetIds[0]);
+}
+
+export async function uploadImageAsset() {
+    await loadRealFile('fish.png')
+    window.files.push(new mockFile('fish.png', "image/x-png", global.fileSystem['fish.png']));
+    await clickButtonInput('#asset-manager-button');
+    await clickButtonInput('#asset-add-button');
+    await clickButtonInput('#dialog-close-button');
+
+    expect(document.querySelector('#assets-container').children.length).toBeGreaterThan(0);
+    expect(testmodel().assets.filter(a => a.type == AssetTypes.IMAGE).length).toBeGreaterThan(0);
+    document.querySelector('#assets-container').children[0].eventListeners.click();
+}
+
+export async function canvasClickMenuButton(buttonId) {
+    forceIntercept(buttonId);
+    await pointermove(0, 0);
+    await canvaspointerdown(0, 0);
+    await pointerup(0, 0);
+    forceIntercept(null);
 }
 
 export function getInputValue(id) {
@@ -90,7 +117,6 @@ export async function clickButtonInput(id) {
     await inputContainer.eventListeners.pointerup();
     await inputContainer.eventListeners.click();
     await inputContainer.eventListeners.pointerout();
-
 }
 
 export function createStoryModel() {

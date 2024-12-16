@@ -31,6 +31,7 @@ export function TeleportWrapper(parent) {
         } else {
             // Put teleport icon on connected object.
         }
+        mSphere.userData.id = teleport.id;
         mTeleport = teleport;
     }
 

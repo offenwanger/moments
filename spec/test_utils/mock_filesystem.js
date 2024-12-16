@@ -66,12 +66,13 @@ export function mockFileSystemFileHandle(filename, config) {
         throw new Error("A requested file or directory could not be found at the time an operation was processed => fake filesystem: " +
             filename + " Existing files: " + (global.fileSystem ? JSON.stringify(Object.keys(global.fileSystem)) : "No filesystem: " + global.fileSystem));
     }
-    this.getFile = () => new mockFile(filename, global.fileSystem[filename]);
-    this.createWritable = () => new mockFile(filename);
+    this.getFile = () => new mockFile(filename, "", global.fileSystem[filename]);
+    this.createWritable = () => new mockFile(filename, '');
 }
 
-export function mockFile(filename, text) {
+export function mockFile(filename, type, text) {
     this.name = filename;
+    this.type = type
     this.text = () => text;
     this.write = (text) => {
         if (typeof text == 'object') {

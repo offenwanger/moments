@@ -134,41 +134,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
 
     let mSidebarController = new SidebarController(mSidebarContainer);
     mSidebarController.onAdd(async (parentId, itemClass, config) => {
-        // should be undo/redo stuff here.
-
-        if (itemClass == Data.Picture) {
-            let id = IdUtil.getUniqueId(itemClass);
-            let parent = mModelController.getModel().find(parentId);
-            if (!parent) { console.error('invalid parent id: ' + parentId); return; }
-            parent.pictureIds.push(id);
-            let updates = [
-                new ModelUpdate({ id }),
-                new ModelUpdate({ id: parentId, pictureIds: parent.pictureIds }),
-            ];
-            await mModelController.applyUpdates(updates);
-        } else if (itemClass == Data.Audio) {
-            let assetId = await mAssetPicker.showOpenAssetPicker(AssetTypes.AUDIO);
-            if (assetId) {
-                let id = IdUtil.getUniqueId(itemClass);
-                let parent = mModelController.getModel().find(parentId);
-                if (!parent) { console.error('invalid parent id: ' + parentId); return; }
-                parent.audioIds.push(id);
-                let updates = [
-                    new ModelUpdate({ id, assetId }),
-                    new ModelUpdate({ id: parentId, audioIds: parent.audioIds }),
-                ];
-                await mModelController.applyUpdates(updates);
-            }
-        } else if (itemClass == Data.PoseableAsset) {
-            let assetId = await mAssetPicker.showOpenAssetPicker(AssetTypes.MODEL);
-            if (assetId) {
-                let updates = await DataUtil.getPoseableAssetCreationUpdates(mModelController.getModel(), parentId, assetId);
-                await mModelController.applyUpdates(updates);
-            }
-        } else if (itemClass == Data.Moment) {
+        if (itemClass == Data.Moment) {
             await createMoment();
-        } else if (itemClass == Data.Asset) {
-            await mAssetPicker.showOpenAssetPicker();
         } else {
             console.error("Parent + item class not supported", parentId, itemClass);
             return;
@@ -207,6 +174,9 @@ export function EditorPage(parentContainer, mWebsocketController) {
     mSidebarController.onStartShare(async () => {
         if (!mWorkspace) { console.error("Invalid state, should not share unless running local worksapce."); }
         await mWebsocketController.shareStory(mModelController.getModel(), mWorkspace);
+    })
+    mSidebarController.onShowAssetManager(async () => {
+        await mAssetPicker.showOpenAssetPicker();
     })
 
     mWebsocketController.onStoryUpdate(async updates => {
@@ -360,8 +330,10 @@ export function EditorPage(parentContainer, mWebsocketController) {
             canvas.width = 512;
             let blurFileName = await mWorkspace.storeCanvas('sphereblur', canvas);
             let colorFileName = await mWorkspace.storeCanvas('spherecolor', canvas);
-            let nextName = Util.getNextName('Moment', mModelController.getModel().moments.map(m => m.name))
-            let updates = await DataUtil.getMomentCreationUpdates(blurFileName, colorFileName, nextName);
+            let updates = await DataUtil.getMomentCreationUpdates(
+                mModelController.getModel(),
+                blurFileName,
+                colorFileName);
             await mModelController.applyUpdates(updates);
             updateModel();
         }

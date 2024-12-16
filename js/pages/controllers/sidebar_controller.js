@@ -11,6 +11,7 @@ import { StoryPanel } from '../editor_panels/story_panel.js';
 export function SidebarController(container) {
     let mNavigateCallback = async (id) => { }
     let mStartShareCallback = async () => { }
+    let mShowAssetManagerCallback = async () => { }
 
     let mShownItem = null;
     let mModel = null;
@@ -23,6 +24,12 @@ export function SidebarController(container) {
             mShareButton.setLabel('Uploading...')
             await mStartShareCallback();
             mShareButton.setLabel('Sharing!')
+        });
+    const mAssetManagerButton = new ButtonInput(container)
+        .setId('asset-manager-button')
+        .setLabel('Assets')
+        .setOnClick(async () => {
+            await mShowAssetManagerCallback();
         });
     const mAssetPanel = new AssetPanel(container);
     const mAudioPanel = new AudioPanel(container);
@@ -119,5 +126,6 @@ export function SidebarController(container) {
     this.onNavigate = (func) => mNavigateCallback = func;
     this.onSessionStart = (func) => mVRButton.onSessionStart(func);
     this.onStartShare = (func) => mStartShareCallback = func;
+    this.onShowAssetManager = (func) => mShowAssetManagerCallback = func;
     this.hideShare = () => mShareButton.hide();
 }

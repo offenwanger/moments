@@ -1,5 +1,5 @@
 import { Data } from "../data.js";
-import { Util } from "../utils/utility.js";
+import { DataUtil } from "../utils/data_util.js";
 
 export function ListPage(parentContainer) {
     let mEditCallback = async () => { };
@@ -22,7 +22,7 @@ export function ListPage(parentContainer) {
         if (!mWorkspace) { console.error('Workspace needed.'); return; }
         let newStory = new Data.StoryModel();
         let stories = await mWorkspace.getStoryList();
-        newStory.name = Util.getNextName('Story', stories.map(s => s.name))
+        newStory.name = DataUtil.getNextName('Story', stories.map(s => s.name))
         await mWorkspace.newStory(newStory.id)
         await mWorkspace.updateStory(newStory);
         await show(mWorkspace);

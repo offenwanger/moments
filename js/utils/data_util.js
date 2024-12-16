@@ -14,7 +14,7 @@ import { Util } from './utility.js';
  * @param {*} colorFileName filename to create specific asset for
  * @returns 
  */
-async function getMomentCreationUpdates(blurFileName, colorFileName, name = 'Moment') {
+async function getMomentCreationUpdates(model, blurFileName, colorFileName) {
     let updates = [];
 
     let blurUpdate = new ModelUpdate({
@@ -56,6 +56,7 @@ async function getMomentCreationUpdates(blurFileName, colorFileName, name = 'Mom
         colorAssetId: colorUpdate.data.id,
     }))
     let momentId = IdUtil.getUniqueId(Data.Moment)
+    let name = getNextName('Moment', model.moments.map(m => m.name))
     updates.push(new ModelUpdate({
         id: momentId,
         photosphereId,
@@ -134,8 +135,38 @@ async function getAssetCreationUpdates(name, filename, type, asset = null) {
     return updates;
 }
 
+function getPictureCreationUpdates(model, parentId, assetId, position, orientation) {
+    let parentMoment = model.moments.find(m => m.id == parentId);
+    let id = IdUtil.getUniqueId(Data.Picture);
+    parentMoment.pictureIds.push(id);
+    let name = getNextName('Picture', model.pictures.map(m => m.name))
+    return [
+        new ModelUpdate({
+            id,
+            name,
+            assetId,
+            x: position.x, y: position.y, z: position.z,
+            orientation: orientation.toArray(),
+        }),
+        new ModelUpdate({
+            id: parentMoment.id,
+            pictureIds: parentMoment.pictureIds,
+        })
+    ];
+}
+
+function getNextName(name, nameList) {
+    let maxNumber = Math.max(0, ...nameList
+        .filter(n => n.includes(name))
+        .map(n => parseInt(n.split(name)[1]))
+        .filter(n => !isNaN(n)));
+    return name + (maxNumber + 1)
+}
+
 export const DataUtil = {
     getMomentCreationUpdates,
     getPoseableAssetCreationUpdates,
     getAssetCreationUpdates,
+    getPictureCreationUpdates,
+    getNextName,
 }

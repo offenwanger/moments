@@ -81,18 +81,6 @@ export function AssetUtil(workspace) {
         return mLoadedAssets['DEFAULT_ENV_BOX'];
     }
 
-    async function loadTexture(file) {
-        const texttureLoader = new THREE.TextureLoader();
-        let texture = await texttureLoader.loadAsync('./assets/images/' + file);
-        return texture;
-    }
-
-    function loadTextureSync(file) {
-        const texttureLoader = new THREE.TextureLoader();
-        let texture = texttureLoader.load('./assets/images/' + file);
-        return texture;
-    }
-
     async function loadGLTFModel(filename) {
         let dataUri = await mWorkspace.getAssetAsDataURI(filename)
         const modelLoader = new GLTFLoader();
@@ -116,8 +104,6 @@ export function AssetUtil(workspace) {
     this.loadEnvironmentCube = loadEnvironmentCube;
     this.loadDefaultEnvironmentCube = loadDefaultEnvironmentCube;
     this.loadImage = loadImage;
-    this.loadTexture = loadTexture;
-    this.loadTextureSync = loadTextureSync;
     this.loadGLTFModel = loadGLTFModel;
     this.loadAssetModel = loadAssetModel;
 }

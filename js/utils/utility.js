@@ -136,15 +136,6 @@ function getClosestTarget(ray, targets) {
     return sortation[0].t;
 }
 
-function getNextName(name, nameList) {
-    let maxNumber = Math.max(0, ...nameList
-        .filter(n => n.includes(name))
-        .map(n => parseInt(n.split(name)[1]))
-        .filter(n => !isNaN(n)));
-    return name + (maxNumber + 1)
-}
-
-
 export const Util = {
     getSphereIntersection,
     hasSphereIntersection,
@@ -158,5 +149,4 @@ export const Util = {
     simplify3DLine,
     pivot,
     getClosestTarget,
-    getNextName,
 }

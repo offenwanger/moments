@@ -12,6 +12,7 @@ import { ToolMode } from "./system_state.js";
 import { BrushToolHandler } from "./tool_handlers/brush_tool_handler.js";
 import { MoveToolHandler } from "./tool_handlers/move_tool_handler.js";
 import { XRSessionController } from './xr_controllers/xr_session_controller.js';
+import { DataUtil } from "../../utils/data_util.js";
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -259,13 +260,25 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
                 enabled: !photosphere.enabled
             })]);
         } else if (IdUtil.getClass(buttonId) == Data.Asset) {
+            let parentMoment = mModel.moments.find(m => m.id == mCurrentMomentId);
+            if (!parentMoment) { console.error("invalid moment id: " + mCurrentMomentId); return; }
+            let point = target.getIntersection().point;
+
             if (menuId == MenuNavButtons.SPHERE_IMAGE) {
-                let moment = mModel.moments.find(m => m.id == mCurrentMomentId);
-                if (!moment) { console.error("invalid moment id: " + mCurrentMomentId); return; }
                 await mModelUpdateCallback([new ModelUpdate({
-                    id: moment.photosphereId,
+                    id: parentMoment.photosphereId,
                     imageAssetId: buttonId
                 })]);
+            } else if (menuId == MenuNavButtons.ADD_MODEL) {
+                let assetId = buttonId;
+                let updates = await DataUtil.getPoseableAssetCreationUpdates(mModel, mCurrentMomentId, assetId);
+                await mModelUpdateCallback(updates);
+            } else if (menuId == MenuNavButtons.ADD_PICTURE) {
+                let assetId = buttonId;
+                let updates = await DataUtil.getPictureCreationUpdates(
+                    mModel, mCurrentMomentId, assetId,
+                    point, new THREE.Quaternion());
+                await mModelUpdateCallback(updates);
             } else {
                 console.error("not implimented!!");
             }

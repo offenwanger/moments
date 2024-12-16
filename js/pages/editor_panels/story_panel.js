@@ -20,13 +20,6 @@ export function StoryPanel(container) {
             await mUpdateAttributeCallback(mStory.id, { name: newText });
         });
 
-    let mAssetsButton = new ButtonInput(mPanelContainer)
-        .setId('story-assets-access-button')
-        .setLabel('Assets [+]')
-        .setOnClick(async () => {
-            await mAddCallback(mStory.id, Data.Asset, {});
-        });
-
     let mMomentsContainer = document.createElement('div')
     mMomentsContainer.setAttribute('id', 'story-moments');
     mPanelContainer.appendChild(mMomentsContainer)

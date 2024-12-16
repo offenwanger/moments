@@ -1,23 +1,40 @@
 import * as THREE from 'three';
 import { Data } from "../../data.js";
 import { InteractionTargetInterface } from "./interaction_target_interface.js";
+import { ToolButtons } from '../../constants.js';
 
 export function PictureWrapper(parent) {
     let mParent = parent;
     let mPicture = new Data.Picture();
     let mInteractionTarget = createInteractionTarget();
 
-    const mMaterial = new THREE.SpriteMaterial({ transparent: true });
-    const mPlane = new THREE.Sprite(mMaterial);
-    parent.add(mPlane);
+    let mRatio = 1;
+
+    const mGeometry = new THREE.PlaneGeometry(1, 1);
+    const mFrontPlane = new THREE.Mesh(mGeometry,
+        new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.FrontSide }));
+    const mBackPlane = new THREE.Mesh(mGeometry,
+        new THREE.MeshBasicMaterial({ color: 0xaaaaaa, side: THREE.BackSide }));
+
+    const mPlanes = new THREE.Group();
+    mPlanes.add(mFrontPlane, mBackPlane);
+    mParent.add(mPlanes);
 
     async function update(picture, model, assetUtil) {
-        new THREE.TextureLoader().load(picture.image, (texture) => {
-            mMaterial.map = texture;
-            mMaterial.needsUpdate = true;
-        })
-        mPlane.position.set(picture.x, picture.y, picture.z);
-        mPlane.scale.set(picture.scale, picture.scale, picture.scale)
+        let image = await assetUtil.loadImage(picture.assetId);
+        if (!image || isNaN(image.height / image.width)) {
+            console.error('Invalid image: ' + picture.assetId);
+            mFrontPlane.material.map = null;
+            mFrontPlane.material.needsUpdate = true;
+            mRatio = 1;
+            return;
+        }
+        let mRatio = image.height / image.width;
+        mFrontPlane.material.map = new THREE.Texture(image);
+        mFrontPlane.material.map.needsUpdate = true;
+        mPlanes.position.set(picture.x, picture.y, picture.z);
+        mPlanes.setRotationFromQuaternion(new THREE.Quaternion().fromArray(picture.orientation));
+        mPlanes.scale.set(picture.scale, picture.scale * mRatio, picture.scale)
         mPicture = picture;
     }
 
@@ -26,11 +43,13 @@ export function PictureWrapper(parent) {
     }
 
     function remove() {
-        mParent.remove(mPlane);
+        mParent.remove(mPlanes);
     }
 
     function getTargets(ray, toolMode) {
-        const intersect = ray.intersectObject(mPlane);
+        if (toolMode.tool != ToolButtons.MOVE) return [];
+
+        const intersect = ray.intersectObject(mPlanes);
         if (intersect.length > 0) {
             mInteractionTarget.getIntersection = () => { return intersect[0]; }
             return [mInteractionTarget];
@@ -41,44 +60,46 @@ export function PictureWrapper(parent) {
         let target = new InteractionTargetInterface();
         target.getLocalPosition = () => {
             let p = new THREE.Vector3();
-            p.copy(mPlane.position)
+            p.copy(mPlanes.position)
             return p;
         }
         target.getWorldPosition = () => {
             let worldPos = new THREE.Vector3();
-            mPlane.getWorldPosition(worldPos);
+            mPlanes.getWorldPosition(worldPos);
             return worldPos;
         }
         target.setWorldPosition = (worldPos) => {
-            let localPosition = mPlane.parent.worldToLocal(worldPos);
-            mPlane.position.copy(localPosition)
+            let localPosition = mPlanes.parent.worldToLocal(worldPos);
+            mPlanes.position.copy(localPosition)
         }
         target.getLocalOrientation = () => {
             let q = new THREE.Quaternion();
-            q.copy(mPlane.quaternion);
+            q.copy(mPlanes.quaternion);
             return q;
         }
         target.setLocalOrientation = (orientation) => {
-            // can't set angle on these.
+            mPlanes.quaternion.copy(orientation)
         }
         target.getScale = () => {
-            let scale = 1;
-            scale = mPlane.scale.x;
-            return scale;
+            return mPlane.scale.x;
         }
         target.setScale = (scale) => {
-            mPlane.scale.set(scale, scale, scale);
+            mPlanes.scale.set(scale, scale * mRatio, scale);
         }
         target.getParent = () => { return null; }
         target.getRoot = () => { return target; }
-        target.getObject3D = () => { return mPlane; }
+        target.getObject3D = () => { return mPlanes; }
         target.highlight = (toolMode) => {
-            mMaterial.color.set(0xff0000);
-            mMaterial.needsUpdate = true;
+            mFrontPlane.material.color.set(0x0000ff);
+            mFrontPlane.material.needsUpdate = true;
+            mBackPlane.material.color.set(0xaaaaff);
+            mBackPlane.material.needsUpdate = true;
         };
         target.idle = (toolMode) => {
-            mMaterial.color.set(0xffffff);
-            mMaterial.needsUpdate = true;
+            mFrontPlane.material.color.set(0xffffff);
+            mFrontPlane.material.needsUpdate = true;
+            mBackPlane.material.color.set(0xaaaaaa);
+            mBackPlane.material.needsUpdate = true;
         }
         target.getId = () => mPicture.id;
         return target;

@@ -22,6 +22,12 @@ export function MenuController() {
     let mSubMenus = {};
     let mParentLinks = {}
 
+    // Dynamic menus
+    let mImageSelectMenu = createSelectMenu('ImageSelectMenu');
+    let mAudioSelectMenu = createSelectMenu('AudioSelectMenu');
+    let mModelSelectMenu = createSelectMenu('ModelSelectMenu');
+    let mMomentSelectMenu = createSelectMenu('MomentSelectMenu');
+    mMomentSelectMenu.add(new MeshButton(ItemButtons.NEW_MOMENT, '+', BUTTON_SIZE));
 
     mMenus[MenuNavButtons.MAIN_MENU] = createMenu(MenuNavButtons.MAIN_MENU, [
         new MeshButton(ToolButtons.MOVE, 'Move', BUTTON_SIZE),
@@ -48,6 +54,9 @@ export function MenuController() {
     ]);
     mParentLinks[MenuNavButtons.SPHERE_SETTINGS] = MenuNavButtons.MAIN_MENU;
 
+    mMenus[MenuNavButtons.SPHERE_IMAGE] = mImageSelectMenu;
+    mParentLinks[MenuNavButtons.SPHERE_IMAGE] = MenuNavButtons.SPHERE_SETTINGS;
+
     mMenus[MenuNavButtons.SETTINGS] = createMenu(MenuNavButtons.SETTINGS, [
         new MeshButton(MenuNavButtons.BACK_BUTTON, 'Back', BUTTON_SIZE),
     ]);
@@ -62,6 +71,18 @@ export function MenuController() {
     ]);
     mParentLinks[MenuNavButtons.SETTINGS] = MenuNavButtons.MAIN_MENU;
 
+    mMenus[MenuNavButtons.ADD_AUDIO] = mAudioSelectMenu;
+    mParentLinks[MenuNavButtons.ADD_AUDIO] = MenuNavButtons.ADD;
+
+    mMenus[MenuNavButtons.ADD_PICTURE] = mImageSelectMenu;
+    mParentLinks[MenuNavButtons.ADD_PICTURE] = MenuNavButtons.ADD;
+
+    mMenus[MenuNavButtons.ADD_MODEL] = mModelSelectMenu;
+    mParentLinks[MenuNavButtons.ADD_MODEL] = MenuNavButtons.ADD;
+
+    mMenus[MenuNavButtons.ADD_TELEPORT] = mMomentSelectMenu;
+    mParentLinks[MenuNavButtons.ADD_TELEPORT] = MenuNavButtons.ADD;
+
     // Submenus
     mSubMenus[ToolButtons.BRUSH] = createMenu(ToolButtons.BRUSH, [
         new MeshButton(BrushToolButtons.UNBLUR, 'Unblur', BUTTON_SIZE),
@@ -73,29 +94,6 @@ export function MenuController() {
         new MeshButton(SurfaceToolButtons.FLATTEN, 'Flatten', BUTTON_SIZE),
         new MeshButton(SurfaceToolButtons.SELECT, 'Select', BUTTON_SIZE),
     ]);
-
-    // Dynamic menus
-    let mImageSelectMenu = createSelectMenu('ImageSelectMenu');
-    let mAudioSelectMenu = createSelectMenu('AudioSelectMenu');
-    let mModelSelectMenu = createSelectMenu('ModelSelectMenu');
-    let mMomentSelectMenu = createSelectMenu('MomentSelectMenu');
-    mMomentSelectMenu.add(new MeshButton(ItemButtons.NEW_MOMENT, '+', BUTTON_SIZE));
-
-    mMenus[MenuNavButtons.SPHERE_IMAGE] = mImageSelectMenu;
-    mParentLinks[MenuNavButtons.SPHERE_IMAGE] = MenuNavButtons.SPHERE_SETTINGS;
-
-    mMenus[MenuNavButtons.ADD_AUDIO] = mAudioSelectMenu;
-    mParentLinks[MenuNavButtons.ADD_AUDIO] = MenuNavButtons.ADD;
-
-    mMenus[MenuNavButtons.ADD_PICTURE] = mImageSelectMenu;
-    mParentLinks[MenuNavButtons.ADD_PICTURE] = MenuNavButtons.ADD;
-
-    mMenus[MenuNavButtons.ADD_MODEL] = mImageSelectMenu;
-    mParentLinks[MenuNavButtons.ADD_MODEL] = MenuNavButtons.ADD;
-
-    mMenus[MenuNavButtons.ADD_TELEPORT] = mMomentSelectMenu;
-    mParentLinks[MenuNavButtons.ADD_TELEPORT] = MenuNavButtons.ADD;
-
 
 
     function setContainer(container1, container2) {

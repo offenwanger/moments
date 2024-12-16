@@ -37,35 +37,16 @@ export function MomentPanel(container) {
     let mPoseableAssetsContainer = document.createElement('div');
     mPoseableAssetsContainer.setAttribute('id', 'moment-poseable-assets');
     mPanelContainer.appendChild(mPoseableAssetsContainer)
-    let mPoseableAssetsAddButton = new ButtonInput(mPoseableAssetsContainer)
-        .setId('moment-poseable-asset-add-button')
-        .setLabel('Poseable Assets [+]')
-        .setOnClick(async () => {
-            await mAddCallback(mMoment.id, Data.PoseableAsset, {});
-        })
     let mPoseableAssetsList = [];
 
     let mPicturesContainer = document.createElement('div');
     mPicturesContainer.setAttribute('id', 'moment-pictures');
     mPanelContainer.appendChild(mPicturesContainer)
-    let mPicturesAddButton = new ButtonInput(mPicturesContainer)
-        .setId('moment-pictures-add-button')
-        .setLabel('Pictures [+]')
-        .setOnClick(async () => {
-            await mAddCallback(mMoment.id, Data.Picture, {});
-        })
     let mPicturesList = [];
-
 
     let mAudiosContainer = document.createElement('div');
     mAudiosContainer.setAttribute('id', 'moment-audios');
     mPanelContainer.appendChild(mAudiosContainer)
-    let mAudiosAddButton = new ButtonInput(mAudiosContainer)
-        .setId('moment-audios-add-button')
-        .setLabel('Audios [+]')
-        .setOnClick(async () => {
-            await mAddCallback(mMoment.id, Data.Audio, {});
-        })
     let mAudiosList = [];
 
     let mDeleteButton = new ButtonInput(mPanelContainer)

@@ -32,10 +32,28 @@ export function PictureWrapper(parent) {
         let mRatio = image.height / image.width;
         mFrontPlane.material.map = new THREE.Texture(image);
         mFrontPlane.material.map.needsUpdate = true;
+        mFrontPlane.material.needsUpdate = true;
         mPlanes.position.set(picture.x, picture.y, picture.z);
         mPlanes.setRotationFromQuaternion(new THREE.Quaternion().fromArray(picture.orientation));
         mPlanes.scale.set(picture.scale, picture.scale * mRatio, picture.scale)
         mPlanes.userData.id = picture.id;
+
+        let teleport = model.teleports.find(t => t.attachedId == picture.id);
+        if (teleport) {
+            console.log("TODO: show teleport marker");
+            mInteractionTarget.isTeleport = () => true;
+        } else {
+            mInteractionTarget.isTeleport = () => false;
+        }
+
+        let audio = model.audios.find(a => a.attachedId == picture.id);
+        if (audio) {
+            console.log("TODO: show audio marker");
+            mInteractionTarget.isAudio = () => true;
+        } else {
+            mInteractionTarget.isAudio = () => false;
+        }
+
         mPicture = picture;
     }
 

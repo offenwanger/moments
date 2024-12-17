@@ -1,20 +1,15 @@
 
 async function updateWrapperArray(wrappers, dataItems, model, assetUtil, createFunction) {
-    let unusedOldWrappers = [...wrappers];
-    for (const item of dataItems) {
-        let wrapper = unusedOldWrappers.find(w => w.getId() == item.id);
-        if (wrapper) {
-            unusedOldWrappers.splice(unusedOldWrappers.indexOf(wrapper), 1);
-        } else {
-            wrapper = await createFunction(item);
-            wrappers.push(wrapper);
+    for (let i = 0; i < dataItems.length; i++) {
+        if (!wrappers[i]) {
+            wrappers.push(await createFunction(dataItems[i]));
         }
-        await wrapper.update(item, model, assetUtil);
+        await wrappers[i].update(dataItems[i], model, assetUtil);
     }
 
-    for (const unusedWrapper of unusedOldWrappers) {
-        await unusedWrapper.remove();
-        wrappers.splice(wrappers.indexOf(unusedWrapper), 1);
+    let deleteWrappers = wrappers.splice(dataItems.length)
+    for (let wrapper of deleteWrappers) {
+        await wrapper.remove();
     }
 }
 

@@ -82,6 +82,8 @@ export function TeleportWrapper(parent) {
             mSphere.position.copy(worldPos)
         }
 
+        target.isTeleport = () => true;
+
         return target;
     }
 

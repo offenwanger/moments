@@ -236,15 +236,18 @@ class Picture extends DataItem {
     scale = 0.3;
     assetId = null;
 }
+
 class Audio extends DataItem {
     assetId = null;
-    volume = 1;
     x = 0; y = 0; z = 0;
+    attachedId = null;
+    volume = 1;
 }
 
 class Teleport extends DataItem {
-    x = 0; y = 0; z = 0;
     momentId = null;
+    x = 0; y = 0; z = 0;
+    attachedId = null;
     sceneX = 0;
     sceneY = 0;
     sceneZ = 0;

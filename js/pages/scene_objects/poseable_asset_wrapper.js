@@ -42,6 +42,7 @@ export function PoseableAssetWrapper(parent) {
 
                 mTargets = []
                 let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(mGLTF.scene);
+                // create and assign the mesh data
                 targets.forEach(target => {
                     if (!target.isMesh && target.type != "Bone") { console.error("Unexpected target type!", target); return; }
 
@@ -52,7 +53,7 @@ export function PoseableAssetWrapper(parent) {
                     }
 
                     if (target.isMesh) {
-                        target.userData.poseId = pose.id;
+                        target.userData.id = pose.id;
                         if (!target.material) { target.material = new THREE.MeshBasicMaterial() }
                         target.userData.originalColor = target.material.color.getHex();
                         mTargets.push(target)
@@ -70,10 +71,27 @@ export function PoseableAssetWrapper(parent) {
         mPoses.forEach(pose => {
             let object = mGLTF.scene.getObjectByName(pose.name);
             if (!object) { console.error("Invalid pose!", pose); return; }
+
             object.setRotationFromQuaternion(new THREE.Quaternion().fromArray(pose.orientation));
             object.position.set(pose.x, pose.y, pose.z);
             object.scale.set(pose.scale, pose.scale, pose.scale);
             object.userData.id = pose.id;
+
+            let teleport = model.teleports.find(t => t.attachedId == pose.id);
+            if (teleport) {
+                console.log('show teleport')
+                object.userData.isTeleport = true;
+            } else {
+                object.userData.isTeleport = false;
+            }
+
+            let audio = model.audios.find(a => a.attachedId == pose.id);
+            if (audio) {
+                console.log('show audio')
+                object.userData.isAudio = true;
+            } else {
+                object.userData.isAudio = false;
+            }
         })
 
         mGLTF.userData.id = poseableAsset.id;
@@ -94,7 +112,7 @@ export function PoseableAssetWrapper(parent) {
         const intersects = ray.intersectObjects(mTargets);
         let targets = intersects.map(i => {
             if (!i.object) { console.error("Invalid Intersect!"); return null; }
-            let poseId = i.object.userData.poseId;
+            let poseId = i.object.userData.id;
 
             let target = mInteractionTargets.find(t => t.getId() == poseId);
             if (!target) { console.error("Invalid intersect mesh, no target!", poseId); return null; }
@@ -105,9 +123,19 @@ export function PoseableAssetWrapper(parent) {
         return targets;
     }
 
-    function makeInteractionTargets() {
+    function makeInteractionTargets(model) {
         return mPoses.map(pose => {
             let interactionTarget = new InteractionTargetInterface();
+
+            interactionTarget.isTeleport = () => {
+                let obj = mGLTF.scene.getObjectByName(pose.name);
+                return obj.userData.isTeleport;
+            }
+
+            interactionTarget.isAudio = () => {
+                let obj = mGLTF.scene.getObjectByName(pose.name);
+                return obj.userData.isAudio;
+            }
 
             interactionTarget.getLocalPosition = () => {
                 let p = new THREE.Vector3();
@@ -255,14 +283,14 @@ export function PoseableAssetWrapper(parent) {
                 const geometry = new THREE.BufferGeometry();
                 geometry.setFromPoints([point1, point2]);
                 const line = new THREE.Line(geometry, BoneMaterial);
-                line.userData.poseId = poseId;
+                line.userData.id = poseId;
                 line.name = bone.name;
                 group.attach(line);
             })
         } else {
             const geometry = new THREE.SphereGeometry(0.03, 4, 2);
             const sphere = new THREE.Mesh(geometry, BoneMaterial);
-            sphere.userData.poseId = poseId;
+            sphere.userData.id = poseId;
             bone.getWorldPosition(sphere.position);
             group.attach(sphere);
         }

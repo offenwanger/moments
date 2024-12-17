@@ -29,4 +29,6 @@ export class InteractionTargetInterface {
     getDepth = () => { return 0; }
 
     isButton = () => false;
+    isTeleport = () => false;
+    isAudio = () => false;
 }

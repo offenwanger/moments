@@ -60,9 +60,8 @@ function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionCo
         interactionState.data.rootTarget.setWorldPosition(newPosition);
         interactionState.data.rootTarget.setLocalOrientation(newOrientation);
 
-        let moveClass = IdUtil.getClass(interactionState.data.rootTarget.getId());
         let targets = [];
-        if (moveClass == Data.Teleport) {
+        if (interactionState.data.rootTarget.isTeleport()) {
             // TODO: Update this to check if an item has a teleport attached. 
             let target = getTeleportDropTarget(raycaster);
             if (target) targets = [target];
@@ -70,6 +69,7 @@ function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionCo
         }
 
         if (targets.length == 0) {
+            let moveClass = IdUtil.getClass(interactionState.data.rootTarget.getId());
             targets = getDropTargets(raycaster, toolMode, moveClass, sceneController);
             if (targets.length > 0) {
                 let closest = Util.getClosestTarget(raycaster.ray, targets);
@@ -185,9 +185,8 @@ function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionCont
     let updates = []
 
     if (type == InteractionType.ONE_HAND_MOVE) {
-        let moveClass = IdUtil.getClass(data.rootTarget.getId());
         let targets = [];
-        if (moveClass == Data.Teleport) {
+        if (data.rootTarget.isTeleport()) {
             // TODO: Update this to check if an item has a teleport attached. 
             let target = getTeleportDropTarget(raycaster);
             if (target) targets = [target];
@@ -198,16 +197,16 @@ function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionCont
         }
 
         if (targets.length == 0) {
+            // if we're not teleporting, check if we dropped on a valid target.
+            let moveClass = IdUtil.getClass(data.rootTarget.getId());
             targets = getDropTargets(raycaster, toolMode, moveClass, sceneController);
             if (targets.length > 0) {
                 let closest = Util.getClosestTarget(raycaster.ray, targets);
-                let update = { id: closest.getId() }
-                if (moveClass == Data.Teleport) {
-                    update.teleportId = data.rootTarget.getId();
-                } else if (moveClass == Data.Audio) {
-                    update.audioId = data.rootTarget.getId();
-                }
-                updates = [new ModelUpdate(update)]
+                let targetId = closest.getId();
+                updates = [new ModelUpdate({
+                    id: data.rootTarget.getId(),
+                    attachedId: targetId
+                })];
             }
         }
 
@@ -280,9 +279,7 @@ function startOneHandMove(raycaster, target, interactionState, sceneController) 
         startPosition: rootTarget.getWorldPosition(),
     }
 
-    let moveClass = IdUtil.getClass(interactionState.data.rootTarget.getId());
-    // TODO: check for attached teleporter
-    if (moveClass == Data.Teleport) {
+    if (interactionState.data.rootTarget.isTeleport()) {
         sceneController.getScene().add(mTeleportTarget);
         let targetPosision = rootTarget.getWorldPosition();
         mTeleportTargetDistance = targetPosision.distanceTo(raycaster.ray.origin) / 2;
@@ -374,10 +371,13 @@ function getDropTargets(raycaster, toolMode, moveClass, sceneController) {
     if (moveClass == Data.Teleport || moveClass == Data.Audio) {
         let targets = sceneController.getTargets(raycaster, toolMode);
         targets = targets.filter(t => {
+            t = t.getRoot();
             // right now both audio and teleport have the 
             // same drop targets other than the teleport target.
             let dropClass = IdUtil.getClass(t.getId())
-            if (dropClass == Data.PoseableAsset) return true;
+            if (moveClass == Data.Teleport && t.isTeleport()) return false;
+            if (moveClass == Data.Audio && t.isAudio()) return false;
+            if (dropClass == Data.AssetPose) return true;
             if (dropClass == Data.Picture) return true;
             return false;
         });
@@ -394,7 +394,6 @@ function updateTeleportTarget(raycaster, sceneController) {
     let scale = Math.min(1 / (unitDist * unitDist), 100);
     mTeleportTarget.scale.set(scale, scale, scale);
     if (unitDist > 1.5) sceneController.getScene().remove(mTeleportTarget);
-
 }
 
 export const MoveToolHandler = {

@@ -207,11 +207,13 @@ export function EditorPage(parentContainer, mWebsocketController) {
     });
 
     mSceneInterface.onTeleport(async (id) => {
-        let teleport = mModelController.getModel().find(id);
+        let isTeleport = IdUtil.getClass(id) == Data.Teleport;
+        let teleport = mModelController.getModel().teleports.find(t => isTeleport ? t.id == id : t.attachedId == id);
         if (!teleport) { console.error('Invalid id: ' + id); }
         let pos = new THREE.Vector3(teleport.sceneX, teleport.sceneY, teleport.sceneZ)
         let direction = new THREE.Vector3(teleport.sceneDirX, teleport.sceneDirY, teleport.sceneDirZ);
         setCurrentMoment(teleport.momentId, pos, direction);
+        updateModel();
     });
 
     mSceneInterface.onCreateMoment(async () => {

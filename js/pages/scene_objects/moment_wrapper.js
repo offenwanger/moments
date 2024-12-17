@@ -59,7 +59,7 @@ export function MomentWrapper(parent) {
                 });
 
             await SceneUtil.updateWrapperArray(mTeleportWrappers,
-                mModel.teleports.filter(a => moment.teleportIds.includes(a.id)),
+                mModel.teleports.filter(t => moment.teleportIds.includes(t.id) && !t.attachedId),
                 mModel,
                 assetUtil,
                 async (teleport) => {

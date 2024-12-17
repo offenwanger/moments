@@ -296,7 +296,7 @@ export function XRInputController(sceneContainer) {
     }
 
     function setUserPositionAndDirection(worldPosition, unitDirection) {
-        mUserGroup.position.copy(worldPosition);
+        mUserGroup.position.subVectors(worldPosition, mXRCamera.position);
         let dir = new THREE.Vector3();
         mXRCamera.getWorldDirection(dir);
 

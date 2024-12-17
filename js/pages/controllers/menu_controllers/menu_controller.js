@@ -33,11 +33,11 @@ export function MenuController() {
         new MeshButton(ToolButtons.MOVE, 'Move', BUTTON_SIZE),
         new MeshButton(ToolButtons.BRUSH, 'Brush', BUTTON_SIZE),
         new MeshButton(ToolButtons.SURFACE, 'Surface', BUTTON_SIZE),
-        new MeshButton(ToolButtons.SCISSORS, 'Scissors', BUTTON_SIZE),
-        new MeshButton(ToolButtons.RECORD, 'Record', BUTTON_SIZE),
-        new MeshButton(ItemButtons.RECENTER, 'Recenter', BUTTON_SIZE),
+        new MeshButton(ToolButtons.SCISSORS, 'Scissors', BUTTON_SIZE, 0xff0000),
+        new MeshButton(ToolButtons.RECORD, 'Record', BUTTON_SIZE, 0xff0000),
+        new MeshButton(ItemButtons.RECENTER, 'Recenter', BUTTON_SIZE, 0xff0000),
         new MeshButton(MenuNavButtons.SPHERE_SETTINGS, 'Sphere Settings', BUTTON_SIZE),
-        new MeshButton(MenuNavButtons.SETTINGS, 'Settings', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.SETTINGS, 'Settings', BUTTON_SIZE, 0xff0000),
         new MeshButton(MenuNavButtons.ADD, 'Add', BUTTON_SIZE)
     ]);
     mCurrentMenuId = MenuNavButtons.MAIN_MENU;
@@ -49,7 +49,7 @@ export function MenuController() {
         new MeshButton(AttributeButtons.SPHERE_TOGGLE, 'Toggle', BUTTON_SIZE),
         new MeshButton(AttributeButtons.SPHERE_SCALE_UP, 'Scale Up', BUTTON_SIZE),
         new MeshButton(MenuNavButtons.SPHERE_IMAGE, 'Image', BUTTON_SIZE),
-        new MeshButton(MenuNavButtons.SPHERE_COLOR, 'Color', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.SPHERE_COLOR, 'Color', BUTTON_SIZE, 0xff0000),
         new MeshButton(AttributeButtons.SPHERE_SCALE_DOWN, 'Scale Down', BUTTON_SIZE),
     ]);
     mParentLinks[MenuNavButtons.SPHERE_SETTINGS] = MenuNavButtons.MAIN_MENU;
@@ -64,7 +64,7 @@ export function MenuController() {
 
     mMenus[MenuNavButtons.ADD] = createMenu(MenuNavButtons.ADD, [
         new MeshButton(MenuNavButtons.BACK_BUTTON, 'Back', BUTTON_SIZE),
-        new MeshButton(MenuNavButtons.ADD_AUDIO, 'Audio', BUTTON_SIZE),
+        new MeshButton(MenuNavButtons.ADD_AUDIO, 'Audio', BUTTON_SIZE, 0xff0000),
         new MeshButton(MenuNavButtons.ADD_PICTURE, 'Picture', BUTTON_SIZE),
         new MeshButton(MenuNavButtons.ADD_MODEL, 'Model', BUTTON_SIZE),
         new MeshButton(MenuNavButtons.ADD_TELEPORT, 'Teleport', BUTTON_SIZE),
@@ -87,12 +87,12 @@ export function MenuController() {
     mSubMenus[ToolButtons.BRUSH] = createMenu(ToolButtons.BRUSH, [
         new MeshButton(BrushToolButtons.UNBLUR, 'Unblur', BUTTON_SIZE),
         new MeshButton(BrushToolButtons.BLUR, 'Blur', BUTTON_SIZE),
-        new MeshButton(BrushToolButtons.COLOR, 'Color', BUTTON_SIZE),
+        new MeshButton(BrushToolButtons.COLOR, 'Color', BUTTON_SIZE, 0xff0000),
     ]);
     mSubMenus[ToolButtons.SURFACE] = createMenu(ToolButtons.SURFACE, [
-        new MeshButton(SurfaceToolButtons.MOVE, 'Move', BUTTON_SIZE),
-        new MeshButton(SurfaceToolButtons.FLATTEN, 'Flatten', BUTTON_SIZE),
-        new MeshButton(SurfaceToolButtons.SELECT, 'Select', BUTTON_SIZE),
+        new MeshButton(SurfaceToolButtons.MOVE, 'Move', BUTTON_SIZE, 0xff0000),
+        new MeshButton(SurfaceToolButtons.FLATTEN, 'Flatten', BUTTON_SIZE, 0xff0000),
+        new MeshButton(SurfaceToolButtons.SELECT, 'Select', BUTTON_SIZE, 0xff0000),
     ]);
 
 
@@ -166,12 +166,12 @@ export function MenuController() {
                 console.error('Invalid type: ' + asset.type);
                 continue;
             }
-            let button = new MeshButton(asset.id, asset.name, BUTTON_SIZE, true);
+            let button = new MeshButton(asset.id, asset.name, BUTTON_SIZE, 0xffffff, true);
             menu.add(button);
         }
         mMomentSelectMenu.empty(true)
         for (let moment of model.moments) {
-            let button = new MeshButton(moment.id, moment.name, BUTTON_SIZE, true);
+            let button = new MeshButton(moment.id, moment.name, BUTTON_SIZE, 0xffffff, true);
             mMomentSelectMenu.add(button);
         }
     }

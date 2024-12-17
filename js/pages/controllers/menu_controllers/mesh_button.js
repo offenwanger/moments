@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import * as ThreeMeshUI from 'three-mesh-ui';
 import { InteractionTargetInterface } from '../../scene_objects/interaction_target_interface.js';
 
-export function MeshButton(id, label, size, dynamic = false) {
+export function MeshButton(id, label, size, color = 0xffffff, dynamic = false) {
     let mDynamic = dynamic;
     const mButton = new ThreeMeshUI.Block({
         padding: 0.05,
@@ -18,7 +18,8 @@ export function MeshButton(id, label, size, dynamic = false) {
     });
     mButton.add(new ThreeMeshUI.Text({
         content: label,
-        fontSize: 0.055
+        fontSize: 0.055,
+        fontColor: new THREE.Color(color),
     }));
     mButton.userData.id = id;
     const mInteractionTarget = createTarget();

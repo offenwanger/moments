@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Data } from "../../data.js";
 import { InteractionTargetInterface } from "./interaction_target_interface.js";
 import { BrushToolButtons, ToolButtons } from '../../constants.js';
+import { CanvasUtil } from '../../utils/canvas_util.js';
 
 const DEFAULT_TEXTURE = 'assets/images/default_sphere_texture.png';
 
@@ -276,8 +277,10 @@ export function PhotosphereWrapper(parent) {
     function createInteractionTarget() {
         let target = new InteractionTargetInterface();
         target.getObject3D = () => { return mSphere; }
-        target.getBlurCanvas = () => mBlur;
-        target.getColorCanvas = () => mColor;
+        target.getBlurCanvas = () => CanvasUtil.cloneCanvas(mBlur);
+        target.getColorCanvas = () => CanvasUtil.cloneCanvas(mColor);
+        target.setBlurCanvas = (canvas) => mOriginalBlur = canvas;
+        target.setColorCanvas = (canvas) => mOriginalColor = canvas;
         return target;
     }
 

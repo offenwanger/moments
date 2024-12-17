@@ -12,6 +12,8 @@ export function AssetUtil(workspace) {
     let mLoadedAssets = {};
     let mAssetAges = {};
 
+    const mImageLoader = new THREE.ImageLoader();
+
     function updateModel(model) {
         let newAssetIds = model.assets.map(a => a.id);
         Object.keys(mLoadedAssets).forEach(id => {
@@ -48,9 +50,8 @@ export function AssetUtil(workspace) {
         if (!mLoadedAssets[assetId]) {
             let asset = mModel.find(assetId);
             if (!asset) { console.error("Invalid image asset: " + assetId, asset); throw new Error("Invalid model asset: " + assetId); }
-            const imageLoader = new THREE.ImageLoader();
             let uri = await mWorkspace.getAssetAsDataURI(asset.filename);
-            let image = await imageLoader.loadAsync(uri, null, null, function (error) { console.error('Error loading image', error); });
+            let image = await mImageLoader.loadAsync(uri, null, null, function (error) { console.error('Error loading image', error); });
             mLoadedAssets[assetId] = image;
             mAssetAges[assetId] = asset.updated;
         }

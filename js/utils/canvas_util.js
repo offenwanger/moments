@@ -27,7 +27,17 @@ function generateWhiteGradient() {
 
 }
 
+function cloneCanvas(canvas) {
+    let newCanvas = document.createElement('canvas');
+    let context = newCanvas.getContext('2d');
+    newCanvas.width = canvas.width;
+    newCanvas.height = canvas.height;
+    context.drawImage(canvas, 0, 0);
+    return newCanvas;
+}
+
 export const CanvasUtil = {
     generateDotCanvas,
     generateWhiteGradient,
+    cloneCanvas,
 }

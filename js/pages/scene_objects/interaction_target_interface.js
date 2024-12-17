@@ -16,6 +16,8 @@ export class InteractionTargetInterface {
     // For Photosphere
     getBlurCanvas = () => { return document.createElement('canvas'); }
     getColorCanvas = () => { return document.createElement('canvas'); }
+    setBlurCanvas = () => { }
+    setColorCanvas = () => { }
 
     // update visual state
     highlight = (toolMode) => { };

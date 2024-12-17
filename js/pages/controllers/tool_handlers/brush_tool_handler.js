@@ -59,8 +59,10 @@ function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionCont
         if (toolMode.brushSettings.mode == BrushToolButtons.BLUR ||
             toolMode.brushSettings.mode == BrushToolButtons.UNBLUR) {
             canvas = data.target.getBlurCanvas();
+            data.target.setBlurCanvas(canvas);
         } else if (toolMode.brushSettings.mode == BrushToolButtons.COLOR) {
             canvas = data.target.getColorCanvas();
+            data.target.setColorCanvas(canvas);
         } else {
             console.error('Invalid brushing state: ' + JSON.stringify(toolMode));
             return [];

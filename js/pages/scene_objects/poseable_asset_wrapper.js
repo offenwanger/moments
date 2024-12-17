@@ -15,6 +15,15 @@ export function PoseableAssetWrapper(parent) {
     let mModelGroup = new THREE.Group();
     mParent.add(mModelGroup);
 
+    const mTeleportMap = new THREE.TextureLoader().load('assets/images/teleportIcon.png');
+    const mTeleportSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: mTeleportMap }));
+    mTeleportSprite.scale.set(0.1, 0.1, 0.1)
+    let mTeleportSprites = {};
+
+    const mAudioMap = new THREE.TextureLoader().load('assets/images/audioIcon.png');
+    const mAudioSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: mAudioMap }));
+    let mAudioSprites = {};
+
     const BoneMaterial = new THREE.LineBasicMaterial({
         color: new THREE.Color(0x0000ff),
         depthTest: false,
@@ -36,12 +45,14 @@ export function PoseableAssetWrapper(parent) {
 
         if (mPoseableAsset.assetId != oldModel.assetId) {
             if (mGLTF) remove();
+            mTeleportSprites = {};
+            mAudioSprites = {};
             try {
                 mGLTF = await assetUtil.loadAssetModel(mPoseableAsset.assetId)
-                mModelGroup.add(mGLTF.scene);
+                mModelGroup.add(mGLTF);
 
                 mTargets = []
-                let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(mGLTF.scene);
+                let targets = GLTKUtil.getInteractionTargetsFromGTLKScene(mGLTF);
                 // create and assign the mesh data
                 targets.forEach(target => {
                     if (!target.isMesh && target.type != "Bone") { console.error("Unexpected target type!", target); return; }
@@ -69,7 +80,7 @@ export function PoseableAssetWrapper(parent) {
         }
 
         mPoses.forEach(pose => {
-            let object = mGLTF.scene.getObjectByName(pose.name);
+            let object = mGLTF.getObjectByName(pose.name);
             if (!object) { console.error("Invalid pose!", pose); return; }
 
             object.setRotationFromQuaternion(new THREE.Quaternion().fromArray(pose.orientation));
@@ -79,9 +90,21 @@ export function PoseableAssetWrapper(parent) {
 
             let teleport = model.teleports.find(t => t.attachedId == pose.id);
             if (teleport) {
-                console.log('show teleport')
+                if (!mTeleportSprites[pose.id]) {
+                    mTeleportSprites[pose.id] = mTeleportSprite.clone();
+                    object.add(mTeleportSprites[pose.id]);
+                    let bbox = new THREE.Box3().setFromObject(object);
+                    let size = new THREE.Vector3();
+                    bbox.getSize(size);
+                    mTeleportSprites[pose.id].position.set(size.x / 2, size.y / 2, size.z / 2);
+                }
+
                 object.userData.isTeleport = true;
             } else {
+                if (mTeleportSprites[pose.id]) {
+                    mTeleportSprites[pose.id].remove();
+                    delete mTeleportSprites[pose.id];
+                }
                 object.userData.isTeleport = false;
             }
 
@@ -128,19 +151,19 @@ export function PoseableAssetWrapper(parent) {
             let interactionTarget = new InteractionTargetInterface();
 
             interactionTarget.isTeleport = () => {
-                let obj = mGLTF.scene.getObjectByName(pose.name);
+                let obj = mGLTF.getObjectByName(pose.name);
                 return obj.userData.isTeleport;
             }
 
             interactionTarget.isAudio = () => {
-                let obj = mGLTF.scene.getObjectByName(pose.name);
+                let obj = mGLTF.getObjectByName(pose.name);
                 return obj.userData.isAudio;
             }
 
             interactionTarget.getLocalPosition = () => {
                 let p = new THREE.Vector3();
                 if (mGLTF) {
-                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    let obj = mGLTF.getObjectByName(pose.name);
                     p.copy(obj.position)
                 }
                 return p;
@@ -149,7 +172,7 @@ export function PoseableAssetWrapper(parent) {
             interactionTarget.getWorldPosition = () => {
                 let worldPos = new THREE.Vector3();
                 if (mGLTF) {
-                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    let obj = mGLTF.getObjectByName(pose.name);
                     obj.getWorldPosition(worldPos);
                 }
                 return worldPos;
@@ -157,7 +180,7 @@ export function PoseableAssetWrapper(parent) {
 
             interactionTarget.setWorldPosition = (worldPos) => {
                 if (mGLTF) {
-                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    let obj = mGLTF.getObjectByName(pose.name);
                     let localPosition = obj.parent.worldToLocal(worldPos);
                     obj.position.copy(localPosition)
                 }
@@ -166,7 +189,7 @@ export function PoseableAssetWrapper(parent) {
             interactionTarget.getLocalOrientation = () => {
                 let q = new THREE.Quaternion();
                 if (mGLTF) {
-                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    let obj = mGLTF.getObjectByName(pose.name);
                     q.copy(obj.quaternion);
                 }
                 return q;
@@ -174,7 +197,7 @@ export function PoseableAssetWrapper(parent) {
 
             interactionTarget.setLocalOrientation = (orientation) => {
                 if (mGLTF) {
-                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    let obj = mGLTF.getObjectByName(pose.name);
                     obj.quaternion.copy(orientation)
                 }
             }
@@ -182,7 +205,7 @@ export function PoseableAssetWrapper(parent) {
             interactionTarget.getScale = () => {
                 let scale = 1;
                 if (mGLTF) {
-                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    let obj = mGLTF.getObjectByName(pose.name);
                     scale = obj.scale.x;
                 }
                 return scale;
@@ -190,14 +213,14 @@ export function PoseableAssetWrapper(parent) {
 
             interactionTarget.setScale = (scale) => {
                 if (mGLTF) {
-                    let obj = mGLTF.scene.getObjectByName(pose.name);
+                    let obj = mGLTF.getObjectByName(pose.name);
                     obj.scale.set(scale, scale, scale);
                 }
             }
 
             interactionTarget.getParent = () => {
-                let obj = mGLTF.scene.getObjectByName(pose.name);
-                if (!obj.parent || obj.parent == mGLTF.scene) return null;
+                let obj = mGLTF.getObjectByName(pose.name);
+                if (!obj.parent || obj.parent == mGLTF) return null;
                 let parentPose = mPoses.find(p => p.name == obj.parent.name);
                 if (!parentPose) { console.error("Invalid target: " + obj.parent.name); return null; };
                 let parentTarget = mInteractionTargets.find(t => t.getId() == parentPose.id);
@@ -206,9 +229,9 @@ export function PoseableAssetWrapper(parent) {
             }
 
             interactionTarget.getRoot = () => {
-                let obj = mGLTF.scene.getObjectByName(pose.name);
+                let obj = mGLTF.getObjectByName(pose.name);
                 let root = obj;
-                while (root.parent && root.parent != mGLTF.scene && root.parent.type == "Bone") {
+                while (root.parent && root.parent != mGLTF && root.parent.type == "Bone") {
                     root = root.parent;
                 }
 
@@ -219,10 +242,10 @@ export function PoseableAssetWrapper(parent) {
             }
 
             interactionTarget.getDepth = () => {
-                let obj = mGLTF.scene.getObjectByName(pose.name);
+                let obj = mGLTF.getObjectByName(pose.name);
                 let root = obj;
                 let count = 0;
-                while (root.parent && root.parent != mGLTF.scene && root.parent.type == "Bone") {
+                while (root.parent && root.parent != mGLTF && root.parent.type == "Bone") {
                     root = root.parent;
                     count++;
                 }
@@ -231,7 +254,7 @@ export function PoseableAssetWrapper(parent) {
             }
 
             interactionTarget.getObject3D = () => {
-                let obj = mGLTF.scene.getObjectByName(pose.name);
+                let obj = mGLTF.getObjectByName(pose.name);
                 return obj
             }
 

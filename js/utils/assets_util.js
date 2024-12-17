@@ -10,6 +10,7 @@ export function AssetUtil(workspace) {
     let mModel = new Data.StoryModel();
 
     let mLoadedAssets = {};
+    let mLoadedFiles = {};
     let mAssetAges = {};
 
     const mImageLoader = new THREE.ImageLoader();
@@ -24,6 +25,7 @@ export function AssetUtil(workspace) {
                 // if the file has been updated remove this from the cache. 
                 delete mLoadedAssets[a.id];
                 delete mAssetAges[a.id];
+                delete mLoadedFiles[a.filename];
             }
         })
         mModel = model;
@@ -60,15 +62,36 @@ export function AssetUtil(workspace) {
     }
 
     async function loadAssetModel(assetId) {
-        if (!mLoadedAssets[assetId]) {
-            let asset = mModel.find(assetId);
-            if (!asset || asset.type != AssetTypes.MODEL) { console.error("Bad asset", assetId, asset); throw new Error("Invalid model asset: " + assetId); }
-            let model = await loadGLTFModel(asset.filename);
-            mLoadedAssets[assetId] = model;
-            mAssetAges[assetId] = asset.updated;
+        let asset = mModel.find(assetId);
+        if (!asset || asset.type != AssetTypes.MODEL) { console.error("Bad asset", assetId, asset); throw new Error("Invalid model asset: " + assetId); }
+        let model = await loadGLTFModel(asset.filename);
+        mAssetAges[assetId] = asset.updated;
+
+        if (!model) { console.error('Failed to load asset: ' + assetId); return null; }
+        return model.scene;
+    }
+
+    async function loadGLTFModel(filename) {
+        if (!mLoadedFiles[filename]) {
+            mLoadedFiles[filename] = await mWorkspace.getAssetAsDataURI(filename)
         }
-        if (!mLoadedAssets[assetId]) { console.error('Failed to load asset: ' + assetId); return null; }
-        return mLoadedAssets[assetId];
+        if (!mLoadedFiles[filename]) { console.error("failed to load file: " + filename); return null; }
+
+        const modelLoader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('./node_modules/three/examples/jsm/libs/draco/');
+        modelLoader.setDRACOLoader(dracoLoader);
+        let model = await modelLoader.loadAsync(mLoadedFiles[filename], null,
+            // called while loading is progressing
+            function (xhr) {
+                logInfo(file + " "(xhr.loaded / xhr.total * 100) + '% loaded');
+            },
+            // called when loading has errors
+            function (error) {
+                console.error('An error happened', error);
+            }
+        );
+        return model;
     }
 
     async function loadDefaultEnvironmentCube() {
@@ -80,25 +103,6 @@ export function AssetUtil(workspace) {
         }
 
         return mLoadedAssets['DEFAULT_ENV_BOX'];
-    }
-
-    async function loadGLTFModel(filename) {
-        let dataUri = await mWorkspace.getAssetAsDataURI(filename)
-        const modelLoader = new GLTFLoader();
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath('./node_modules/three/examples/jsm/libs/draco/');
-        modelLoader.setDRACOLoader(dracoLoader);
-        let model = await modelLoader.loadAsync(dataUri, null,
-            // called while loading is progressing
-            function (xhr) {
-                logInfo(file + " "(xhr.loaded / xhr.total * 100) + '% loaded');
-            },
-            // called when loading has errors
-            function (error) {
-                console.error('An error happened', error);
-            }
-        );
-        return model;
     }
 
     this.updateModel = updateModel;

@@ -16,6 +16,16 @@ export function PictureWrapper(parent) {
     const mBackPlane = new THREE.Mesh(mGeometry,
         new THREE.MeshBasicMaterial({ color: 0xaaaaaa, side: THREE.BackSide }));
 
+    const mTeleportMap = new THREE.TextureLoader().load('assets/images/teleportIcon.png');
+    const mTeleportSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: mTeleportMap }));
+    mTeleportSprite.position.x = 0.5;
+    mTeleportSprite.position.y = 0.5;
+
+    const mAudioMap = new THREE.TextureLoader().load('assets/images/audioIcon.png');
+    const mAudioSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: mAudioMap }));
+    mAudioSprite.position.x = -0.5;
+    mAudioSprite.position.y = 0.5;
+
     const mPlanes = new THREE.Group();
     mPlanes.add(mFrontPlane, mBackPlane);
     mParent.add(mPlanes);
@@ -36,21 +46,25 @@ export function PictureWrapper(parent) {
         mPlanes.position.set(picture.x, picture.y, picture.z);
         mPlanes.setRotationFromQuaternion(new THREE.Quaternion().fromArray(picture.orientation));
         mPlanes.scale.set(picture.scale, picture.scale * mRatio, picture.scale)
+        mTeleportSprite.scale.set(0.1 / picture.scale, 0.1 / (picture.scale * mRatio), 0.1 / picture.scale);
+        mAudioSprite.scale.set(0.1 / picture.scale, 0.1 / (picture.scale * mRatio), 0.1 / picture.scale);
         mPlanes.userData.id = picture.id;
 
         let teleport = model.teleports.find(t => t.attachedId == picture.id);
         if (teleport) {
-            console.log("TODO: show teleport marker");
+            mPlanes.add(mTeleportSprite);
             mInteractionTarget.isTeleport = () => true;
         } else {
+            mPlanes.remove(mTeleportSprite);
             mInteractionTarget.isTeleport = () => false;
         }
 
         let audio = model.audios.find(a => a.attachedId == picture.id);
         if (audio) {
-            console.log("TODO: show audio marker");
+            mPlanes.add(mAudioSprite);
             mInteractionTarget.isAudio = () => true;
         } else {
+            mPlanes.remove(mAudioSprite);
             mInteractionTarget.isAudio = () => false;
         }
 

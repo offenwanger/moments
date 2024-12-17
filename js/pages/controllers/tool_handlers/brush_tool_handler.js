@@ -2,21 +2,25 @@ import { ASSET_UPDATE_COMMAND, BrushToolButtons, InteractionType } from "../../.
 
 function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
     if (interactionState.type == InteractionType.NONE) {
-        let targets = sceneController.getTargets(raycaster, toolMode)
-        if (targets.length == 0) {
-            sessionController.hovered(false, isPrimary)
-        } else {
-            if (targets.length > 1) { console.error('Unexpected target result!'); }
-            let target = targets[0];
-            target.highlight(toolMode);
-            helperPointController.showPoint(isPrimary, target.getIntersection().point);
-
-            if (isPrimary) {
-                interactionState.primaryHovered = target;
+        if (isPrimary) {
+            let targets = sceneController.getTargets(raycaster, toolMode)
+            if (targets.length == 0) {
+                sessionController.hovered(false, isPrimary)
             } else {
-                interactionState.secondaryHovered = target;
+                if (targets.length > 1) { console.error('Unexpected target result!'); }
+                let target = targets[0];
+                target.highlight(toolMode);
+                helperPointController.showPoint(isPrimary, target.getIntersection().point);
+
+                if (isPrimary) {
+                    interactionState.primaryHovered = target;
+                } else {
+                    interactionState.secondaryHovered = target;
+                }
+                sessionController.hovered(true, isPrimary)
             }
-            sessionController.hovered(true, isPrimary)
+        } else {
+            // do nothing.
         }
     } else if (interactionState.type == InteractionType.BRUSHING) {
         let targets = sceneController.getTargets(raycaster, toolMode)

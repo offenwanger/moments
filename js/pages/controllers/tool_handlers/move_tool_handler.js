@@ -25,7 +25,7 @@ mTeleportTarget.userData.id = 'teleportTarget';
 const mTeleportTargetInteractionWrapper = new InteractionTargetInterface();
 mTeleportTargetInteractionWrapper.getId = () => TELEPORT_TARGET;
 
-function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
+function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
     if (!raycaster) {
         // unhighlight things, hide interface stuff, that's it.
         return;
@@ -49,11 +49,14 @@ function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionCo
     } else if (interactionState.type == InteractionType.ONE_HAND_MOVE && isPrimary) {
         // Move the moving thing. 
         let fromRay = interactionState.data.startRay;
+        let fromOrientation = new THREE.Quaternion().copy(interactionState.data.startRayOrientation);
         let toRay = raycaster.ray;
+        let toOrientation = orientation;
 
-        let rotation = new THREE.Quaternion().setFromUnitVectors(fromRay.direction, toRay.direction);
-        let newOrientation = new THREE.Quaternion().copy(interactionState.data.startOrientation)
-        // .applyQuaternion(rotation);
+        let rotation = new THREE.Quaternion()
+            .multiplyQuaternions(toOrientation, fromOrientation.invert());
+        let newOrientation = new THREE.Quaternion()
+            .multiplyQuaternions(interactionState.data.startOrientation, rotation);
         let newPosition = new THREE.Vector3().copy(interactionState.data.startPosition)
             .sub(fromRay.origin).applyQuaternion(rotation).add(toRay.origin);
 
@@ -158,16 +161,16 @@ function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionCo
     }
 }
 
-function pointerDown(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, points) {
+function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, points) {
     let hovered = isPrimary ? interactionState.primaryHovered : interactionState.secondaryHovered;
     if (hovered) {
         if (interactionState.type == InteractionType.NONE) {
-            startOneHandMove(raycaster, hovered, interactionState, sceneController)
+            startOneHandMove(raycaster, orientation, hovered, interactionState, sceneController)
         } else if (interactionState.type == InteractionType.ONE_HAND_MOVE) {
             if (interactionState.data.target.getId() == hovered.getId()) {
-                startTwoHandMove(raycaster.ray, hovered);
+                startTwoHandMove(raycaster.ray, orientation, hovered);
             } else {
-                startTwoHandPose(raycaster.ray, hovered);
+                startTwoHandPose(raycaster.ray, orientation, hovered);
             }
         } else {
             console.error("How did you pointerdown with both hands full?? " + interactionState.type);
@@ -175,7 +178,7 @@ function pointerDown(raycaster, isPrimary, interactionState, toolMode, sessionCo
     }
 }
 
-function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, points) {
+function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, points) {
     let type = interactionState.type;
     let data = interactionState.data;
 
@@ -217,7 +220,7 @@ function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionCont
                 x: newPosition.x,
                 y: newPosition.y,
                 z: newPosition.z,
-                //TODO: orientation = ...
+                orientation: data.rootTarget.getLocalOrientation().toArray(),
             })]
         }
     } else if (type == InteractionType.TWO_HAND_MOVE) {
@@ -268,13 +271,14 @@ function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionCont
 }
 
 
-function startOneHandMove(raycaster, target, interactionState, sceneController) {
+function startOneHandMove(raycaster, orientation, target, interactionState, sceneController) {
     interactionState.type = InteractionType.ONE_HAND_MOVE;
     let rootTarget = target.getRoot();
     interactionState.data = {
         target,
         rootTarget,
         startRay: new THREE.Ray().copy(raycaster.ray),
+        startRayOrientation: new THREE.Quaternion().copy(orientation),
         startOrientation: rootTarget.getLocalOrientation(),
         startPosition: rootTarget.getWorldPosition(),
     }

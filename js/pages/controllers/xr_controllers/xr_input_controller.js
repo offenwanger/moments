@@ -5,9 +5,9 @@ import { CanvasUtil } from '../../../utils/canvas_util.js';
 import { Util } from "../../../utils/utility.js";
 
 export function XRInputController(sceneContainer) {
-    let mPointerDownCallback = async (raycaster, isPrimary) => { }
-    let mPointerMoveCallback = async (raycaster, isPrimary) => { }
-    let mPointerUpCallback = async (raycaster, isPrimary) => { }
+    let mPointerDownCallback = async (raycaster, orietation, isPrimary) => { }
+    let mPointerMoveCallback = async (raycaster, orietation, isPrimary) => { }
+    let mPointerUpCallback = async (raycaster, orietation, isPrimary) => { }
 
 
     let mSession = null;
@@ -25,6 +25,7 @@ export function XRInputController(sceneContainer) {
     mSceneContainer.add(mUserGroup);
 
     const mRaycaster = new THREE.Raycaster();
+    mRaycaster.camera = mXRCamera;
 
     let mLeftController;
     let mRightController;
@@ -161,22 +162,22 @@ export function XRInputController(sceneContainer) {
 
 
         setRay(mRightController, mRaycaster);
-        await mPointerMoveCallback(mRaycaster, true);
+        await mPointerMoveCallback(mRaycaster, mRightController.quaternion, true);
         if (lastButtonState.primaryRPressed != mButtonState.primaryRPressed) {
             if (mButtonState.primaryRPressed) {
-                await mPointerDownCallback(mRaycaster, true);
+                await mPointerDownCallback(mRaycaster, mRightController.quaternion, true);
             } else {
-                await mPointerUpCallback(mRaycaster, true);
+                await mPointerUpCallback(mRaycaster, mRightController.quaternion, true);
             }
         }
 
-        setRay(mLeftController, mRaycaster);
+        setRay(mLeftController, mLeftController.quaternion, mRaycaster);
         await mPointerMoveCallback(mRaycaster, false);
         if (lastButtonState.primaryLPressed != mButtonState.primaryLPressed) {
             if (mButtonState.primaryLPressed) {
-                await mPointerDownCallback(mRaycaster, false);
+                await mPointerDownCallback(mRaycaster, mLeftController.quaternion, false);
             } else {
-                await mPointerUpCallback(mRaycaster, false);
+                await mPointerUpCallback(mRaycaster, mLeftController.quaternion, false);
             }
         }
     }

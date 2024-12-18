@@ -7,9 +7,9 @@ export function PageSessionController(parentContainer) {
     let mWindowEventManager = new WindowEventManager();
 
     let mUserMovedCallback = async () => { }
-    let mPointerMoveCallback = async () => { }
-    let mPointerDownCallback = async () => { }
-    let mPointerUpCallback = async () => { }
+    let mPointerDownCallback = async (raycaster, orietation, isPrimary) => { }
+    let mPointerMoveCallback = async (raycaster, orietation, isPrimary) => { }
+    let mPointerUpCallback = async (raycaster, orietation, isPrimary) => { }
 
     const mRaycaster = new THREE.Raycaster();
     mRaycaster.near = 0.2;
@@ -88,19 +88,28 @@ export function PageSessionController(parentContainer) {
     async function onPointerDown(screenCoords) {
         let pointer = screenToNomralizedCoords(screenCoords);
         mRaycaster.setFromCamera(pointer, mPageCamera);
-        await mPointerDownCallback(mRaycaster)
+        let orientation = new THREE.Quaternion().setFromRotationMatrix(
+            new THREE.Matrix4().lookAt(mRaycaster.ray.direction,
+                new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0)));
+        await mPointerDownCallback(mRaycaster, orientation)
     }
 
     mWindowEventManager.onPointerMove(async (screenCoords) => {
         let pointer = screenToNomralizedCoords(screenCoords);
         mRaycaster.setFromCamera(pointer, mPageCamera);
-        await mPointerMoveCallback(mRaycaster)
+        let orientation = new THREE.Quaternion().setFromRotationMatrix(
+            new THREE.Matrix4().lookAt(mRaycaster.ray.direction,
+                new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0)));
+        await mPointerMoveCallback(mRaycaster, orientation)
     });
 
     mWindowEventManager.onPointerUp(async (screenCoords) => {
         let pointer = screenToNomralizedCoords(screenCoords);
         mRaycaster.setFromCamera(pointer, mPageCamera);
-        await mPointerUpCallback(mRaycaster)
+        let orientation = new THREE.Quaternion().setFromRotationMatrix(
+            new THREE.Matrix4().lookAt(mRaycaster.ray.direction,
+                new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0)));
+        await mPointerUpCallback(mRaycaster, orientation);
     });
 
     function screenToNomralizedCoords(screenCoords) {

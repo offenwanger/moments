@@ -115,7 +115,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
 
     mPageSessionController.onPointerMove(onPointerMove);
     mXRSessionController.onPointerMove(onPointerMove);
-    async function onPointerMove(raycaster = null, isPrimary = true) {
+    async function onPointerMove(raycaster = null, orientation = null, isPrimary = true) {
         // unhighlight evertying. 
         (isPrimary ? mInteractionState.primaryHovered : mInteractionState.secondaryHovered)?.idle(mToolMode);
         isPrimary ? mInteractionState.primaryHovered = null : mInteractionState.secondaryHovered = null;
@@ -140,6 +140,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             if (!handler) { console.error("Tool not handled: " + mToolMode.tool); return; }
             handler.pointerMove(
                 raycaster,
+                orientation,
                 isPrimary,
                 mInteractionState,
                 mToolMode,
@@ -152,7 +153,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
 
     mPageSessionController.onPointerDown(onPointerDown);
     mXRSessionController.onPointerDown(onPointerDown);
-    async function onPointerDown(raycaster, isPrimary = true) {
+    async function onPointerDown(raycaster, orientation = null, isPrimary = true) {
         let hovered = isPrimary ? mInteractionState.primaryHovered : mInteractionState.secondaryHovered;
         if (!hovered) {
             // nothing to do. 
@@ -164,6 +165,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             if (!handler) { console.error("Tool not handled: " + mToolMode.tool); return; }
             await handler.pointerDown(
                 raycaster,
+                orientation,
                 isPrimary,
                 mInteractionState,
                 mToolMode,
@@ -175,11 +177,12 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
 
     mPageSessionController.onPointerUp(onPointerUp);
     mXRSessionController.onPointerUp(onPointerUp);
-    async function onPointerUp(raycaster, isPrimary) {
+    async function onPointerUp(raycaster, orientation = null, isPrimary) {
         let handler = getToolHandler(mToolMode.tool)
         if (!handler) { console.error("Tool not handled: " + mToolMode.tool); return; }
         let updates = handler.pointerUp(
             raycaster,
+            orientation,
             isPrimary,
             mInteractionState,
             mToolMode,

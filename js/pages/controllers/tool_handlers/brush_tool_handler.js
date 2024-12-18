@@ -1,6 +1,6 @@
 import { ASSET_UPDATE_COMMAND, BrushToolButtons, InteractionType } from "../../../constants.js";
 
-function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
+function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
     if (interactionState.type == InteractionType.NONE) {
         if (isPrimary) {
             let targets = sceneController.getTargets(raycaster, toolMode)
@@ -33,7 +33,7 @@ function pointerMove(raycaster, isPrimary, interactionState, toolMode, sessionCo
     }
 }
 
-function pointerDown(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
+function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
     let hovered = isPrimary ? interactionState.primaryHovered : interactionState.secondaryHovered;
     if (hovered) {
         if (interactionState.type == InteractionType.NONE) {
@@ -45,7 +45,7 @@ function pointerDown(raycaster, isPrimary, interactionState, toolMode, sessionCo
     }
 }
 
-function pointerUp(raycaster, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
+function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
     let type = interactionState.type;
     let data = interactionState.data;
 

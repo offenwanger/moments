@@ -49,16 +49,21 @@ export function AssetUtil(workspace) {
     }
 
     async function loadImage(assetId) {
-        if (!mLoadedAssets[assetId]) {
-            let asset = mModel.find(assetId);
-            if (!asset) { console.error("Invalid image asset: " + assetId, asset); throw new Error("Invalid model asset: " + assetId); }
-            let uri = await mWorkspace.getAssetAsDataURI(asset.filename);
-            let image = await mImageLoader.loadAsync(uri, null, null, function (error) { console.error('Error loading image', error); });
-            mLoadedAssets[assetId] = image;
-            mAssetAges[assetId] = asset.updated;
+        try {
+            if (!mLoadedAssets[assetId]) {
+                let asset = mModel.find(assetId);
+                if (!asset) { console.error("Invalid image asset: " + assetId, asset); throw new Error("Invalid model asset: " + assetId); }
+                let uri = await mWorkspace.getAssetAsDataURI(asset.filename);
+                let image = await mImageLoader.loadAsync(uri, null, null, function (error) { console.error('Error loading image', error); });
+                mLoadedAssets[assetId] = image;
+                mAssetAges[assetId] = asset.updated;
+            }
+            if (!mLoadedAssets[assetId]) { console.error('Failed to load asset: ' + assetId); return null; }
+            return mLoadedAssets[assetId];
+        } catch (e) {
+            console.error(e);
+            return null;
         }
-        if (!mLoadedAssets[assetId]) { console.error('Failed to load asset: ' + assetId); return null; }
-        return mLoadedAssets[assetId];
     }
 
     async function loadAssetModel(assetId) {

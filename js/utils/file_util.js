@@ -45,17 +45,10 @@ async function pacakgeToZip(model, assetFolder) {
     let modelBlobStream = new Blob([JSON.stringify(model)]).stream();
     await zipWriter.add(STORY_JSON_FILE, modelBlobStream);
 
-    let assets = model.getAssets();
+    let assets = model.assets;
     for (const asset of assets) {
-        if (asset.type == AssetTypes.IMAGE || asset.type == AssetTypes.MODEL) {
-            let file = await getFile(assetFolder, asset.filename);
-            await zipWriter.add(asset.filename, file.stream());
-        } else if (asset.type == AssetTypes.BOX) {
-            for (const prefix of BOX_ASSET_PREFIXES) {
-                let file = await getFile(assetFolder, prefix + asset.filename);
-                await zipWriter.add(prefix + asset.filename, file.stream());
-            }
-        }
+        let file = await getFile(assetFolder, asset.filename);
+        await zipWriter.add(asset.filename, file.stream());
     }
 
     await zipWriter.close();

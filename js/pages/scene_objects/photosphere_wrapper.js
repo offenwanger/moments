@@ -18,7 +18,11 @@ export function PhotosphereWrapper(parent) {
     let mParent = parent;
     let mModel = new Data.StoryModel();
     let mPhotosphere = new Data.Photosphere();
+    let mSurfaces = [];
     let mInteractionTarget = createInteractionTarget();
+
+    let mBasePointUVs = Data.Photosphere.basePointUVs;
+    let mSurfaceOffsets = [];
 
     const mGeometry = new THREE.BufferGeometry();
     let mPositionAttribute;
@@ -50,7 +54,9 @@ export function PhotosphereWrapper(parent) {
     const mSphere = new THREE.Mesh(mGeometry, mMaterial);
 
     async function update(photosphereId, model, assetUtil) {
-        mPhotosphere = model.find(photosphereId);
+        mPhotosphere = model.photospheres.find(p => p.id == photosphereId);
+        mSurfaces = model.surfaces.filter(s => mPhotosphere.surfaceIds.includes(s.id));
+
         mModel = model;
 
         if (!mPhotosphere.enabled) {
@@ -98,7 +104,11 @@ export function PhotosphereWrapper(parent) {
     }
 
     function updateMesh() {
-        let numVertices = mPhotosphere.pointIds.length;
+        let numVertices = mBasePointUVs.length / 2 + mSurfaces.reduce((sum, surface) => {
+            // add the length of the array /2 since it's a flat u,v array
+            sum += surface.points.length / 2;
+            return sum;
+        }, 0);
         mPositionArray = new Float32Array(numVertices * POSITION_NUM_COMPONENTS);
         mNormalsArray = new Float32Array(numVertices * NORMAL_NUM_COMPONENTS);
         mUVArray = new Float32Array(numVertices * UV_NUM_COMPONENTS);
@@ -107,26 +117,48 @@ export function PhotosphereWrapper(parent) {
         const longHelper = new THREE.Object3D();
         const latHelper = new THREE.Object3D();
         const pointHelper = new THREE.Object3D();
+        const planeHelper = new THREE.Plane();
+        const lineHelper = new THREE.Line();
         longHelper.add(latHelper);
         latHelper.add(pointHelper);
         const temp = new THREE.Vector3();
 
-        function getPoint(lat, long, dist) {
-            pointHelper.position.z = dist * mPhotosphere.scale;
+        function getPoint(lat, long) {
+            pointHelper.position.z = 1;
             latHelper.rotation.x = lat;
             longHelper.rotation.y = long;
             longHelper.updateMatrixWorld(true);
             return pointHelper.getWorldPosition(temp).toArray();
         }
 
-        let points = mModel.photospherePoints.filter(p => mPhotosphere.pointIds.includes(p.id));
-        for (let i = 0; i < points.length; i++) {
-            let p = points[i];
-            const lat = ((1 - p.v) - 0.5) * Math.PI;
-            const long = (1 - p.u) * Math.PI * 2;
-            mPositionArray.set(getPoint(lat, long, p.dist), i * POSITION_NUM_COMPONENTS);
-            mNormalsArray.set(getPoint(lat, long, 1), i * NORMAL_NUM_COMPONENTS);
-            mUVArray.set([p.u, p.v], i * UV_NUM_COMPONENTS);
+        let points = [...mBasePointUVs];
+        mSurfaceOffsets = [];
+        for (let surface of mSurfaces) {
+            // the offset where this surfaces points start. 
+            mSurfaceOffsets.push(points.length / 2);
+            points.push(...surface.points);
+        }
+        for (let i = 0; i < numVertices; i++) {
+            let u = points[i * 2];
+            let v = points[i * 2 + 1];
+            const lat = ((1 - v) - 0.5) * Math.PI;
+            const long = (1 - u) * Math.PI * 2;
+            let point = getPoint(lat, long)
+            let scaledPoint = new THREE.Vector3();
+            let surface = getSurfaceForPointIndex(i);
+            if (surface) {
+                planeHelper.normal.set(...surface.normal);
+                planeHelper.constant = surface.dist;
+                lineHelper.end.copy(point);
+                planeHelper.intersectLine(lineHelper, scaledPoint);
+            } else {
+                scaledPoint.set(...point);
+            }
+            scaledPoint.multiplyScalar(mPhotosphere.scale);
+
+            mPositionArray.set(scaledPoint.toArray(), i * POSITION_NUM_COMPONENTS);
+            mNormalsArray.set(point, i * NORMAL_NUM_COMPONENTS);
+            mUVArray.set([u, v], i * UV_NUM_COMPONENTS);
             mColorArray.set([0, 0, 1, 0], i * COLOR_NUM_COMPONENTS);
         }
 
@@ -152,6 +184,23 @@ export function PhotosphereWrapper(parent) {
         mGeometry.setAttribute('uv', mUVAttribute);
         mGeometry.setAttribute('normal', mNormalsAttribute);
         mGeometry.setIndex(mIndicesArray);
+    }
+
+    function getSurfaceForPointIndex(pointIndex) {
+        if (pointIndex < mBasePointUVs.length / 2) {
+            return mSurfaces.find(s => s.basePointIndices.includes(i));
+        } else {
+            // if it's base the end of the offsets, it's in the last surface.
+            if (pointIndex > mSurfaceOffsets[mSurfaceOffsets.length - 1]) {
+                return mSurfaces[mSurfaces.length - 1];
+            } else {
+                for (let i = 1; i < mSurfaceOffsets.length; i++) {
+                    if (pointIndex < mSurfaceOffsets[i]) {
+                        return mSurfaces[i - 1];
+                    }
+                }
+            }
+        }
     }
 
     function getId() {

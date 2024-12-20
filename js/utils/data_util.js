@@ -32,26 +32,9 @@ async function getMomentCreationUpdates(model, blurFileName, colorFileName) {
 
     updates.push(blurUpdate, colorUpdate);
 
-    const segmentsDown = 16
-    const segmentsAround = 32;
-
-    let pointIds = []
-    for (let down = 0; down <= segmentsDown; ++down) {
-        for (let across = 0; across <= segmentsAround; ++across) {
-            let attrs = {
-                id: IdUtil.getUniqueId(Data.PhotospherePoint),
-                u: across / segmentsAround,
-                v: down / segmentsDown,
-                dist: 1,
-            }
-            pointIds.push(attrs.id);
-            updates.push(new ModelUpdate(attrs));
-        }
-    }
     let photosphereId = IdUtil.getUniqueId(Data.Photosphere);
     updates.push(new ModelUpdate({
         id: photosphereId,
-        pointIds,
         blurAssetId: blurUpdate.data.id,
         colorAssetId: colorUpdate.data.id,
     }))

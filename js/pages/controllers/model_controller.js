@@ -61,8 +61,8 @@ export function ModelController(story = new Data.StoryModel()) {
             return mModel.moments;
         } else if (cls == Data.Photosphere) {
             return mModel.photospheres;
-        } else if (cls == Data.PhotospherePoint) {
-            return mModel.photospherePoints;
+        } else if (cls == Data.PhotosphereSurface) {
+            return mModel.surfaces;
         } else if (cls == Data.PoseableAsset) {
             return mModel.poseableAssets;
         } else if (cls == Data.Picture) {

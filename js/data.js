@@ -164,7 +164,7 @@ class StoryModel extends DataItem {
     assetPoses = [];
     moments = [];
     photospheres = [];
-    photospherePoints = [];
+    surfaces = []
     poseableAssets = [];
     pictures = [];
     audios = [];
@@ -214,13 +214,40 @@ class Photosphere extends DataItem {
     // an image with the coloring that gets drawn on top of 
     // everything.
     blurAssetId = null;
-    pointIds = [];
+    surfaceIds = []
+
+    // We add this here as it's integral to the data structure. 
+    // photosphere surface references these indices. Any changes
+    // here will invalidate save models. 
+    static get basePointUVs() {
+        const segmentsDown = 16
+        const segmentsAround = 32;
+
+        let basePointUVs = [];
+        for (let down = 0; down <= segmentsDown; ++down) {
+            for (let across = 0; across <= segmentsAround; ++across) {
+                let u = across / segmentsAround;
+                let v = down / segmentsDown;
+                basePointUVs.push(u, v);
+            }
+        }
+
+        return basePointUVs;
+    }
 }
 
-class PhotospherePoint extends DataItem {
-    u = 0;
-    v = 0;
-    dist = 1;
+class PhotosphereSurface extends DataItem {
+    // uv array of u,v. 
+    points = []
+    /**
+     * array of basePoint indices. 
+     * this relies on the assumption that all photospheres
+     * will have the same number of base points.
+     */
+    basePointIndices = []
+    normal = [0, 0, 1]
+    dist = -1;
+
 }
 
 class PoseableAsset extends DataItem {
@@ -262,7 +289,7 @@ export const Data = {
     AssetPose,
     Moment,
     Photosphere,
-    PhotospherePoint,
+    PhotosphereSurface,
     PoseableAsset,
     Picture,
     Audio,

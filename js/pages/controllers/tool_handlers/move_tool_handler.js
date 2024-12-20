@@ -15,7 +15,7 @@ let mTeleportTargetDistance = 1;
 const mTeleportTarget = new THREE.Mesh(
     new THREE.SphereGeometry(0.1, 32, 16),
     new THREE.MeshBasicMaterial({
-        color: 0xffff00,
+        color: 0x00000,
         side: THREE.BackSide,
         depthTest: false,
     }));

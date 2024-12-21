@@ -24,7 +24,8 @@ function getUrl(params) {
 }
 
 function getParam(name) {
-    return new URLSearchParams(window.location.search).get(name);
+    const url = new URL(window.location.href);
+    return url.searchParams.get(name);
 }
 
 export const UrlUtil = {

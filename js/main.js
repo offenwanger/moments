@@ -46,7 +46,7 @@ export async function main() {
             if (await folder.requestPermission({ mode: 'readwrite' }) === 'granted') {
                 await HandleStorage.setItem('folder', folder);
             }
-            UrlUtil.nagivate({ list: 'true' });
+            UrlUtil.navigate({ list: 'true' });
         });
 
         page.onLastFolder(async () => {

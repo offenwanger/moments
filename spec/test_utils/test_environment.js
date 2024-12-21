@@ -109,7 +109,7 @@ export async function setup() {
 
         },
         history: {
-            pushState: function (something, somethingElse, url) {
+            replaceState: function (something, somethingElse, url) {
                 window.location.href = url.href;
                 window.location.search = url.search;
             }
@@ -146,6 +146,7 @@ export async function setup() {
     await mockServerSetup();
 
     let { main } = await import('../../js/main.js')
+    window.mainFunc = main;
     await main();
 
     let app = await import('../../app.js');

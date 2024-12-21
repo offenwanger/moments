@@ -29,11 +29,17 @@ export async function pointerup(x, y) {
         await cb({ clientX: x, clientY: y });
 }
 
-export async function createAndEditStory() {
+export async function chooseFolder() {
     window.directories.push(new mockFileSystemDirectoryHandle('test'));
     await document.querySelector('#choose-folder-button').eventListeners.click();
+    await window.mainFunc();
+}
+
+export async function createAndEditStory() {
+    await chooseFolder();
     await document.querySelector('#new-story-button').eventListeners.click();
     await document.querySelector('#edit-' + testmodel().id).eventListeners.click();
+    await window.mainFunc();
     expect(testmodel().moments.length).toBe(1);
     await clickButtonInput('#moment-button-' + testmodel().moments[0].id);
 

@@ -171,7 +171,7 @@ export function XRInputController(sceneContainer) {
             }
         }
 
-        setRay(mLeftController, mLeftController.quaternion, mRaycaster);
+        setRay(mLeftController, mRaycaster);
         await mPointerMoveCallback(mRaycaster, false);
         if (lastButtonState.primaryLPressed != mButtonState.primaryLPressed) {
             if (mButtonState.primaryLPressed) {

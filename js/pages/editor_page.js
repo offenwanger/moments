@@ -299,16 +299,17 @@ export function EditorPage(parentContainer, mWebsocketController) {
     }
 
     async function setCurrentMoment(momentId, position = new THREE.Vector3(), direction = new THREE.Vector3(0, 0, -1)) {
-        if (!momentId) { UrlUtil.setParams({ 'moment': null }); }
+        if (!momentId) { UrlUtil.updateParams({ 'moment': null }); }
 
         let model = mModelController.getModel();
         let moment = model.find(momentId);
         if (moment) {
-            UrlUtil.setParams({ 'moment': momentId });
+            UrlUtil.updateParams({ 'moment': momentId });
             await mSceneInterface.setCurrentMoment(momentId, position, direction);
             await mSidebarController.navigate(momentId);
         } else {
-            UrlUtil.setParams({ 'moment': null });
+            UrlUtil.updateParams({ 'moment': null });
+            await mSceneInterface.setCurrentMoment(null);
             await mSidebarController.navigate(model.id);
         }
     }

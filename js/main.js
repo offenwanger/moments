@@ -13,31 +13,30 @@ export async function main() {
         document.querySelector('#content').replaceChildren();
         let folder = await HandleStorage.getItem('folder');
         let missingPermissions = folder ? await folder.queryPermission({ mode: 'readwrite' }) !== 'granted' : false;
-        let story = UrlUtil.getParam("story");
-        let view = UrlUtil.getParam("view") == 'true';
-        let remote = UrlUtil.getParam("remote") == 'true';
-        let list = UrlUtil.getParam("list") == 'true';
 
-        if (story && remote) {
-            if (view) {
-                await showViewPage();
-            } else {
-                await showEditorPage()
-            }
-        } else if (!folder) {
+        if (UrlUtil.getParam("story") && UrlUtil.getParam("remote") == 'true') {
+            // attempt to connect to the remote story
+            await showEditorPage()
+            return;
+        }
+
+        if (!folder) {
             await showWelcomePage(false);
-        } else if (folder && missingPermissions) {
-            await showWelcomePage(true);
-        } else if (folder && !missingPermissions && story) {
-            let workspaceManager = new WorkspaceManager(folder);
-            await showEditorPage(workspaceManager)
-        } else if (folder && !missingPermissions && list) {
-            let workspaceManager = new WorkspaceManager(folder);
-            await showListPage(workspaceManager);
-        } else if (folder && !missingPermissions && !list) {
-            await showWelcomePage(true);
         } else {
-            console.error("Unknown state! folder: " + folder + " - missingPermissions: " + missingPermissions + " - story: " + story + " - view: " + view + " - remote: " + remote + " - list: " + list)
+            if (missingPermissions) {
+                await showWelcomePage(true);
+            } else if (UrlUtil.getParam("story")) {
+                // we have a folder, permissions, and a story id, show it. 
+                let workspaceManager = new WorkspaceManager(folder);
+                await showEditorPage(workspaceManager)
+            } else if (UrlUtil.getParam("list") == 'true') {
+                // no story, but we want to show the list!
+                let workspaceManager = new WorkspaceManager(folder);
+                await showListPage(workspaceManager);
+            } else {
+                // Default to the welcome page.
+                await showWelcomePage(true);
+            }
         }
     }
 
@@ -47,8 +46,7 @@ export async function main() {
             if (await folder.requestPermission({ mode: 'readwrite' }) === 'granted') {
                 await HandleStorage.setItem('folder', folder);
             }
-            UrlUtil.setParams({ list: 'true' });
-            await updatePage();
+            UrlUtil.nagivate({ list: 'true' });
         });
 
         page.onLastFolder(async () => {
@@ -56,22 +54,18 @@ export async function main() {
             if (await folder.requestPermission({ mode: 'readwrite' }) !== 'granted') {
                 await HandleStorage.removeItem('folder');
             }
-            UrlUtil.setParams({ list: 'true' });
-            await updatePage();
+            UrlUtil.navigate({ list: 'true' });
         });
 
         page.onOpenRemoteStory(async (storyId) => {
-            UrlUtil.setParams({ remote: 'true' });
-            UrlUtil.setParams({ story: storyId }, true);
-            await updatePage();
+            UrlUtil.navigate({ remote: 'true', story: storyId });
         });
     }
 
     async function showListPage(workspaceManger) {
         let page = new ListPage(document.querySelector('#content'));
         page.setEditCallback(async (storyId) => {
-            UrlUtil.setParams({ story: storyId });
-            await updatePage();
+            UrlUtil.navigate({ story: storyId });
         });
 
         await page.show(workspaceManger)

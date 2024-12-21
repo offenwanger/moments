@@ -1,4 +1,16 @@
-function setParams(params) {
+function updateParams(params) {
+    const url = getUrl(params);
+    if (window.location.href != url.href) {
+        window.history.replaceState(null, null, url);
+    }
+}
+
+function navigate(params) {
+    const url = getUrl(params);
+    window.location.href = url.href;
+}
+
+function getUrl(params) {
     const url = new URL(window.location.href);
     for (let name of Object.keys(params)) {
         let value = params[name];
@@ -8,21 +20,15 @@ function setParams(params) {
             url.searchParams.set(name, value);
         }
     }
-    if (window.location.href != url.href) {
-        window.history.pushState(null, null, url);
-    }
+    return url;
 }
 
 function getParam(name) {
     return new URLSearchParams(window.location.search).get(name);
 }
 
-function reloadPage() {
-    window.location.reload();
-}
-
 export const UrlUtil = {
-    setParams,
+    updateParams,
+    navigate,
     getParam,
-    reloadPage,
 }

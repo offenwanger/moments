@@ -43,13 +43,10 @@ function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMo
 
         let rotation = new THREE.Quaternion()
             .multiplyQuaternions(toOrientation, fromOrientation.invert());
-        let newOrientation = new THREE.Quaternion()
-            .multiplyQuaternions(interactionState.data.startOrientation, rotation);
         let newPosition = new THREE.Vector3().copy(interactionState.data.startPosition)
             .sub(fromRay.origin).applyQuaternion(rotation).add(toRay.origin);
 
         interactionState.data.rootTarget.setWorldPosition(newPosition);
-        interactionState.data.rootTarget.setLocalOrientation(newOrientation);
     } else {
         console.error('invalid state:' + toolMode.tool + ", " + interactionState.type);
     }
@@ -63,7 +60,7 @@ function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMo
                 interactionState.type = InteractionType.BRUSHING;
                 interactionState.data = { target: hovered };
             } else if (toolMode.surfaceSettings.mode == SurfaceToolButtons.PULL) {
-                startOneHandMove();
+                startOneHandMove(raycaster, orientation, hovered, interactionState);
             } else {
                 console.error("Not handled:" + toolMode.surfaceSettings.mode);
             }
@@ -122,13 +119,7 @@ function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode
         let otherSurfaces = model.surfaces.filter(s => photosphere.surfaceIds.includes(s.id));
         for (let s of otherSurfaces) {
             let u = []
-            let bpi = s.basePointIndices.filter(i => !includedIndices.includes(i));
-            if (bpi.length != s.basePointIndices.length) {
-                u.push(new ModelUpdate({
-                    id: s.id,
-                    basePointIndices: bpi,
-                }));
-            }
+
             let points = []
             for (let shape of shapes) {
                 for (let i = 0; i < s.points.length; i += 2) {
@@ -137,14 +128,20 @@ function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode
                     }
                 }
             }
-            if (points.length != s.points.length) {
+            if (points.length == 0) {
+                u = [new ModelUpdate({ id: s.id }, ModelUpdateCommands.DELETE)]
+            } else if (points.length != s.points.length) {
                 u.push(new ModelUpdate({
                     id: s.id,
                     points,
                 }));
-            }
-            if (bpi.length == 0 && points.length == 0) {
-                u = [new ModelUpdate({ id: s.id }, ModelUpdateCommands.DELETE)]
+                let bpi = s.basePointIndices.filter(i => !includedIndices.includes(i));
+                if (bpi.length != s.basePointIndices.length) {
+                    u.push(new ModelUpdate({
+                        id: s.id,
+                        basePointIndices: bpi,
+                    }));
+                }
             }
             updates.push(...u);
         }
@@ -163,7 +160,9 @@ function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode
             }),
         );
     } else if (type == InteractionType.ONE_HAND_MOVE) {
-        console.error('not implimented');
+        let { normal, dist } = data.target.getNormalAndDist();
+        let id = data.target.getId();
+        updates.push(new ModelUpdate({ id, normal, dist }));
     }
 
     return updates;

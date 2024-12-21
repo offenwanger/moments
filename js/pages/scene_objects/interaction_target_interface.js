@@ -17,6 +17,7 @@ export class InteractionTargetInterface {
     getBlurCanvas = () => { return document.createElement('canvas'); }
     getColorCanvas = () => { return document.createElement('canvas'); }
     getDrawnPath = () => { return []; }
+    getNormalAndDist = () => { return { normal: [0, 0, 1], dist: -1 } }
     setBlurCanvas = () => { }
     setColorCanvas = () => { }
 

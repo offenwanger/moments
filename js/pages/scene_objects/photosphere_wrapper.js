@@ -22,6 +22,7 @@ export function PhotosphereWrapper(parent) {
     let mModel = new Data.StoryModel();
     let mPhotosphere = new Data.Photosphere();
     let mSurfaces = [];
+    let mSurfacePivots = [];
     let mInteractionTarget = createInteractionTarget();
 
     let mBasePointUVs = Data.Photosphere.basePointUVs;
@@ -62,6 +63,9 @@ export function PhotosphereWrapper(parent) {
 
     const mSphere = new THREE.Mesh(mGeometry, mMaterial);
 
+    const mPlaneHelper = new THREE.Plane();
+    const mRayHelper = new THREE.Ray();
+
     async function update(photosphereId, model, assetUtil) {
         mPhotosphere = model.photospheres.find(p => p.id == photosphereId);
         mSurfaces = model.surfaces.filter(s => mPhotosphere.surfaceIds.includes(s.id));
@@ -74,6 +78,25 @@ export function PhotosphereWrapper(parent) {
         } else {
             mParent.add(mSphere)
         }
+
+        mSurfacePivots = mSurfaces.map(s => {
+            let center = new THREE.Vector3();
+            for (let i = 0; i < s.points.length; i += 2) {
+                center.add(Util.uvToPoint(s.points[i], s.points[i + 1]));
+            }
+            center.normalize();
+
+            let pivot = new THREE.Vector3();
+            mPlaneHelper.normal.set(...s.normal);
+            mPlaneHelper.constant = s.dist;
+            mRayHelper.direction.copy(center);
+            mRayHelper.intersectPlane(mPlaneHelper, pivot);
+            if (pivot.length() == 0) {
+                console.error('Invalid pivot:' + [u, v] + ", " + pivot.toArray())
+                pivot.copy(center);
+            }
+            return pivot;
+        })
 
         // TODO: Might need to fix performance here. 
         updateMesh();
@@ -126,9 +149,6 @@ export function PhotosphereWrapper(parent) {
         mUVArray = new Float32Array(numVertices * UV_NUM_COMPONENTS);
         mColorArray = new Float32Array(numVertices * COLOR_NUM_COMPONENTS);
 
-        const planeHelper = new THREE.Plane();
-        const rayHelper = new THREE.Ray();
-
         let points = [...mBasePointUVs];
         mSurfaceOffsets = [];
         for (let surface of mSurfaces) {
@@ -143,10 +163,10 @@ export function PhotosphereWrapper(parent) {
             let scaledPoint = new THREE.Vector3();
             let surface = getSurfaceForPointIndex(i);
             if (surface) {
-                planeHelper.normal.set(...surface.normal);
-                planeHelper.constant = surface.dist;
-                rayHelper.direction.copy(point);
-                rayHelper.intersectPlane(planeHelper, scaledPoint);
+                mPlaneHelper.normal.set(...surface.normal);
+                mPlaneHelper.constant = surface.dist;
+                mRayHelper.direction.copy(point);
+                mRayHelper.intersectPlane(mPlaneHelper, scaledPoint);
                 if (scaledPoint.length() == 0) {
                     console.error('Invalid point:' + [u, v] + ", " + scaledPoint.toArray())
                     scaledPoint.copy(point);
@@ -216,7 +236,6 @@ export function PhotosphereWrapper(parent) {
     function getTargets(ray, toolMode) {
         let lastTool = mTool;
         mTool = toolMode.tool;
-        console.log(toolMode.tool, mTool)
         if (mTool != lastTool) { drawTexture() }
 
         if (toolMode.tool == ToolButtons.BRUSH ||
@@ -391,6 +410,48 @@ export function PhotosphereWrapper(parent) {
         target.getDrawnPath = () => [...mSurfaceSelectLine];
         target.setBlurCanvas = (canvas) => mOriginalBlur = canvas;
         target.setColorCanvas = (canvas) => mOriginalColor = canvas;
+        // these are only for moving surfaces
+        target.getWorldPosition = function () {
+            let surfaceId = this.getId();
+            let surfaceIndex = mSurfaces.findIndex(s => s.id == surfaceId);
+            if (surfaceIndex == -1) console.error('invalid target: ' + this.getId());
+            return mSurfacePivots[surfaceIndex];
+        }
+        target.setWorldPosition = function (pos) {
+            let surfaceId = this.getId();
+            let surfaceIndex = mSurfaces.findIndex(s => s.id == surfaceId);
+            if (surfaceIndex == -1) console.error('invalid target: ' + this.getId());
+            let ray = new THREE.Ray()
+            ray.direction.copy(mSurfacePivots[surfaceIndex]);
+            let newPos = new THREE.Vector3()
+            ray.closestPointToPoint(pos, newPos);
+            mPlaneHelper.setFromNormalAndCoplanarPoint(new THREE.Vector3(...mSurfaces[surfaceIndex].normal), newPos);
+            mSurfaces[surfaceIndex].dist = mPlaneHelper.constant;
+            updateMesh();
+        }
+        target.getLocalOrientation = function () {
+            let surfaceId = this.getId();
+            let surface = mSurfaces.find(s => s.id == surfaceId);
+            if (!surface) console.error('invalid target: ' + this.getId());
+            return new THREE.Quaternion().setFromRotationMatrix(
+                new THREE.Matrix4().lookAt(new THREE.Vector3(...surface.normal),
+                    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0)));
+        }
+        target.setLocalOrientation = function (orientation) {
+            let surfaceId = this.getId();
+            let surfaceIndex = mSurfaces.findIndex(s => s.id == surfaceId);
+            if (surfaceIndex == -1) console.error('invalid target: ' + this.getId());
+            mSurfaces[surfaceIndex].normal = new THREE.Vector3(0, 0, 1).applyQuaternion(orientation).toArray();
+            mPlaneHelper.setFromNormalAndCoplanarPoint(new THREE.Vector3(...mSurfaces[surfaceIndex].normal), mSurfacePivots[surfaceIndex]);
+            mSurfaces[surfaceIndex].dist = mPlaneHelper.constant;
+            updateMesh();
+        }
+        target.getNormalAndDist = function () {
+            let surfaceId = this.getId();
+            let surface = mSurfaces.find(s => s.id == surfaceId);
+            if (!surface) console.error('invalid target: ' + this.getId());
+            return { normal: surface.normal, dist: surface.dist };
+        }
         return target;
     }
 

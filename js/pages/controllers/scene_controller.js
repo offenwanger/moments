@@ -53,7 +53,7 @@ export function SceneController() {
         await mMomentWrapper.update(mCurrentMomentId, model, assetUtil);
     }
 
-    async function setCurrentMoment(momentId) {
+    async function setCurrentMoment(momentId = null) {
         mCurrentMomentId = momentId;
         if (mAssetUtil) await updateModel(mModel, mAssetUtil);
     }

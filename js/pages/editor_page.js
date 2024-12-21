@@ -212,7 +212,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         if (!teleport) { console.error('Invalid id: ' + id); }
         let pos = new THREE.Vector3(teleport.sceneX, teleport.sceneY, teleport.sceneZ)
         let direction = new THREE.Vector3(teleport.sceneDirX, teleport.sceneDirY, teleport.sceneDirZ);
-        setCurrentMoment(teleport.momentId, pos, direction);
+        await setCurrentMoment(teleport.momentId, pos, direction);
         updateModel();
     });
 
@@ -279,9 +279,9 @@ export function EditorPage(parentContainer, mWebsocketController) {
 
         const momentId = UrlUtil.getParam('moment')
         if (momentId) {
-            setCurrentMoment(momentId);
+            await setCurrentMoment(momentId);
         } else {
-            setCurrentMoment(null);
+            await setCurrentMoment(null);
         }
     }
 
@@ -305,13 +305,12 @@ export function EditorPage(parentContainer, mWebsocketController) {
         let moment = model.find(momentId);
         if (moment) {
             UrlUtil.updateParams({ 'moment': momentId });
-            await mSceneInterface.setCurrentMoment(momentId, position, direction);
             await mSidebarController.navigate(momentId);
         } else {
             UrlUtil.updateParams({ 'moment': null });
-            await mSceneInterface.setCurrentMoment(null);
             await mSidebarController.navigate(model.id);
         }
+        await mSceneInterface.setCurrentMoment(momentId, position, direction);
     }
 
     async function createMoment() {

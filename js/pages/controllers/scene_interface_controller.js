@@ -13,6 +13,7 @@ import { BrushToolHandler } from "./tool_handlers/brush_tool_handler.js";
 import { MoveToolHandler } from "./tool_handlers/move_tool_handler.js";
 import { XRSessionController } from './xr_controllers/xr_session_controller.js';
 import { DataUtil } from "../../utils/data_util.js";
+import { SurfaceToolHandler } from "./tool_handlers/surface_tool_handler.js";
 
 /**
  * Handles the display of the story, including the event handling and 
@@ -144,6 +145,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
                 isPrimary,
                 mInteractionState,
                 mToolMode,
+                mModel,
                 mCurrentSessionController,
                 mSceneController,
                 mHelperPointController)
@@ -169,6 +171,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
                 isPrimary,
                 mInteractionState,
                 mToolMode,
+                mModel,
                 mCurrentSessionController,
                 mSceneController,
                 mHelperPointController);
@@ -186,6 +189,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
             isPrimary,
             mInteractionState,
             mToolMode,
+            mModel,
             mCurrentSessionController,
             mSceneController,
             mHelperPointController);
@@ -317,7 +321,9 @@ export function SceneInterfaceController(parentContainer, mWebsocketController) 
         if (tool == ToolButtons.MOVE) {
             return MoveToolHandler;
         } else if (tool == ToolButtons.BRUSH) {
-            return BrushToolHandler
+            return BrushToolHandler;
+        } else if (tool == ToolButtons.SURFACE) {
+            return SurfaceToolHandler;
         } else {
             console.error('Tool not handled.')
         }

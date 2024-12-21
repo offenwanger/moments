@@ -25,7 +25,7 @@ mTeleportTarget.userData.id = 'teleportTarget';
 const mTeleportTargetInteractionWrapper = new InteractionTargetInterface();
 mTeleportTargetInteractionWrapper.getId = () => TELEPORT_TARGET;
 
-function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
+function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMode, model, sessionController, sceneController, helperPointController) {
     if (!raycaster) {
         // unhighlight things, hide interface stuff, that's it.
         return;
@@ -161,7 +161,7 @@ function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMo
     }
 }
 
-function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, points) {
+function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMode, model, sessionController, sceneController, points) {
     let hovered = isPrimary ? interactionState.primaryHovered : interactionState.secondaryHovered;
     if (hovered) {
         if (interactionState.type == InteractionType.NONE) {
@@ -178,7 +178,7 @@ function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMo
     }
 }
 
-function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, points) {
+function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode, model, sessionController, sceneController, helperPointController) {
     let type = interactionState.type;
     let data = interactionState.data;
 

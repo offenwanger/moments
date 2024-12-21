@@ -68,9 +68,9 @@ export const BrushToolButtons = {
 }
 
 export const SurfaceToolButtons = {
-    MOVE: 'surfaceToolMove',
+    PULL: 'surfaceToolPull',
     FLATTEN: 'surfaceToolFlatten',
-    SELECT: 'surfaceToolSelect',
+    RESET: 'surfaceToolReset',
 }
 
 export const MenuNavButtons = {

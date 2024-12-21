@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { Data } from "../../data.js";
 import { InteractionTargetInterface } from "./interaction_target_interface.js";
-import { BrushToolButtons, ToolButtons } from '../../constants.js';
+import { BrushToolButtons, SurfaceToolButtons, ToolButtons } from '../../constants.js';
 import { CanvasUtil } from '../../utils/canvas_util.js';
+import { Util } from '../../utils/utility.js';
 
 const DEFAULT_TEXTURE = 'assets/images/default_sphere_texture.png';
 
@@ -14,6 +15,8 @@ const UV_NUM_COMPONENTS = 2;
 const COLOR_NUM_COMPONENTS = 4;
 const NORMAL_NUM_COMPONENTS = 3;
 
+const SURFACE_COLORS = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', '#ffffff', '#000000']
+
 export function PhotosphereWrapper(parent) {
     let mParent = parent;
     let mModel = new Data.StoryModel();
@@ -23,6 +26,8 @@ export function PhotosphereWrapper(parent) {
 
     let mBasePointUVs = Data.Photosphere.basePointUVs;
     let mSurfaceOffsets = [];
+
+    let mSurfaceSelectLine = [];
 
     const mGeometry = new THREE.BufferGeometry();
     let mPositionAttribute;
@@ -42,6 +47,10 @@ export function PhotosphereWrapper(parent) {
     let mColorCtx = mColor.getContext('2d')
     let mOriginalBlur = document.createElement('canvas');
     let mOriginalColor = document.createElement('canvas');
+    let mSurfacesOverlay = document.createElement('canvas');
+    mSurfacesOverlay.height = 256;
+    mSurfacesOverlay.width = 512;
+    let mSurfacesOverlayCtx = mSurfacesOverlay.getContext('2d')
 
     const mCanvas = document.createElement('canvas');
     mCanvas.width = BASE_CANVAS_WIDTH;
@@ -98,8 +107,11 @@ export function PhotosphereWrapper(parent) {
         mCtx.drawImage(mImage, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
         mCtx.drawImage(mImage, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
         mCtx.globalCompositeOperation = 'source-over'
-        mCtx.filter = null;
+        mCtx.filter = "none";
         mCtx.drawImage(mColor, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT)
+        if (mTool == ToolButtons.SURFACE) {
+            mCtx.drawImage(mSurfacesOverlay, 0, 0, BASE_CANVAS_WIDTH, BASE_CANVAS_HEIGHT);
+        }
         mCanvasMaterial.needsUpdate = true;
     }
 
@@ -114,22 +126,8 @@ export function PhotosphereWrapper(parent) {
         mUVArray = new Float32Array(numVertices * UV_NUM_COMPONENTS);
         mColorArray = new Float32Array(numVertices * COLOR_NUM_COMPONENTS);
 
-        const longHelper = new THREE.Object3D();
-        const latHelper = new THREE.Object3D();
-        const pointHelper = new THREE.Object3D();
         const planeHelper = new THREE.Plane();
-        const lineHelper = new THREE.Line();
-        longHelper.add(latHelper);
-        latHelper.add(pointHelper);
-        const temp = new THREE.Vector3();
-
-        function getPoint(lat, long) {
-            pointHelper.position.z = 1;
-            latHelper.rotation.x = lat;
-            longHelper.rotation.y = long;
-            longHelper.updateMatrixWorld(true);
-            return pointHelper.getWorldPosition(temp).toArray();
-        }
+        const rayHelper = new THREE.Ray();
 
         let points = [...mBasePointUVs];
         mSurfaceOffsets = [];
@@ -141,18 +139,20 @@ export function PhotosphereWrapper(parent) {
         for (let i = 0; i < numVertices; i++) {
             let u = points[i * 2];
             let v = points[i * 2 + 1];
-            const lat = ((1 - v) - 0.5) * Math.PI;
-            const long = (1 - u) * Math.PI * 2;
-            let point = getPoint(lat, long)
+            let point = Util.uvToPoint(u, v);
             let scaledPoint = new THREE.Vector3();
             let surface = getSurfaceForPointIndex(i);
             if (surface) {
                 planeHelper.normal.set(...surface.normal);
                 planeHelper.constant = surface.dist;
-                lineHelper.end.copy(point);
-                planeHelper.intersectLine(lineHelper, scaledPoint);
+                rayHelper.direction.copy(point);
+                rayHelper.intersectPlane(planeHelper, scaledPoint);
+                if (scaledPoint.length() == 0) {
+                    console.error('Invalid point:' + [u, v] + ", " + scaledPoint.toArray())
+                    scaledPoint.copy(point);
+                }
             } else {
-                scaledPoint.set(...point);
+                scaledPoint.copy(point);
             }
             scaledPoint.multiplyScalar(mPhotosphere.scale);
 
@@ -188,7 +188,7 @@ export function PhotosphereWrapper(parent) {
 
     function getSurfaceForPointIndex(pointIndex) {
         if (pointIndex < mBasePointUVs.length / 2) {
-            return mSurfaces.find(s => s.basePointIndices.includes(i));
+            return mSurfaces.find(s => s.basePointIndices.includes(pointIndex));
         } else {
             // if it's base the end of the offsets, it's in the last surface.
             if (pointIndex > mSurfaceOffsets[mSurfaceOffsets.length - 1]) {
@@ -211,7 +211,14 @@ export function PhotosphereWrapper(parent) {
         mParent.remove(mSphere);
     }
 
+    // TODO: This is terrible and needs to be done better
+    let mTool = ToolButtons.MOVE;
     function getTargets(ray, toolMode) {
+        let lastTool = mTool;
+        mTool = toolMode.tool;
+        console.log(toolMode.tool, mTool)
+        if (mTool != lastTool) { drawTexture() }
+
         if (toolMode.tool == ToolButtons.BRUSH ||
             toolMode.tool == ToolButtons.SURFACE ||
             toolMode.tool == ToolButtons.SCISSORS) {
@@ -219,28 +226,33 @@ export function PhotosphereWrapper(parent) {
             return []
         }
 
-        let targetedAssetId;
-        if (toolMode.tool == ToolButtons.BRUSH) {
-            if (toolMode.brushSettings.mode == BrushToolButtons.BLUR ||
-                toolMode.brushSettings.mode == BrushToolButtons.UNBLUR) {
-                targetedAssetId = mPhotosphere.blurAssetId;
-            } else if (toolMode.brushSettings.mode == BrushToolButtons.COLOR) {
-                targetedAssetId = mPhotosphere.colorAssetId;
-            } else {
-                console.error('Unhandled mode: ' + toolMode.brushSettings.mode);
-            }
-        } else {
-            // it's complicated.
-            console.error("Impliment me!");
-            return [];
-        }
-
         let intersect = ray.intersectObject(mSphere);
         if (intersect.length == 0) return [];
         intersect = intersect[0];
 
+        let targetedId;
+        if (toolMode.tool == ToolButtons.BRUSH &&
+            (toolMode.brushSettings.mode == BrushToolButtons.BLUR ||
+                toolMode.brushSettings.mode == BrushToolButtons.UNBLUR)) {
+            targetedId = mPhotosphere.blurAssetId;
+        } else if (toolMode.tool == ToolButtons.BRUSH &&
+            toolMode.brushSettings.mode == BrushToolButtons.COLOR) {
+            targetedId = mPhotosphere.colorAssetId;
+        } else if (toolMode.tool == ToolButtons.SURFACE &&
+            toolMode.surfaceSettings.mode == SurfaceToolButtons.PULL) {
+            let pointIndex = intersect.face.a
+            let surface = getSurfaceForPointIndex(pointIndex);
+            if (!surface) return [];
+            else targetedId = surface.id;
+        } else if (toolMode.tool == ToolButtons.SURFACE &&
+            toolMode.surfaceSettings.mode == SurfaceToolButtons.FLATTEN) {
+            targetedId = mPhotosphere.id;
+        } else {
+            console.error('Unhandled tool state: ' + JSON.stringify(toolMode));
+        }
+
         mInteractionTarget.getIntersection = () => intersect;
-        mInteractionTarget.getId = () => targetedAssetId;
+        mInteractionTarget.getId = () => targetedId;
         mInteractionTarget.highlight = function (toolMode) {
             if (toolMode.tool == ToolButtons.BRUSH) {
                 if (toolMode.brushSettings.mode == BrushToolButtons.UNBLUR) {
@@ -252,30 +264,44 @@ export function PhotosphereWrapper(parent) {
                     drawBlur(intersect.uv.x, intersect.uv.y, toolMode.brushSettings.brushWidth, true)
                     drawTexture();
                 }
-            } else if (toolMode.tool == ToolButtons.SURFACE) {
-
+            } else if (toolMode.tool == ToolButtons.SURFACE && toolMode.surfaceSettings.mode == SurfaceToolButtons.PULL) {
+                resetSurfacesOverlay();
+                let surfaceIndex = mSurfaces.findIndex(s => s.id == targetedId);
+                if (surfaceIndex == -1) { console.error('Invalid surface: ' + targetedId); return; }
+                drawSurface(mSurfaces[surfaceIndex].points, surfaceIndex);
+                drawTexture();
             }
         };
         mInteractionTarget.select = (toolMode) => {
             if (toolMode.tool == ToolButtons.BRUSH) {
                 if (toolMode.brushSettings.mode == BrushToolButtons.UNBLUR) {
                     drawBlur(intersect.uv.x, intersect.uv.y, toolMode.brushSettings.brushWidth, false)
-                    drawTexture();
                 } else if (toolMode.brushSettings.mode == BrushToolButtons.BLUR) {
                     drawBlur(intersect.uv.x, intersect.uv.y, toolMode.brushSettings.brushWidth, true)
-                    drawTexture();
                 }
+                drawTexture();
             } else if (toolMode.tool == ToolButtons.SURFACE) {
-
+                if (toolMode.surfaceSettings.mode == SurfaceToolButtons.FLATTEN) {
+                    mSurfaceSelectLine.push(...intersect.uv);
+                    resetSurfacesOverlay();
+                    drawSurface(mSurfaceSelectLine, mSurfaces.length);
+                } else {
+                    let surfaceIndex = mSurfaces.findIndex(s => s.id == targetedId);
+                    if (surfaceIndex == -1) { console.error('Invalid surface: ' + targetedId); return; }
+                    resetSurfacesOverlay();
+                    drawSurface(mSurfaces[surfaceIndex].points, surfaceIndex);
+                }
+                drawTexture();
             }
         }
         mInteractionTarget.idle = (toolMode) => {
             if (toolMode.tool == ToolButtons.BRUSH) {
                 resetBlur();
-                drawTexture();
             } else if (toolMode.tool == ToolButtons.SURFACE) {
-
+                mSurfaceSelectLine = [];
+                resetSurfacesOverlay();
             }
+            drawTexture();
         }
         return [mInteractionTarget];
     }
@@ -308,6 +334,40 @@ export function PhotosphereWrapper(parent) {
         mColorCtx.drawImage(mOriginalColor, 0, 0);
     }
 
+    function drawSurface(points, colorIndex) {
+        let sets = Util.breakUpUVSelection(points);
+        let shapes = sets.map(s => {
+            let coordArray = []
+            for (let i = 0; i < s.length; i += 2) {
+                let u = s[i];
+                let v = s[i + 1];
+                let x = Math.round(u * mSurfacesOverlay.width);
+                let y = Math.round((1 - v) * mSurfacesOverlay.height);
+                coordArray.push({ x, y });
+            }
+            return coordArray;
+        })
+        for (let shape of shapes) {
+            mSurfacesOverlayCtx.save();
+            mSurfacesOverlayCtx.beginPath();
+            mSurfacesOverlayCtx.moveTo(shape[0].x, shape[0].y);
+            for (let p of shape) {
+                mSurfacesOverlayCtx.lineTo(p.x, p.y);
+            }
+            mSurfacesOverlayCtx.fillStyle = SURFACE_COLORS[colorIndex % SURFACE_COLORS.length];
+            mSurfacesOverlayCtx.globalAlpha = 0.1;
+            mSurfacesOverlayCtx.fill();
+            mSurfacesOverlayCtx.restore();
+        }
+    }
+
+    function resetSurfacesOverlay() {
+        mSurfacesOverlayCtx.reset();
+        for (let i = 0; i < mSurfaces.length; i++) {
+            drawSurface(mSurfaces[i].points, i);
+        }
+    }
+
     function drawWrappedCircle(u, v, brushWidth, canvas, ctx) {
         let x = Math.round(u * canvas.width);
         let y = Math.round((1 - v) * canvas.height);
@@ -328,6 +388,7 @@ export function PhotosphereWrapper(parent) {
         target.getObject3D = () => { return mSphere; }
         target.getBlurCanvas = () => CanvasUtil.cloneCanvas(mBlur);
         target.getColorCanvas = () => CanvasUtil.cloneCanvas(mColor);
+        target.getDrawnPath = () => [...mSurfaceSelectLine];
         target.setBlurCanvas = (canvas) => mOriginalBlur = canvas;
         target.setColorCanvas = (canvas) => mOriginalColor = canvas;
         return target;

@@ -1,6 +1,6 @@
 import { ASSET_UPDATE_COMMAND, BrushToolButtons, InteractionType } from "../../../constants.js";
 
-function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
+function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMode, model, sessionController, sceneController, helperPointController) {
     if (interactionState.type == InteractionType.NONE) {
         if (isPrimary) {
             let targets = sceneController.getTargets(raycaster, toolMode)
@@ -11,12 +11,7 @@ function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMo
                 let target = targets[0];
                 target.highlight(toolMode);
                 helperPointController.showPoint(isPrimary, target.getIntersection().point);
-
-                if (isPrimary) {
-                    interactionState.primaryHovered = target;
-                } else {
-                    interactionState.secondaryHovered = target;
-                }
+                interactionState.primaryHovered = target;
                 sessionController.hovered(true, isPrimary)
             }
         } else {
@@ -33,7 +28,7 @@ function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMo
     }
 }
 
-function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
+function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMode, model, sessionController, sceneController, helperPointController) {
     let hovered = isPrimary ? interactionState.primaryHovered : interactionState.secondaryHovered;
     if (hovered) {
         if (interactionState.type == InteractionType.NONE) {
@@ -45,7 +40,7 @@ function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMo
     }
 }
 
-function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode, sessionController, sceneController, helperPointController) {
+function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode, model, sessionController, sceneController, helperPointController) {
     let type = interactionState.type;
     let data = interactionState.data;
 

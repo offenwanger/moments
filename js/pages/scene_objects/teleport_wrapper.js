@@ -24,6 +24,12 @@ export function TeleportWrapper(parent) {
             transparent: true
         }));
 
+    const mTeleportMap = new THREE.TextureLoader().load('assets/images/teleportIcon.png');
+    const mTeleportSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: mTeleportMap }));
+    mTeleportSprite.scale.set(0.09, 0.09, 0.09);
+    mTeleportSprite.position.set(0.1, 0.1, 0);
+    mSphere.add(mTeleportSprite)
+
     async function update(teleport, model, assetUtil) {
         if (true /* teleport is not attached */) {
             mParent.add(mSphere);

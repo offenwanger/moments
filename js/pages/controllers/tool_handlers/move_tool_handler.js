@@ -215,13 +215,17 @@ function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode
 
         if (targets.length == 0) {
             let newPosition = data.rootTarget.getLocalPosition();
-            updates = [new ModelUpdate({
+            let updateData = {
                 id: data.rootTarget.getId(),
                 x: newPosition.x,
                 y: newPosition.y,
                 z: newPosition.z,
-                orientation: data.rootTarget.getLocalOrientation().toArray(),
-            })]
+            }
+            let cls = IdUtil.getClass(updateData.id)
+            if (cls == Data.AssetPose || cls == Data.Picture) {
+                updateData.orientation = data.rootTarget.getLocalOrientation().toArray();
+            }
+            updates = [new ModelUpdate(updateData)]
         }
     } else if (type == InteractionType.TWO_HAND_MOVE) {
         let newPosition = data.rootTarget.getLocalPosition();

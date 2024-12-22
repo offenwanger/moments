@@ -42,7 +42,11 @@ export function AudioWrapper(parent, audioListener) {
         mSound.setBuffer(buffer);
         mSound.setLoop(true);
         mSound.setVolume(audio.volume);
-        if (audio.ambient) mSound.play();
+        if (audio.ambient) {
+            mSound.play();
+        } else {
+            mSound.stop();
+        }
 
         mAudio = audio;
     }

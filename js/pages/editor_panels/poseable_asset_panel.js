@@ -1,6 +1,5 @@
 import { Util } from "../../utils/utility.js";
 import { ButtonInput } from "../components/button_input.js";
-import { ComponentInput } from '../components/component_input.js';
 import { TextInput } from "../components/text_input.js";
 
 export function PoseableAssetPanel(container) {

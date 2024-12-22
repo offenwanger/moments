@@ -36,17 +36,17 @@ export function TeleportPanel(container) {
     let mPositionXInput = new TextInput(mPanelContainer, 'number')
         .setLabel("x")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, { x: newNum });
+            await mUpdateAttributeCallback(mTeleportId, { x: newNum });
         });
     let mPositionYInput = new TextInput(mPanelContainer, 'number')
         .setLabel("y")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, { y: newNum });
+            await mUpdateAttributeCallback(mTeleportId, { y: newNum });
         });
     let mPositionZInput = new TextInput(mPanelContainer, 'number')
         .setLabel("z")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, { z: newNum });
+            await mUpdateAttributeCallback(mTeleportId, { z: newNum });
         });
 
     let mDeleteButton = new ButtonInput(mPanelContainer)

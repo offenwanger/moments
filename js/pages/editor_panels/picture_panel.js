@@ -57,17 +57,17 @@ export function PicturePanel(container) {
     let mPositionXInput = new TextInput(mPanelContainer, 'number')
         .setLabel("x")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, { x: newNum });
+            await mUpdateAttributeCallback(mPictureId, { x: newNum });
         });
     let mPositionYInput = new TextInput(mPanelContainer, 'number')
         .setLabel("y")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, { y: newNum });
+            await mUpdateAttributeCallback(mPictureId, { y: newNum });
         });
     let mPositionZInput = new TextInput(mPanelContainer, 'number')
         .setLabel("z")
         .setOnChange(async (newNum) => {
-            await mUpdateAttributeCallback(mComponentId, { z: newNum });
+            await mUpdateAttributeCallback(mPictureId, { z: newNum });
         });
 
     let mDeleteButton = new ButtonInput(mPanelContainer)

@@ -92,7 +92,7 @@ export function PhotosphereWrapper(parent) {
             mRayHelper.direction.copy(center);
             mRayHelper.intersectPlane(mPlaneHelper, pivot);
             if (pivot.length() == 0) {
-                console.error('Invalid pivot:' + [u, v] + ", " + pivot.toArray())
+                console.error('Invalid pivot:' + pivot.toArray())
                 pivot.copy(center);
             }
             return pivot;
@@ -264,7 +264,8 @@ export function PhotosphereWrapper(parent) {
             if (!surface) return [];
             else targetedId = surface.id;
         } else if (toolMode.tool == ToolButtons.SURFACE &&
-            toolMode.surfaceSettings.mode == SurfaceToolButtons.FLATTEN) {
+            (toolMode.surfaceSettings.mode == SurfaceToolButtons.FLATTEN ||
+                toolMode.surfaceSettings.mode == SurfaceToolButtons.RESET)) {
             targetedId = mPhotosphere.id;
         } else {
             console.error('Unhandled tool state: ' + JSON.stringify(toolMode));
@@ -283,7 +284,8 @@ export function PhotosphereWrapper(parent) {
                     drawBlur(intersect.uv.x, intersect.uv.y, toolMode.brushSettings.brushWidth, true)
                     drawTexture();
                 }
-            } else if (toolMode.tool == ToolButtons.SURFACE && toolMode.surfaceSettings.mode == SurfaceToolButtons.PULL) {
+            } else if (toolMode.tool == ToolButtons.SURFACE &&
+                toolMode.surfaceSettings.mode == SurfaceToolButtons.PULL) {
                 resetSurfacesOverlay();
                 let surfaceIndex = mSurfaces.findIndex(s => s.id == targetedId);
                 if (surfaceIndex == -1) { console.error('Invalid surface: ' + targetedId); return; }
@@ -300,7 +302,8 @@ export function PhotosphereWrapper(parent) {
                 }
                 drawTexture();
             } else if (toolMode.tool == ToolButtons.SURFACE) {
-                if (toolMode.surfaceSettings.mode == SurfaceToolButtons.FLATTEN) {
+                if (toolMode.surfaceSettings.mode == SurfaceToolButtons.FLATTEN ||
+                    toolMode.surfaceSettings.mode == SurfaceToolButtons.RESET) {
                     mSurfaceSelectLine.push(...intersect.uv);
                     resetSurfacesOverlay();
                     drawSurface(mSurfaceSelectLine, mSurfaces.length);
@@ -381,6 +384,7 @@ export function PhotosphereWrapper(parent) {
     }
 
     function resetSurfacesOverlay() {
+        mSurfacesOverlayCtx.clearRect(0, 0, mSurfacesOverlay.width, mSurfacesOverlay.height);
         mSurfacesOverlayCtx.reset();
         for (let i = 0; i < mSurfaces.length; i++) {
             drawSurface(mSurfaces[i].points, i);
@@ -422,7 +426,7 @@ export function PhotosphereWrapper(parent) {
             let surfaceIndex = mSurfaces.findIndex(s => s.id == surfaceId);
             if (surfaceIndex == -1) console.error('invalid target: ' + this.getId());
             let ray = new THREE.Ray()
-            ray.direction.copy(mSurfacePivots[surfaceIndex]);
+            ray.direction.copy(mSurfacePivots[surfaceIndex]).normalize();
             let newPos = new THREE.Vector3()
             ray.closestPointToPoint(pos, newPos);
             mPlaneHelper.setFromNormalAndCoplanarPoint(new THREE.Vector3(...mSurfaces[surfaceIndex].normal), newPos);

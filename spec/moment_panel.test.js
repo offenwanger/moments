@@ -4,7 +4,7 @@ import { cleanup, setup } from './test_utils/test_environment.js';
 import { clickButtonInput, createAndOpenStoryMoment, testmodel } from './test_utils/test_actions.js';
 
 
-describe('Test StoryPanel', function () {
+describe('Test MomentPanel', function () {
     beforeEach(async function () {
         await setup();
     });
@@ -14,17 +14,17 @@ describe('Test StoryPanel', function () {
     })
 
     describe('init tests', function () {
-        it('should open a story', async function () {
+        it('should open a moment', async function () {
             await createAndOpenStoryMoment();
         });
     });
 
-    describe('add tests', function () {
-        it('should add a moment', async function () {
+    describe('delete tests', function () {
+        fit('should delete the moment', async function () {
             await createAndOpenStoryMoment();
             expect(testmodel().moments.length == 1);
-            await clickButtonInput('#story-moment-add-button');
-            expect(testmodel().moments.length == 2);
+            await clickButtonInput('#moment-delete-button');
+            expect(testmodel().moments.length == 0);
         });
     });
 });

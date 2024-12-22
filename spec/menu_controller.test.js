@@ -2,7 +2,7 @@
 import { cleanup, setup } from './test_utils/test_environment.js';
 
 import { AssetTypes, MenuNavButtons } from '../js/constants.js';
-import { canvasClickMenuButton, createAndEditStory, testmodel, uploadImageAsset } from './test_utils/test_actions.js';
+import { canvasClickMenuButton, createAndOpenStoryMoment, testmodel, uploadImageAsset } from './test_utils/test_actions.js';
 
 
 describe('Test menu buttons', function () {
@@ -16,13 +16,13 @@ describe('Test menu buttons', function () {
 
     describe('init tests', function () {
         it('should open a story', async function () {
-            await createAndEditStory();
+            await createAndOpenStoryMoment();
         });
     });
 
     describe('add tests', function () {
         it('should add a story picture', async function () {
-            await createAndEditStory();
+            await createAndOpenStoryMoment();
             await uploadImageAsset();
             let assetId = testmodel().assets.find(a => a.type == AssetTypes.IMAGE).id;
 

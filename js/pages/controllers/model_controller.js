@@ -11,8 +11,8 @@ export function ModelController(story = new Data.StoryModel()) {
         for (let update of updates) {
             if (!update) { console.error('Invalid update, no data'); continue; }
             if (update.command == ModelUpdateCommands.DELETE) {
-                mModel.delete(update.id);
-                delete mModelIndex[update.id];
+                mModel.delete(update.data.id);
+                delete mModelIndex[update.data.id];
             } else if (update.command == ModelUpdateCommands.CREATE_OR_UPDATE) {
                 if (!update.data.id || !IdUtil.getClass(update.data.id)) { console.error('Invalid update, invalid id: ' + update.data.id); continue; }
 

@@ -91,8 +91,8 @@ export function MenuController() {
     ]);
     mSubMenus[ToolButtons.SURFACE] = createMenu(ToolButtons.SURFACE, [
         new MeshButton(SurfaceToolButtons.FLATTEN, 'Flatten', BUTTON_SIZE),
-        new MeshButton(SurfaceToolButtons.PULL, 'Pull', BUTTON_SIZE, 0xff0000),
-        new MeshButton(SurfaceToolButtons.RESET, 'Reset', BUTTON_SIZE, 0xff0000),
+        new MeshButton(SurfaceToolButtons.PULL, 'Pull', BUTTON_SIZE),
+        new MeshButton(SurfaceToolButtons.RESET, 'Reset', BUTTON_SIZE),
     ]);
 
 

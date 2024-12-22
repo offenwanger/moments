@@ -2,7 +2,7 @@
 import { setup, cleanup } from './test_utils/test_environment.js';
 import { createAndOpenPoseableAsset, enterInputValue, getInputValue, testmodel } from './test_utils/test_actions.js';
 
-describe('Test Moment Panel', function () {
+describe('Test PoseableAsset Panel', function () {
     beforeEach(async function () {
         await setup();
     });
@@ -18,7 +18,7 @@ describe('Test Moment Panel', function () {
     });
 
     describe('edit tests', function () {
-        it('should update model name', async function () {
+        it('should update asset name', async function () {
             await createAndOpenPoseableAsset();
             expect(getInputValue("#poseableAsset-name-input")).toBe('sample.glb');
             expect(testmodel().find(testmodel().moments[0].poseableAssetIds[0]).name).toBe('sample.glb');

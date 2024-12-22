@@ -49,10 +49,10 @@ export function MomentPanel(container) {
     let mAudiosList = [];
 
     let mDeleteButton = new ButtonInput(mPanelContainer)
-        .setId('picture-delete-button')
+        .setId('moment-delete-button')
         .setLabel('Delete')
         .setOnClick(async () => {
-            await mDeleteCallback(mPictureId);
+            await mDeleteCallback(mMoment.id);
             await mNavigationCallback(mModel.id);
         })
 

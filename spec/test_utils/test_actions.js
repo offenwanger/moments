@@ -35,18 +35,17 @@ export async function chooseFolder() {
     await window.mainFunc();
 }
 
-export async function createAndEditStory() {
+export async function createAndOpenStoryMoment() {
     await chooseFolder();
     await document.querySelector('#new-story-button').eventListeners.click();
     await document.querySelector('#edit-' + testmodel().id).eventListeners.click();
     await window.mainFunc();
     expect(testmodel().moments.length).toBe(1);
     await clickButtonInput('#moment-button-' + testmodel().moments[0].id);
-
 }
 
 export async function createAndOpenPoseableAsset() {
-    await createAndEditStory();
+    await createAndOpenStoryMoment();
 
     await loadRealFile('sample.glb')
     window.files.push(new mockFile('sample.glb', "model/gltf-binary", global.fileSystem['sample.glb']));

@@ -68,6 +68,16 @@ describe('Test Data', function () {
     })
 
     describe('delete tests', function () {
+        it('should delete a moment', function () {
+            let model = createStoryModel();
+            let id = model.moments[0].id;
+            let moment = model.find(id);
+            expect(moment).not.toBeNull();
+            model.delete(id);
+            moment = model.find(id);
+            expect(moment).toBeNull()
+        });
+
         it('should delete poseableAsset', function () {
             let model = createStoryModel();
             let id = model.moments[0].poseableAssetIds[0];

@@ -3,12 +3,12 @@ import { Data } from '../../data.js';
 import { MomentWrapper } from '../scene_objects/moment_wrapper.js';
 import { OtherUserWrapper } from '../scene_objects/other_user_wrapper.js';
 
-export function SceneController() {
+export function SceneController(audioListener) {
     let mScene = new THREE.Scene();
     let mContent = new THREE.Group();
     mScene.add(mContent);
     let mCurrentMomentId = null;
-    let mMomentWrapper = new MomentWrapper(mContent);
+    let mMomentWrapper = new MomentWrapper(mContent, audioListener);
     let mModel = new Data.StoryModel();
     let mAssetUtil = null;
 

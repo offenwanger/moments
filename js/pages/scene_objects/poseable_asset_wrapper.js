@@ -4,7 +4,7 @@ import { GLTKUtil } from '../../utils/gltk_util.js';
 import { InteractionTargetInterface } from './interaction_target_interface.js';
 import { ToolButtons } from '../../constants.js';
 
-export function PoseableAssetWrapper(parent) {
+export function PoseableAssetWrapper(parent, audioListener) {
     let mModel = new Data.StoryModel();
     let mParent = parent;
     let mPoseableAsset = new Data.PoseableAsset();
@@ -24,6 +24,8 @@ export function PoseableAssetWrapper(parent) {
     const mAudioSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: mAudioMap }));
     mAudioSprite.scale.set(0.1, 0.1, 0.1)
     let mAudioSprites = {};
+
+    let mSounds = {};
 
     const BoneMaterial = new THREE.LineBasicMaterial({
         color: new THREE.Color(0x0000ff),
@@ -48,6 +50,7 @@ export function PoseableAssetWrapper(parent) {
             if (mGLTF) remove();
             mTeleportSprites = {};
             mAudioSprites = {};
+            mSounds = {};
             try {
                 mGLTF = await assetUtil.loadAssetModel(mPoseableAsset.assetId)
                 mModelGroup.add(mGLTF);
@@ -80,7 +83,7 @@ export function PoseableAssetWrapper(parent) {
             }
         }
 
-        mPoses.forEach(pose => {
+        for (const pose of mPoses) {
             let object = mGLTF.getObjectByName(pose.name);
             if (!object) { console.error("Invalid pose!", pose); return; }
 
@@ -119,11 +122,22 @@ export function PoseableAssetWrapper(parent) {
                     bbox.getSize(size);
                     mAudioSprites[pose.id].position.set(size.x / 2, -size.y / 2, size.z / 2);
                 }
+
+                if (!mSounds[pose.id]) {
+                    mSounds[pose.id] = new THREE.PositionalAudio(audioListener);
+                    let buffer = await assetUtil.loadAudioBuffer(audio.assetId);
+                    mSounds[pose.id].setBuffer(buffer);
+                    mSounds[pose.id].setLoop(true);
+                    mSounds[pose.id].setVolume(audio.volume);
+                    if (audio.ambient) mSounds[pose.id].play();
+                }
+
+                object.userData.interactionAudio = !audio.ambient;
                 object.userData.isAudio = true;
             } else {
                 object.userData.isAudio = false;
             }
-        })
+        }
 
         mGLTF.userData.id = poseableAsset.id;
     }
@@ -134,6 +148,7 @@ export function PoseableAssetWrapper(parent) {
 
     function remove() {
         mParent.remove(mModelGroup)
+        Object.values(mSounds).forEach(s => s.stop())
     }
 
     function getTargets(ray, toolMode) {
@@ -278,8 +293,14 @@ export function PoseableAssetWrapper(parent) {
                     console.error("Unexpected target object!", obj);
                 }
             };
+            interactionTarget.select = (toolMode) => {
+                let obj = mGLTF.getObjectByName(pose.name);
+                if (obj.userData.interactionAudio) mSounds[pose.id].play();
+            };
             interactionTarget.idle = (toolMode) => {
                 let obj = interactionTarget.getObject3D();
+                if (obj.userData.interactionAudio) mSounds[pose.id].pause();
+
                 if (obj.isMesh) {
                     obj.material.color.set(obj.userData.originalColor);
                 } else if (obj.type == "Bone") {

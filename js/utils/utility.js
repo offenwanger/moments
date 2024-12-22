@@ -280,6 +280,39 @@ function getPoint(lat, long) {
     return pointHelper.getWorldPosition(temp).toArray();
 }
 
+
+function updateHoverTargetHighlight(target, interactionState, toolMode, isPrimary, sessionController, helperPointController) {
+    let currentTarget = isPrimary ? interactionState.primaryHovered : interactionState.secondaryHovered;
+    let currentId = currentTarget?.getId()
+    let targetId = target?.getId();
+    if (currentTarget && currentId != targetId) {
+        if (isPrimary) {
+            interactionState.primaryHovered.idle(toolMode);
+            interactionState.primaryHovered = null;
+        } else {
+            interactionState.secondaryHovered.idle(toolMode);
+            interactionState.secondaryHovered = null;
+        }
+        sessionController.hovered(false, isPrimary)
+        helperPointController.hidePoint(isPrimary);
+    }
+
+    if (target) {
+        helperPointController.showPoint(isPrimary, target.getIntersection().point);
+    }
+
+    if (target && currentId != targetId) {
+        sessionController.hovered(true, isPrimary)
+        if (isPrimary) {
+            interactionState.primaryHovered = target;
+            interactionState.primaryHovered.highlight(toolMode);
+        } else {
+            interactionState.secondaryHovered = target;
+            interactionState.secondaryHovered.highlight(toolMode);
+        }
+    }
+}
+
 export const Util = {
     getSphereIntersection,
     hasSphereIntersection,
@@ -296,4 +329,5 @@ export const Util = {
     pointInPolygon,
     breakUpUVSelection,
     uvToPoint,
+    updateHoverTargetHighlight,
 }

@@ -7,7 +7,7 @@ import { PictureWrapper } from "./picture_wrapper.js";
 import { PoseableAssetWrapper } from "./poseable_asset_wrapper.js";
 import { TeleportWrapper } from './teleport_wrapper.js';
 
-export function MomentWrapper(parent) {
+export function MomentWrapper(parent, audioListener) {
     let mModel = new Data.StoryModel();
 
     let mStoryGroup = new THREE.Group();
@@ -36,7 +36,7 @@ export function MomentWrapper(parent) {
                 mModel,
                 assetUtil,
                 async (poseableAsset) => {
-                    let newPoseableAssetWrapper = new PoseableAssetWrapper(mStoryGroup);
+                    let newPoseableAssetWrapper = new PoseableAssetWrapper(mStoryGroup, audioListener);
                     return newPoseableAssetWrapper;
                 });
 
@@ -45,7 +45,7 @@ export function MomentWrapper(parent) {
                 mModel,
                 assetUtil,
                 async (picture) => {
-                    let newPictureWrapper = new PictureWrapper(mStoryGroup);
+                    let newPictureWrapper = new PictureWrapper(mStoryGroup, audioListener);
                     return newPictureWrapper;
                 });
 
@@ -54,7 +54,7 @@ export function MomentWrapper(parent) {
                 mModel,
                 assetUtil,
                 async (audio) => {
-                    let newAudioWrapper = new AudioWrapper(mStoryGroup);
+                    let newAudioWrapper = new AudioWrapper(mStoryGroup, audioListener);
                     return newAudioWrapper;
                 });
 

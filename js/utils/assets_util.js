@@ -8,6 +8,7 @@ import { logInfo } from './log_util.js';
 export function AssetUtil(workspace) {
     let mWorkspace = workspace;
     let mModel = new Data.StoryModel();
+    const mAudioLoader = new THREE.AudioLoader();
 
     let mLoadedAssets = {};
     let mLoadedFiles = {};
@@ -110,10 +111,29 @@ export function AssetUtil(workspace) {
         return mLoadedAssets['DEFAULT_ENV_BOX'];
     }
 
+    async function loadAudioBuffer(assetId) {
+        try {
+            if (!mLoadedAssets[assetId]) {
+                let asset = mModel.find(assetId);
+                if (!asset) { console.error("Invalid image asset: " + assetId, asset); throw new Error("Invalid model asset: " + assetId); }
+                let uri = await mWorkspace.getAssetAsDataURI(asset.filename);
+                let buffer = await new Promise((resolve, reject) => mAudioLoader.load(uri, resolve, null, reject));
+                mLoadedAssets[assetId] = buffer;
+                mAssetAges[assetId] = asset.updated;
+            }
+            if (!mLoadedAssets[assetId]) { console.error('Failed to load asset: ' + assetId); return null; }
+            return mLoadedAssets[assetId];
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    }
+
     this.updateModel = updateModel;
     this.loadEnvironmentCube = loadEnvironmentCube;
     this.loadDefaultEnvironmentCube = loadDefaultEnvironmentCube;
     this.loadImage = loadImage;
     this.loadGLTFModel = loadGLTFModel;
     this.loadAssetModel = loadAssetModel;
+    this.loadAudioBuffer = loadAudioBuffer;
 }

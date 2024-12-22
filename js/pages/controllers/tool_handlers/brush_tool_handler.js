@@ -1,19 +1,12 @@
 import { ASSET_UPDATE_COMMAND, BrushToolButtons, InteractionType } from "../../../constants.js";
+import { Util } from "../../../utils/utility.js";
 
 function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMode, model, sessionController, sceneController, helperPointController) {
     if (interactionState.type == InteractionType.NONE) {
         if (isPrimary) {
             let targets = sceneController.getTargets(raycaster, toolMode)
-            if (targets.length == 0) {
-                sessionController.hovered(false, isPrimary)
-            } else {
-                if (targets.length > 1) { console.error('Unexpected target result!'); }
-                let target = targets[0];
-                target.highlight(toolMode);
-                helperPointController.showPoint(isPrimary, target.getIntersection().point);
-                interactionState.primaryHovered = target;
-                sessionController.hovered(true, isPrimary)
-            }
+            if (targets.length > 1) { console.error('Unexpected target result!'); }
+            Util.updateHoverTargetHighlight(targets[0], interactionState, toolMode, isPrimary, sessionController, helperPointController);
         } else {
             // do nothing.
         }
@@ -48,6 +41,8 @@ function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode
     interactionState.data = {};
 
     let updates = []
+
+    helperPointController.hidePoint(isPrimary);
 
     if (type == InteractionType.BRUSHING) {
         let canvas;

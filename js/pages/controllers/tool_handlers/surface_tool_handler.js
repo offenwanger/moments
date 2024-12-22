@@ -13,17 +13,8 @@ function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMo
     if (isPrimary) {
         if (interactionState.type == InteractionType.NONE) {
             let targets = sceneController.getTargets(raycaster, toolMode)
-            if (targets.length == 0) {
-                sessionController.hovered(false, isPrimary)
-            } else {
-                if (targets.length > 1) { console.error('Unexpected target result!'); }
-                let target = targets[0];
-                target.highlight(toolMode);
-                helperPointController.showPoint(isPrimary, target.getIntersection().point);
-                interactionState.primaryHovered = target;
-                sessionController.hovered(true, isPrimary)
-            }
-
+            if (targets.length > 1) { console.error('Unexpected target result!'); }
+            Util.updateHoverTargetHighlight(targets[0], interactionState, toolMode, isPrimary, sessionController, helperPointController);
         } else if (interactionState.type == InteractionType.BRUSHING) {
             let targets = sceneController.getTargets(raycaster, toolMode)
             if (targets.length == 0) { /* we moved off the sphere, do nothing. */ } else {
@@ -83,6 +74,8 @@ function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode
     interactionState.data = {};
 
     let updates = []
+
+    helperPointController.hidePoint();
 
     if (type == InteractionType.BRUSHING) {
         // we are either flattening or resetting.

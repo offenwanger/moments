@@ -197,8 +197,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
     });
 
     mSceneInterface.onAssetCreate(async (id, name, type, blob) => {
-        let asset = mModelController.getModel().find(id);
-        if (!asset) { console.error('Invalid id: ' + id); }
         let file = new File([blob], name);
         if (!mWorkspace) {
             await mWebsocketController.newAsset(id, file, type)

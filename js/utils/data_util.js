@@ -138,6 +138,27 @@ function getPictureCreationUpdates(model, parentId, assetId, position, orientati
     ];
 }
 
+function getAudioCreationUpdates(model, parentId, assetId, position) {
+    let parentMoment = model.moments.find(m => m.id == parentId);
+    let name = getNextName('Audio', model.audios.map(m => m.name))
+
+    let id = IdUtil.getUniqueId(Data.Audio);
+    parentMoment.audioIds.push(id);
+
+    return [
+        new ModelUpdate({
+            id,
+            name,
+            assetId,
+            x: position.x, y: position.y, z: position.z,
+        }),
+        new ModelUpdate({
+            id: parentMoment.id,
+            audioIds: parentMoment.audioIds,
+        }),
+    ];
+}
+
 function getNextName(name, nameList) {
     let maxNumber = Math.max(0, ...nameList
         .filter(n => n.includes(name))
@@ -151,5 +172,6 @@ export const DataUtil = {
     getPoseableAssetCreationUpdates,
     getAssetCreationUpdates,
     getPictureCreationUpdates,
+    getAudioCreationUpdates,
     getNextName,
 }

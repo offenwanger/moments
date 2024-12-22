@@ -3,10 +3,10 @@ import { ToolButtons } from '../../constants.js';
 import { Data } from "../../data.js";
 import { InteractionTargetInterface } from "./interaction_target_interface.js";
 
-export function AudioWrapper(parent) {
+export function AudioWrapper(parent, audioListener) {
     let mParent = parent;
     let mAudio = new Data.Audio();
-    let mInteractionTarget = createInteractionTarget();
+    let mInteractionTarget = createInteractionTarget(); 1
 
     const mSphere = new THREE.Mesh(
         new THREE.SphereGeometry(0.1, 32, 16),
@@ -24,6 +24,9 @@ export function AudioWrapper(parent) {
             transparent: true
         }));
 
+    const mSound = new THREE.PositionalAudio(audioListener);
+    mSphere.add(mSound);
+
     const mAudioMap = new THREE.TextureLoader().load('assets/images/audioIcon.png');
     const mAudioSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: mAudioMap }));
     mAudioSprite.scale.set(0.09, 0.09, 0.09);
@@ -34,6 +37,13 @@ export function AudioWrapper(parent) {
         mParent.add(mSphere);
         mSphere.position.set(audio.x, audio.y, audio.z);
         mSphere.userData.id = audio.id;
+
+        let buffer = await assetUtil.loadAudioBuffer(audio.assetId);
+        mSound.setBuffer(buffer);
+        mSound.setLoop(true);
+        mSound.setVolume(audio.volume);
+        if (audio.ambient) mSound.play();
+
         mAudio = audio;
     }
 
@@ -43,6 +53,7 @@ export function AudioWrapper(parent) {
 
     function remove() {
         mParent.remove(mSphere);
+        mSound.stop();
     }
 
     function getTargets(ray, toolMode) {
@@ -64,9 +75,13 @@ export function AudioWrapper(parent) {
         };
         target.select = function (toolMode) {
             mSphere.material.color.setHex(0xffffff)
+            if (!mAudio.ambient) {
+                mSound.play();
+            }
         };
         target.idle = (toolMode) => {
             mSphere.material.color.setHex(0xaaaa99)
+            if (!mAudio.ambient) mSound.pause();
         }
         target.getLocalPosition = () => {
             let p = new THREE.Vector3();

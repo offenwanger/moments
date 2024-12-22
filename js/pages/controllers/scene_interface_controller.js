@@ -43,7 +43,9 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
     let mToolMode = new ToolMode();
     let mCurrentMomentId = null;
 
-    let mSceneController = new SceneController();
+    const mAudioListener = new THREE.AudioListener();
+
+    let mSceneController = new SceneController(mAudioListener);
     let mMenuController = new MenuController();
     mMenuController.setToolMode(mToolMode);
     let mOtherUsers = {};
@@ -66,6 +68,8 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
         controller.getRenderer().setAnimationLoop(render);
         controller.setUserPositionAndDirection(pos, dir);
         mCurrentSessionController = controller;
+
+        mCurrentSessionController.getCamera().add(mAudioListener);
     }
 
     async function render(time) {
@@ -123,25 +127,29 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
     mPageSessionController.onPointerMove(onPointerMove);
     mXRSessionController.onPointerMove(onPointerMove);
     async function onPointerMove(raycaster = null, orientation = null, isPrimary = true) {
-        // unhighlight evertying. 
-        (isPrimary ? mInteractionState.primaryHovered : mInteractionState.secondaryHovered)?.idle(mToolMode);
-        isPrimary ? mInteractionState.primaryHovered = null : mInteractionState.secondaryHovered = null;
-        mHelperPointController.hidePoint(isPrimary);
+        // unhighlight buttons. 
+        let hovered = (isPrimary ? mInteractionState.primaryHovered : mInteractionState.secondaryHovered)
+        if (hovered && hovered.isButton()) {
+            Util.updateHoverTargetHighlight(
+                null,
+                mInteractionState,
+                mToolMode,
+                isPrimary,
+                mCurrentSessionController,
+                mHelperPointController)
+        }
 
         let menuTargets = mInteractionState.type == InteractionType.NONE ?
             mMenuController.getTargets(raycaster, mToolMode) : [];
         if (menuTargets.length > 0) {
             let closest = Util.getClosestTarget(raycaster.ray, menuTargets);
-            closest.highlight(mToolMode);
-            mHelperPointController.showPoint(isPrimary, closest.getIntersection().point);
-
-            if (isPrimary) {
-                mInteractionState.primaryHovered = closest;
-            } else {
-                mInteractionState.secondaryHovered = closest;
-            }
-
-            mCurrentSessionController.hovered(true, isPrimary);
+            Util.updateHoverTargetHighlight(
+                closest,
+                mInteractionState,
+                mToolMode,
+                isPrimary,
+                mCurrentSessionController,
+                mHelperPointController);
         } else {
             let handler = getToolHandler(mToolMode.tool)
             if (!handler) { console.error("Tool not handled: " + mToolMode.tool); return; }
@@ -221,6 +229,14 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
         let buttonId = target.getId();
         let menuId = mMenuController.getCurrentMenuId();
         if (Object.values(ToolButtons).includes(buttonId)) {
+            // unhighlight evertying. 
+            if (mInteractionState.primaryHovered) mInteractionState.primaryHovered.idle(mToolMode);
+            mInteractionState.primaryHovered = null;
+            mHelperPointController.hidePoint(true);
+            if (mInteractionState.secondaryHovered) mInteractionState.secondaryHovered.idle(mToolMode);
+            mInteractionState.secondaryHovered = null;
+            mHelperPointController.hidePoint(false);
+
             if (mToolMode.tool == buttonId && buttonId != ToolButtons.MOVE) {
                 buttonId = ToolButtons.MOVE;
             }
@@ -275,31 +291,15 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
             mAudioRecorder.forwardAudioFile();
         } else if (buttonId == RecordToolButtons.ACCEPT) {
             if (mAudioRecorder.hasContent()) {
-                let parentMoment = mModel.moments.find(m => m.id == mCurrentMomentId);
-                if (!parentMoment) { console.error("invalid moment id: " + mCurrentMomentId); return; }
-
                 let point = target.getIntersection().point;
                 let audioBlob = mAudioRecorder.getAudioBlob();
+                mAudioRecorder.clearRecorder();
                 let assetId = IdUtil.getUniqueId(Data.Asset);
                 let filename = assetId + '.weba';
                 await mAssetCreateCallback(assetId, filename, AssetTypes.AUDIO, audioBlob);
 
-                let id = IdUtil.getUniqueId(Data.Audio);
-                parentMoment.audioIds.push(id);
-
-                await mModelUpdateCallback([
-                    new ModelUpdate({
-                        id,
-                        assetId,
-                        x: point.x, y: point.y, z: point.z,
-                    }),
-                    new ModelUpdate({
-                        id: parentMoment.id,
-                        audioIds: parentMoment.audioIds,
-                    }),
-                ]);
+                await mModelUpdateCallback(DataUtil.getAudioCreationUpdates(mModel, mCurrentMomentId, assetId, point));
             }
-            console.log('get the audio and create an audio asset and audio node');
         } else if (buttonId == RecordToolButtons.DELETE) {
             mAudioRecorder.clearRecorder();
         } else if (buttonId == AttributeButtons.SPHERE_TOGGLE) {
@@ -330,6 +330,11 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
                 let updates = await DataUtil.getPictureCreationUpdates(
                     mModel, mCurrentMomentId, assetId,
                     point, new THREE.Quaternion());
+                await mModelUpdateCallback(updates);
+            } else if (menuId == MenuNavButtons.ADD_AUDIO) {
+                let assetId = buttonId;
+                let updates = await DataUtil.getAudioCreationUpdates(
+                    mModel, mCurrentMomentId, assetId, point);
                 await mModelUpdateCallback(updates);
             } else {
                 console.error("not implimented!!");

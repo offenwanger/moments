@@ -3,7 +3,7 @@ import { Data } from "../../data.js";
 import { InteractionTargetInterface } from "./interaction_target_interface.js";
 import { ToolButtons } from '../../constants.js';
 
-export function PictureWrapper(parent) {
+export function PictureWrapper(parent, audioListener) {
     let mParent = parent;
     let mPicture = new Data.Picture();
     let mInteractionTarget = createInteractionTarget();
@@ -26,8 +26,11 @@ export function PictureWrapper(parent) {
     mAudioSprite.position.x = -0.5;
     mAudioSprite.position.y = 0.5;
 
+    const mSound = new THREE.PositionalAudio(audioListener);
+    let mInteractionSound = false;
+
     const mPlanes = new THREE.Group();
-    mPlanes.add(mFrontPlane, mBackPlane);
+    mPlanes.add(mFrontPlane, mBackPlane, mSound);
     mParent.add(mPlanes);
 
     async function update(picture, model, assetUtil) {
@@ -62,6 +65,17 @@ export function PictureWrapper(parent) {
         let audio = model.audios.find(a => a.attachedId == picture.id);
         if (audio) {
             mPlanes.add(mAudioSprite);
+
+            let buffer = await assetUtil.loadAudioBuffer(audio.assetId);
+            mSound.setBuffer(buffer);
+            mSound.setLoop(true);
+            mSound.setVolume(audio.volume);
+            if (audio.ambient) {
+                mSound.play();
+            } else {
+                mInteractionSound = true;
+            }
+
             mInteractionTarget.isAudio = () => true;
         } else {
             mPlanes.remove(mAudioSprite);
@@ -77,6 +91,7 @@ export function PictureWrapper(parent) {
 
     function remove() {
         mParent.remove(mPlanes);
+        mSound.stop();
     }
 
     function getTargets(ray, toolMode) {
@@ -114,7 +129,7 @@ export function PictureWrapper(parent) {
             mPlanes.quaternion.copy(orientation)
         }
         target.getScale = () => {
-            return mPlane.scale.x;
+            return mPlanes.scale.x;
         }
         target.setScale = (scale) => {
             mPlanes.scale.set(scale, scale * mRatio, scale);
@@ -133,6 +148,10 @@ export function PictureWrapper(parent) {
             mFrontPlane.material.needsUpdate = true;
             mBackPlane.material.color.set(0xaaaaaa);
             mBackPlane.material.needsUpdate = true;
+            if (mInteractionSound) { mSound.pause(); }
+        }
+        target.select = (toolMode) => {
+            if (mInteractionSound) { mSound.play(); }
         }
         target.getId = () => mPicture.id;
         return target;

@@ -257,7 +257,7 @@ class PoseableAsset extends DataItem {
 }
 
 class Picture extends DataItem {
-    name = "Picture"
+    name = "Picture";
     x = 0; y = 0; z = 0;
     orientation = [0, 0, 0, 1];
     scale = 0.3;
@@ -265,10 +265,12 @@ class Picture extends DataItem {
 }
 
 class Audio extends DataItem {
+    name = "Audio";
     assetId = null;
     x = 0; y = 0; z = 0;
     attachedId = null;
     volume = 1;
+    ambient = false;
 }
 
 class Teleport extends DataItem {

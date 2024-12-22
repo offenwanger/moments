@@ -33,16 +33,9 @@ function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMo
 
     if (interactionState.type == InteractionType.NONE) {
         if (isPrimary) {
-            let targets = sceneController.getTargets(raycaster, toolMode)
-            if (targets.length == 0) {
-                sessionController.hovered(false, isPrimary)
-            } else {
-                let closest = Util.getClosestTarget(raycaster.ray, targets);
-                closest.highlight(toolMode);
-                helperPointController.showPoint(isPrimary, closest.getIntersection().point);
-                interactionState.primaryHovered = closest;
-                sessionController.hovered(true, isPrimary)
-            }
+            let targets = sceneController.getTargets(raycaster, toolMode);
+            let closest = Util.getClosestTarget(raycaster.ray, targets);
+            Util.updateHoverTargetHighlight(closest, interactionState, toolMode, isPrimary, sessionController, helperPointController);
         } else {
             // do nothing.
         }
@@ -74,26 +67,16 @@ function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMo
         if (targets.length == 0) {
             let moveClass = IdUtil.getClass(interactionState.data.rootTarget.getId());
             targets = getDropTargets(raycaster, toolMode, moveClass, sceneController);
-            if (targets.length > 0) {
-                let closest = Util.getClosestTarget(raycaster.ray, targets);
-                closest.highlight(toolMode);
-                helperPointController.showPoint(isPrimary, closest.getIntersection().point);
-                interactionState.primaryHovered = closest;
-                sessionController.hovered(true, isPrimary)
-            }
+            let closest = Util.getClosestTarget(raycaster.ray, targets);
+            Util.updateHoverTargetHighlight(closest, interactionState, toolMode, isPrimary, sessionController, helperPointController);
         }
     } else if (interactionState.type == InteractionType.ONE_HAND_MOVE && !isPrimary) {
         // highlight 2 handed interactions
         let targets = sceneController.getTargets(raycaster, toolMode)
         // the only valid targets are the dragged object or bones belonging to it. 
         targets = targets.filter(t => t.getRoot().getId() == interactionState.data.rootTarget.getId());
-        if (targets.length > 0) {
-            let closest = Util.getClosestTarget(raycaster.ray, targets);
-            closest.highlight(toolMode);
-            helperPointController.showPoint(isPrimary, closest.getIntersection().point);
-            interactionState.secondaryHovered = closest;
-            sessionController.hovered(true, isPrimary)
-        }
+        let closest = Util.getClosestTarget(raycaster.ray, targets);
+        Util.updateHoverTargetHighlight(closest, interactionState, toolMode, isPrimary, sessionController, helperPointController);
     } else if (interactionState.type == InteractionType.TWO_HAND_MOVE) {
         if (isPrimary) {
             let fromRay = interactionState.data.primaryStartRay;
@@ -161,11 +144,14 @@ function pointerMove(raycaster, orientation, isPrimary, interactionState, toolMo
     }
 }
 
-function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMode, model, sessionController, sceneController, points) {
+function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMode, model, sessionController, sceneController, helperPointController) {
     let hovered = isPrimary ? interactionState.primaryHovered : interactionState.secondaryHovered;
     if (hovered) {
         if (interactionState.type == InteractionType.NONE) {
             startOneHandMove(raycaster, orientation, hovered, interactionState, sceneController)
+            // we are selecting so we are no longer hovered.
+            isPrimary ? interactionState.primaryHovered = null : interactionState.secondaryHovered = null;
+            helperPointController.hidePoint(isPrimary);
         } else if (interactionState.type == InteractionType.ONE_HAND_MOVE) {
             if (interactionState.data.target.getId() == hovered.getId()) {
                 startTwoHandMove(raycaster.ray, orientation, hovered);
@@ -188,6 +174,12 @@ function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode
     let updates = []
 
     if (type == InteractionType.ONE_HAND_MOVE) {
+        // idle the hovered
+        Util.updateHoverTargetHighlight(data.target, interactionState, toolMode, isPrimary, sessionController, helperPointController);
+        // idle the target
+        Util.updateHoverTargetHighlight(null, interactionState, toolMode, isPrimary, sessionController, helperPointController);
+
+
         let targets = [];
         if (data.rootTarget.isTeleport()) {
             // TODO: Update this to check if an item has a teleport attached. 
@@ -276,6 +268,8 @@ function pointerUp(raycaster, orientation, isPrimary, interactionState, toolMode
 
 
 function startOneHandMove(raycaster, orientation, target, interactionState, sceneController) {
+    target.select();
+
     interactionState.type = InteractionType.ONE_HAND_MOVE;
     let rootTarget = target.getRoot();
     interactionState.data = {

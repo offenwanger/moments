@@ -64,12 +64,12 @@ export function MenuController() {
 
     mMenus[MenuNavButtons.ADD] = createMenu(MenuNavButtons.ADD, [
         new MeshButton(MenuNavButtons.BACK_BUTTON, 'Back', BUTTON_SIZE),
-        new MeshButton(MenuNavButtons.ADD_AUDIO, 'Audio', BUTTON_SIZE, 0xff0000),
+        new MeshButton(MenuNavButtons.ADD_AUDIO, 'Audio', BUTTON_SIZE),
         new MeshButton(MenuNavButtons.ADD_PICTURE, 'Picture', BUTTON_SIZE),
         new MeshButton(MenuNavButtons.ADD_MODEL, 'Model', BUTTON_SIZE),
         new MeshButton(MenuNavButtons.ADD_TELEPORT, 'Teleport', BUTTON_SIZE),
     ]);
-    mParentLinks[MenuNavButtons.SETTINGS] = MenuNavButtons.MAIN_MENU;
+    mParentLinks[MenuNavButtons.ADD] = MenuNavButtons.MAIN_MENU;
 
     mMenus[MenuNavButtons.ADD_AUDIO] = mAudioSelectMenu;
     mParentLinks[MenuNavButtons.ADD_AUDIO] = MenuNavButtons.ADD;
@@ -98,7 +98,7 @@ export function MenuController() {
         new MeshButton(RecordToolButtons.REWIND, 'Rewind', BUTTON_SIZE),
         new MeshButton(RecordToolButtons.PLAYPAUSE, 'Play/Pause', BUTTON_SIZE),
         new MeshButton(RecordToolButtons.FORWARD, 'Forward', BUTTON_SIZE),
-        new MeshButton(RecordToolButtons.ACCEPT, 'Accept', BUTTON_SIZE, 0xff0000),
+        new MeshButton(RecordToolButtons.ACCEPT, 'Accept', BUTTON_SIZE),
         new MeshButton(RecordToolButtons.DELETE, 'Delete', BUTTON_SIZE),
     ]);
 
@@ -114,8 +114,15 @@ export function MenuController() {
     }
 
     function showMenu(menuId) {
-        mMenuContainer.remove(mCurrentMenu.getObject());
+        if (menuId == MenuNavButtons.PREVIOUS_BUTTON) {
+            mMenus[mCurrentMenuId].decrementItemOffset(); return;
+        }
 
+        if (menuId == MenuNavButtons.NEXT_BUTTON) {
+            mMenus[mCurrentMenuId].incrementItemOffset(); return;
+        }
+
+        mMenuContainer.remove(mCurrentMenu.getObject());
         if (menuId == MenuNavButtons.BACK_BUTTON) {
             menuId = mParentLinks[mCurrentMenuId];
             if (!menuId) { console.error('No parent specified for ' + mCurrentMenuId); }
@@ -221,11 +228,11 @@ export function MenuController() {
             new MeshButton(MenuNavButtons.BACK_BUTTON, 'Back', BUTTON_SIZE),
             new MeshButton(MenuNavButtons.PREVIOUS_BUTTON, 'Prev', BUTTON_SIZE),
             new MeshButton(MenuNavButtons.NEXT_BUTTON, 'Next', BUTTON_SIZE),
-        ]);
+        ], 6);
     }
 
-    function createMenu(id, buttons) {
-        let menu = new ButtonMenu(id, MENU_WIDTH);
+    function createMenu(id, buttons, paginate = 0) {
+        let menu = new ButtonMenu(id, MENU_WIDTH, paginate);
         menu.add(...buttons);
         menu.onAfterUpdate(() => {
             if (mSingleContainer && menu == mCurrentMenu && mCurrentSubMenu) {

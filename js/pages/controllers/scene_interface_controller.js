@@ -382,6 +382,22 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
     }
 
     async function updateModel(model, assetUtil) {
+        // clear the highlighting / hovering.
+        Util.updateHoverTargetHighlight(
+            null,
+            mInteractionState,
+            mToolMode,
+            true,
+            mCurrentSessionController,
+            mHelperPointController)
+        Util.updateHoverTargetHighlight(
+            null,
+            mInteractionState,
+            mToolMode,
+            false,
+            mCurrentSessionController,
+            mHelperPointController)
+
         if (mModel.id != model.id) {
             let dir = new THREE.Vector3(0, 0, -1);
             let pos = new THREE.Vector3(0, 0, 0);

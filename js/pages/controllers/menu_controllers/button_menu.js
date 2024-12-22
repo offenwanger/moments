@@ -1,10 +1,12 @@
 import * as ThreeMeshUI from 'three-mesh-ui';
 import { MeshButton } from './mesh_button.js';
 
-export function ButtonMenu(id, width) {
+export function ButtonMenu(id, width, paginate = 0) {
     const PADDING = 0.1;
     let mOnAfterUpdateCallback = () => { }
     let mVOffset = 0
+    let mPaginate = paginate;
+    let mItemOffset = 0;
 
     // set of MeshButtons
     let mButtons = [];
@@ -27,8 +29,21 @@ export function ButtonMenu(id, width) {
     function layout() {
         mContainer.remove(...mRows)
         mRows = [];
-        for (let i = 0; i < mButtons.length; i += 3) {
-            let buttons = mButtons.slice(i, i + 3);
+        let buttonsSubset = mButtons;
+        if (mPaginate > 0) {
+            let dynamicButtons = mButtons.filter(b => b.isDynamic());
+            // wrap into the offset range, then ensure it's positive, then make sure it's not over the end of the line.
+            let offset = ((mItemOffset % dynamicButtons.length) + dynamicButtons.length) % dynamicButtons.length;
+            if (dynamicButtons.length > paginate) {
+                let buttons = dynamicButtons.slice(offset, offset + mPaginate);
+                if (buttons.length < mPaginate) {
+                    buttons.unshift(...dynamicButtons.slice(0, mPaginate - buttons.length));
+                }
+                buttonsSubset = mButtons.filter(b => !b.isDynamic()).concat(buttons);
+            }
+        }
+        for (let i = 0; i < buttonsSubset.length; i += 3) {
+            let buttons = buttonsSubset.slice(i, i + 3);
             let row = new ThreeMeshUI.Block({
                 contentDirection: 'row',
                 backgroundOpacity: 0,
@@ -41,7 +56,7 @@ export function ButtonMenu(id, width) {
             mContainer.add(row)
         }
 
-        mContainer.update(false, true, false);
+        mContainer.update(true, true, false);
     }
 
     function setVOffset(offset) {
@@ -81,6 +96,15 @@ export function ButtonMenu(id, width) {
         layout();
     }
 
+    function incrementItemOffset() {
+        mItemOffset += 3;
+        layout();
+    }
+    function decrementItemOffset() {
+        mItemOffset -= 3;
+        layout();
+    }
+
     this.add = add;
     this.remove = remove;
     this.empty = empty;
@@ -88,4 +112,6 @@ export function ButtonMenu(id, width) {
     this.getButtons = () => [...mButtons];
     this.onAfterUpdate = (func) => mOnAfterUpdateCallback = func;
     this.setVOffset = setVOffset;
+    this.incrementItemOffset = incrementItemOffset;
+    this.decrementItemOffset = decrementItemOffset;
 }

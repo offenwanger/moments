@@ -55,7 +55,6 @@ export function AssetPanel(container) {
         .setLabel('Delete')
         .setOnClick(async () => {
             await mDeleteCallback(mAssetId);
-            await mNavigationCallback(mModel.id);
         })
 
     function show(model, assetId) {

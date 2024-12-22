@@ -274,6 +274,7 @@ class Audio extends DataItem {
 }
 
 class Teleport extends DataItem {
+    name = "Teleport";
     momentId = null;
     x = 0; y = 0; z = 0;
     attachedId = null;

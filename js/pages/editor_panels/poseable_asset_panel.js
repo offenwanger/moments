@@ -11,6 +11,7 @@ export function PoseableAssetPanel(container) {
     let mModel = null;
     let mPoseableAssetId = null;
     let mPoseableAsset = null;
+    let mMomentId = null;
 
     let mPanelContainer = document.createElement("div")
     container.appendChild(mPanelContainer);
@@ -18,8 +19,9 @@ export function PoseableAssetPanel(container) {
 
     let mBackButton = new ButtonInput(mPanelContainer)
         .setId('poseableAsset-back-button')
+        .setLabel("<- Back")
         .setOnClick(async () => {
-            mNavigationCallback(mModel.id);
+            await mNavigationCallback(mMomentId);
         })
 
     let mNameInput = new TextInput(mPanelContainer)
@@ -29,30 +31,16 @@ export function PoseableAssetPanel(container) {
             await mUpdateAttributeCallback(mPoseableAssetId, { name: newText });
         });
 
-    let mAssetButton = new ButtonInput(mPanelContainer)
-        .setId('poseableAsset-asset-button')
-        .setOnClick(async () => {
-            if (mPoseableAsset.assetId) {
-                mNavigationCallback(mPoseableAsset.assetId)
-            }
-        })
-
-
-    let mLabel = document.createElement('div');
-    mLabel.textContent = "Component Values";
-    mPanelContainer.appendChild(mLabel);
-
-    let mAssetComponentContainer = document.createElement('div');
-    mAssetComponentContainer.setAttribute('id', 'component-list');
-    mPanelContainer.appendChild(mAssetComponentContainer)
-    let mAssetComponentList = [];
+    let mAssetPosesContainer = document.createElement('div');
+    mAssetPosesContainer.setAttribute('id', 'poseable-asset-asset-poses');
+    mPanelContainer.appendChild(mAssetPosesContainer)
+    let mAssetPosesList = [];
 
     let mDeleteButton = new ButtonInput(mPanelContainer)
         .setId('poseableAsset-delete-button')
         .setLabel('Delete')
         .setOnClick(async () => {
             await mDeleteCallback(mPoseableAssetId);
-            await mNavigationCallback(mModel.id);
         })
 
     function show(model, poseableAssetId) {
@@ -60,29 +48,18 @@ export function PoseableAssetPanel(container) {
         mPoseableAssetId = poseableAssetId;
         mPoseableAsset = mModel.find(mPoseableAssetId);
 
-        mBackButton.setLabel("<- Story");
+        let moment = mModel.moments.find(m => m.poseableAssetIds.includes(mPoseableAssetId));
+        if (!moment) { console.error("Moment not found!"); }
+        else mMomentId = moment.id;
 
         mNameInput.setText(mPoseableAsset.name);
 
-        let asset = model.find(mPoseableAsset.assetId);
-        mAssetButton.setLabel(asset ? asset.name : "<i>Not Set<i/>")
-
-        Util.setComponentListLength(mAssetComponentList, mPoseableAsset.poseIds.length, () => {
-            let component = new ComponentInput(mAssetComponentContainer)
-            component.onUpdateAttribute(async (id, attrs) => {
-                await mUpdateAttributeCallback(id, attrs);
-            });
-            return component;
-        })
-        let poses = mModel.assetPoses.filter(p => mPoseableAsset.poseIds.includes(p.id))
-        for (let i = 0; i < poses.length; i++) {
-            let pose = poses[i];
-            mAssetComponentList[i].setId("component-" + pose.id)
-                .setPosition(pose.type == "Mesh" ? pose : false)
-                .setOrientation(pose.orientation)
-                .setScale(pose.scale)
-                .setName(pose.name)
-                .setComponentId(pose.id);
+        let assetPoses = model.assetPoses.filter(p => mPoseableAsset.poseIds.includes(p.id));
+        Util.setComponentListLength(mAssetPosesList, assetPoses.length, () => new ButtonInput(mAssetPosesContainer))
+        for (let i = 0; i < assetPoses.length; i++) {
+            mAssetPosesList[i].setId("assetpose-button-" + assetPoses[i].id)
+                .setLabel(assetPoses[i].name)
+                .setOnClick(async () => await mNavigationCallback(assetPoses[i].id));
         }
 
         mPanelContainer.style['display'] = '';

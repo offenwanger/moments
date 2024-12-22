@@ -16,7 +16,7 @@ export function MomentPanel(container) {
     container.appendChild(mPanelContainer); hide();
 
     let mBackButton = new ButtonInput(mPanelContainer)
-        .setId('picture-back-button')
+        .setId('moment-back-button')
         .setLabel("<- Story")
         .setOnClick(async () => {
             await mNavigationCallback(mModel.id);
@@ -48,12 +48,16 @@ export function MomentPanel(container) {
     mPanelContainer.appendChild(mAudiosContainer)
     let mAudiosList = [];
 
+    let mTeleportsContainer = document.createElement('div');
+    mTeleportsContainer.setAttribute('id', 'moment-teleports');
+    mPanelContainer.appendChild(mTeleportsContainer)
+    let mTeleportsList = [];
+
     let mDeleteButton = new ButtonInput(mPanelContainer)
         .setId('moment-delete-button')
         .setLabel('Delete')
         .setOnClick(async () => {
             await mDeleteCallback(mMoment.id);
-            await mNavigationCallback(mModel.id);
         })
 
     function show(model, momentId) {
@@ -94,6 +98,13 @@ export function MomentPanel(container) {
             mAudiosList[i].setId("audio-button-" + audios[i].id)
                 .setLabel(audios[i].name)
                 .setOnClick(async () => await mNavigationCallback(audios[i].id));
+        }
+        let teleports = model.teleports.filter(t => mMoment.teleportIds.includes(t.id));
+        Util.setComponentListLength(mTeleportsList, teleports.length, () => new ButtonInput(mTeleportsContainer))
+        for (let i = 0; i < teleports.length; i++) {
+            mTeleportsList[i].setId("teleport-button-" + teleports[i].id)
+                .setLabel(teleports[i].name)
+                .setOnClick(async () => await mNavigationCallback(teleports[i].id));
         }
 
         mPanelContainer.style['display'] = '';

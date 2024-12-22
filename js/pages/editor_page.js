@@ -227,6 +227,10 @@ export function EditorPage(parentContainer, mWebsocketController) {
         await createMoment();
     });
 
+    mSceneInterface.onSelect(async (id) => {
+        mSidebarController.navigate(id);
+    });
+
     mWebsocketController.onUpdateAsset(async (id, name, buffer) => {
         let file = new File([buffer], name);
         await mWorkspace.updateAsset(file);

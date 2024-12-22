@@ -27,6 +27,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
     let mAssetCreateCallback = async () => { }
     let mTeleportCallback = async () => { }
     let mCreateMomentCallback = async () => { }
+    let mSelectCallback = async () => { }
 
     RecorderToolHandler.setRecorder(mAudioRecorder);
 
@@ -179,7 +180,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
         } else {
             let handler = getToolHandler(mToolMode.tool)
             if (!handler) { console.error("Tool not handled: " + mToolMode.tool); return; }
-            await handler.pointerDown(
+            let selectedTargetId = await handler.pointerDown(
                 raycaster,
                 orientation,
                 isPrimary,
@@ -189,6 +190,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
                 mCurrentSessionController,
                 mSceneController,
                 mHelperPointController);
+            if (selectedTargetId) await mSelectCallback(selectedTargetId);
         }
     }
 
@@ -431,5 +433,6 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
     this.onAssetCreate = (func) => mAssetCreateCallback = func;
     this.onTeleport = (func) => mTeleportCallback = func;
     this.onCreateMoment = (func) => mCreateMomentCallback = func;
+    this.onSelect = (func) => mSelectCallback = func;
 }
 

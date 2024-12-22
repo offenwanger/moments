@@ -2,15 +2,14 @@ import { Data } from "../../data.js";
 import { ButtonInput } from "../components/button_input.js";
 import { TextInput } from "../components/text_input.js";
 
-export function AudioPanel(container) {
+export function TeleportPanel(container) {
     let mUpdateAttributeCallback = async (id, attrs) => { };
     let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
-    let mCloseEditAudioCallback = async (id) => { };
 
     let mModel = new Data.StoryModel();
-    let mAudio = new Data.Audio();
-    let mAudioId = null;
+    let mTeleport = new Data.Teleport();
+    let mTeleportId = null;
     let mMomentId = null;
 
     let mPanelContainer = document.createElement('div');
@@ -18,17 +17,17 @@ export function AudioPanel(container) {
     hide();
 
     let mBackButton = new ButtonInput(mPanelContainer)
-        .setId('audio-back-button')
+        .setId('teleport-back-button')
         .setLabel("<- Back")
         .setOnClick(async () => {
             await mNavigationCallback(mMomentId);
         });
 
     let mNameInput = new TextInput(mPanelContainer)
-        .setId('audio-name-input')
+        .setId('teleport-name-input')
         .setLabel("Name")
         .setOnChange(async (newText) => {
-            await mUpdateAttributeCallback(mAudioId, { name: newText });
+            await mUpdateAttributeCallback(mTeleportId, { name: newText });
         });
 
     let mPositionHeader = document.createElement('div');
@@ -51,26 +50,26 @@ export function AudioPanel(container) {
         });
 
     let mDeleteButton = new ButtonInput(mPanelContainer)
-        .setId('audio-delete-button')
+        .setId('teleport-delete-button')
         .setLabel('Delete')
         .setOnClick(async () => {
-            await mDeleteCallback(mAudioId);
+            await mDeleteCallback(mTeleportId);
         })
 
-    function show(model, audioId) {
+    function show(model, teleportId) {
         mModel = model;
-        mAudioId = audioId;
-        mAudio = mModel.find(audioId);
+        mTeleportId = teleportId;
+        mTeleport = mModel.find(teleportId);
 
-        let moment = mModel.moments.find(m => m.audioIds.includes(mAudioId));
+        let moment = mModel.moments.find(m => m.teleportIds.includes(mTeleportId));
         if (!moment) { console.error("Moment not found!"); }
         else mMomentId = moment.id;
 
-        mNameInput.setText(mAudio.name);
+        mNameInput.setText(mTeleport.name);
 
-        mPositionXInput.setText(Math.round(mAudio.x * 1000) / 1000);
-        mPositionYInput.setText(Math.round(mAudio.y * 1000) / 1000);
-        mPositionZInput.setText(Math.round(mAudio.z * 1000) / 1000);
+        mPositionXInput.setText(Math.round(mTeleport.x * 1000) / 1000);
+        mPositionYInput.setText(Math.round(mTeleport.y * 1000) / 1000);
+        mPositionZInput.setText(Math.round(mTeleport.z * 1000) / 1000);
 
         mPanelContainer.style['display'] = '';
     }
@@ -84,6 +83,5 @@ export function AudioPanel(container) {
     this.hide = hide;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
     this.setDeleteCallback = (func) => mDeleteCallback = func;
-    this.setCloseEditAudioCallback = (func) => mCloseEditAudioCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
 }

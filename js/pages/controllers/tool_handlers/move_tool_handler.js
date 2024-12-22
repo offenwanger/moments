@@ -152,6 +152,7 @@ function pointerDown(raycaster, orientation, isPrimary, interactionState, toolMo
             // we are selecting so we are no longer hovered.
             isPrimary ? interactionState.primaryHovered = null : interactionState.secondaryHovered = null;
             helperPointController.hidePoint(isPrimary);
+            return hovered.getId();
         } else if (interactionState.type == InteractionType.ONE_HAND_MOVE) {
             if (interactionState.data.target.getId() == hovered.getId()) {
                 startTwoHandMove(raycaster.ray, orientation, hovered);

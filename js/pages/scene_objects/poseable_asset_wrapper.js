@@ -106,7 +106,7 @@ export function PoseableAssetWrapper(parent, audioListener) {
                 object.userData.isTeleport = true;
             } else {
                 if (mTeleportSprites[pose.id]) {
-                    mTeleportSprites[pose.id].remove();
+                    mTeleportSprites[pose.id].parent.remove(mTeleportSprites[pose.id]);
                     delete mTeleportSprites[pose.id];
                 }
                 object.userData.isTeleport = false;
@@ -135,6 +135,10 @@ export function PoseableAssetWrapper(parent, audioListener) {
                 object.userData.interactionAudio = !audio.ambient;
                 object.userData.isAudio = true;
             } else {
+                if (mAudioSprites[pose.id]) {
+                    mAudioSprites[pose.id].parent.remove(mAudioSprites[pose.id]);
+                    delete mAudioSprites[pose.id];
+                }
                 object.userData.isAudio = false;
             }
         }

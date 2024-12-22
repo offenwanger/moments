@@ -82,20 +82,6 @@ export function EditorPage(parentContainer, mWebsocketController) {
     })
 
     let mAssetPicker = new AssetPicker(parentContainer);
-    mAssetPicker.onNewAsset(async (file, type) => {
-        if (!mWorkspace) {
-            await mWebsocketController.newAsset(file, type)
-        } else {
-            let newFilename = await mWorkspace.storeAsset(file);
-            let asset = null;
-            if (type == AssetTypes.MODEL) {
-                asset = await mAssetUtil.loadGLTFModel(newFilename);
-            }
-            let updates = await DataUtil.getAssetCreationUpdates(file.name, newFilename, type, asset);
-            await mModelController.applyUpdates(updates);
-        }
-        await updateModel();
-    })
     mAssetPicker.onAssetsUpload(async (files) => {
         let updates = [];
         for (let file of files) {
@@ -114,15 +100,17 @@ export function EditorPage(parentContainer, mWebsocketController) {
                     }
                 }
 
+                let id = IdUtil.getUniqueId(Data.Asset);
                 if (!mWorkspace) {
-                    await mWebsocketController.newAsset(file, type)
+                    await mWebsocketController.newAsset(id, file, type)
                 } else {
                     let newFilename = await mWorkspace.storeAsset(file);
                     let asset = null;
                     if (type == AssetTypes.MODEL) {
                         asset = await mAssetUtil.loadGLTFModel(newFilename);
                     }
-                    updates.push(...(await DataUtil.getAssetCreationUpdates(file.name, newFilename, type, asset)));
+                    updates.push(...(await DataUtil.getAssetCreationUpdates(
+                        id, file.name, newFilename, type, asset)));
                 }
             } catch (e) {
                 console.error(e);
@@ -180,7 +168,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         updateModel();
     })
 
-    mWebsocketController.onNewAsset(async (name, buffer, type) => {
+    mWebsocketController.onNewAsset(async (id, name, buffer, type) => {
         let file = new File([buffer], name);
         let newFilename = await mWorkspace.storeAsset(file);
         await mWebsocketController.uploadAsset(mModelController.getModel().id, newFilename, mWorkspace);
@@ -189,7 +177,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
         if (type == AssetTypes.MODEL) {
             asset = await mAssetUtil.loadGLTFModel(newFilename);
         }
-        let updates = await DataUtil.getAssetCreationUpdates(file.name, newFilename, type, asset);
+        let updates = await DataUtil.getAssetCreationUpdates(id, file.name, newFilename, type, asset);
         await mModelController.applyUpdates(updates);
         updateModel();
     })
@@ -205,6 +193,25 @@ export function EditorPage(parentContainer, mWebsocketController) {
             await mWebsocketController.uploadAsset(mModelController.getModel().id, asset.filename, mWorkspace);
             await mModelController.applyUpdates([new ModelUpdate({ id, updated: Date.now() })]);
             await updateModel();
+        }
+    });
+
+    mSceneInterface.onAssetCreate(async (id, name, type, blob) => {
+        let asset = mModelController.getModel().find(id);
+        if (!asset) { console.error('Invalid id: ' + id); }
+        let file = new File([blob], name);
+        if (!mWorkspace) {
+            await mWebsocketController.newAsset(id, file, type)
+        } else {
+            let newFilename = await mWorkspace.storeAsset(file);
+            let asset = null;
+            if (type == AssetTypes.MODEL) {
+                asset = await mAssetUtil.loadGLTFModel(newFilename);
+            }
+            let updates = await DataUtil.getAssetCreationUpdates(
+                id, file.name, newFilename, type, asset)
+            await mModelController.applyUpdates(updates);
+            updateModel();
         }
     });
 

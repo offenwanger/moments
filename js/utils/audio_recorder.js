@@ -140,6 +140,7 @@ export function AudioRecorder() {
     this.rewindAudioFile = rewindAudioFile;
     this.forwardAudioFile = forwardAudioFile;
     this.isPlaying = () => mIsPlaying;
+    this.hasContent = () => mChunks.length > 1;
     this.animate = animate;
     this.getCanvas = () => mCanvas;
     this.getAudioBlob = getAudioBlob;

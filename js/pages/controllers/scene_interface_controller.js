@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { ASSET_UPDATE_COMMAND, AttributeButtons, BrushToolButtons, InteractionType, ItemButtons, MenuNavButtons, RecordToolButtons, SurfaceToolButtons, TELEPORT_COMMAND, ToolButtons } from "../../constants.js";
+import { ASSET_UPDATE_COMMAND, AssetTypes, AttributeButtons, BrushToolButtons, InteractionType, ItemButtons, MenuNavButtons, RecordToolButtons, SurfaceToolButtons, TELEPORT_COMMAND, ToolButtons } from "../../constants.js";
 import { Data } from "../../data.js";
 import { IdUtil } from "../../utils/id_util.js";
 import { Util } from "../../utils/utility.js";
@@ -24,6 +24,7 @@ import { RecorderToolHandler } from "./tool_handlers/recorder_tool_handler.js";
 export function SceneInterfaceController(parentContainer, mWebsocketController, mAudioRecorder) {
     let mModelUpdateCallback = async () => { }
     let mAssetUpdateCallback = async () => { }
+    let mAssetCreateCallback = async () => { }
     let mTeleportCallback = async () => { }
     let mCreateMomentCallback = async () => { }
 
@@ -273,6 +274,31 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
         } else if (buttonId == RecordToolButtons.FORWARD) {
             mAudioRecorder.forwardAudioFile();
         } else if (buttonId == RecordToolButtons.ACCEPT) {
+            if (mAudioRecorder.hasContent()) {
+                let parentMoment = mModel.moments.find(m => m.id == mCurrentMomentId);
+                if (!parentMoment) { console.error("invalid moment id: " + mCurrentMomentId); return; }
+
+                let point = target.getIntersection().point;
+                let audioBlob = mAudioRecorder.getAudioBlob();
+                let assetId = IdUtil.getUniqueId(Data.Asset);
+                let filename = assetId + '.weba';
+                await mAssetCreateCallback(assetId, filename, AssetTypes.AUDIO, audioBlob);
+
+                let id = IdUtil.getUniqueId(Data.Audio);
+                parentMoment.audioIds.push(id);
+
+                await mModelUpdateCallback([
+                    new ModelUpdate({
+                        id,
+                        assetId,
+                        x: point.x, y: point.y, z: point.z,
+                    }),
+                    new ModelUpdate({
+                        id: parentMoment.id,
+                        audioIds: parentMoment.audioIds,
+                    }),
+                ]);
+            }
             console.log('get the audio and create an audio asset and audio node');
         } else if (buttonId == RecordToolButtons.DELETE) {
             mAudioRecorder.clearRecorder();
@@ -381,6 +407,7 @@ export function SceneInterfaceController(parentContainer, mWebsocketController, 
     this.sessionStart = sessionStart;
     this.onModelUpdate = (func) => mModelUpdateCallback = func;
     this.onAssetUpdate = (func) => mAssetUpdateCallback = func;
+    this.onAssetCreate = (func) => mAssetCreateCallback = func;
     this.onTeleport = (func) => mTeleportCallback = func;
     this.onCreateMoment = (func) => mCreateMomentCallback = func;
 }

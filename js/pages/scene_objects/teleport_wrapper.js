@@ -31,12 +31,8 @@ export function TeleportWrapper(parent) {
     mSphere.add(mTeleportSprite)
 
     async function update(teleport, model, assetUtil) {
-        if (true /* teleport is not attached */) {
-            mParent.add(mSphere);
-            mSphere.position.set(teleport.x, teleport.y, teleport.z);
-        } else {
-            // Put teleport icon on connected object.
-        }
+        mParent.add(mSphere);
+        mSphere.position.set(teleport.x, teleport.y, teleport.z);
         mSphere.userData.id = teleport.id;
         mTeleport = teleport;
     }

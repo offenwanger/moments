@@ -69,7 +69,7 @@ export function WebsocketController() {
     });
 
     mWebSocket.on(ServerMessage.NEW_ASSET, async (data) => {
-        await mNewAssetCallback(data.name, data.buffer, data.type);
+        await mNewAssetCallback(data.id, data.name, data.buffer, data.type);
     });
 
     mWebSocket.on(ServerMessage.UPDATE_ASSET, async (data) => {
@@ -150,9 +150,9 @@ export function WebsocketController() {
         logInfo(filename + " uploaded.");
     }
 
-    async function newAsset(file, type) {
+    async function newAsset(id, file, type) {
         let buffer = await file.arrayBuffer();
-        mWebSocket.emit(ServerMessage.NEW_ASSET, { name: file.name, type, buffer })
+        mWebSocket.emit(ServerMessage.NEW_ASSET, { id, name: file.name, type, buffer })
     }
 
     async function updateAsset(id, file) {

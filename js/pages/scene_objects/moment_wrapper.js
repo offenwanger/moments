@@ -50,7 +50,7 @@ export function MomentWrapper(parent) {
                 });
 
             await SceneUtil.updateWrapperArray(mAudioWrappers,
-                mModel.audios.filter(a => moment.audioIds.includes(a.id)),
+                mModel.audios.filter(a => moment.audioIds.includes(a.id) && !a.attachedId),
                 mModel,
                 assetUtil,
                 async (audio) => {

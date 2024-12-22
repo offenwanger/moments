@@ -79,7 +79,7 @@ async function getPoseableAssetCreationUpdates(model, parentId, assetId = null) 
     return updates;
 }
 
-async function getAssetCreationUpdates(name, filename, type, asset = null) {
+async function getAssetCreationUpdates(id, name, filename, type, asset = null) {
     let updates = [];
 
     let poseIds = [];
@@ -108,7 +108,7 @@ async function getAssetCreationUpdates(name, filename, type, asset = null) {
     }
 
     updates.push(new ModelUpdate({
-        id: IdUtil.getUniqueId(Data.Asset),
+        id,
         name,
         filename,
         type,

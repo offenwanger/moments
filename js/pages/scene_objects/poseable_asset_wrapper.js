@@ -22,6 +22,7 @@ export function PoseableAssetWrapper(parent) {
 
     const mAudioMap = new THREE.TextureLoader().load('assets/images/audioIcon.png');
     const mAudioSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: mAudioMap }));
+    mAudioSprite.scale.set(0.1, 0.1, 0.1)
     let mAudioSprites = {};
 
     const BoneMaterial = new THREE.LineBasicMaterial({
@@ -110,7 +111,14 @@ export function PoseableAssetWrapper(parent) {
 
             let audio = model.audios.find(a => a.attachedId == pose.id);
             if (audio) {
-                console.log('show audio')
+                if (!mAudioSprites[pose.id]) {
+                    mAudioSprites[pose.id] = mAudioSprite.clone();
+                    object.add(mAudioSprites[pose.id]);
+                    let bbox = new THREE.Box3().setFromObject(object);
+                    let size = new THREE.Vector3();
+                    bbox.getSize(size);
+                    mAudioSprites[pose.id].position.set(size.x / 2, -size.y / 2, size.z / 2);
+                }
                 object.userData.isAudio = true;
             } else {
                 object.userData.isAudio = false;

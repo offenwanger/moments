@@ -4,7 +4,6 @@ import { Util } from "../../utils/utility.js";
 import { ButtonInput } from "../components/button_input.js";
 
 export function AssetPicker(container) {
-    let mNewAssetCallback = async (file, type) => { }
     let mAssetsUploadCallback = async (files) => { }
 
     let userAssetTypes = [
@@ -36,7 +35,7 @@ export function AssetPicker(container) {
                     accept = ".glb,.glTF";
                 }
                 let file = await FileUtil.showFilePicker(accept);
-                if (file) await mNewAssetCallback(file, mSelectionType);
+                if (file) await mAssetsUploadCallback([file]);
             } else {
                 let files = await FileUtil.showFilePicker(null, true);
                 await mAssetsUploadCallback(files);
@@ -92,6 +91,5 @@ export function AssetPicker(container) {
 
     this.updateModel = updateModel;
     this.showOpenAssetPicker = showOpenAssetPicker;
-    this.onNewAsset = (func) => mNewAssetCallback = func;
     this.onAssetsUpload = (func) => mAssetsUploadCallback = func;
 }

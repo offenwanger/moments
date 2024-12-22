@@ -1,5 +1,5 @@
 import * as ThreeMeshUI from 'three-mesh-ui';
-import { AssetTypes, AttributeButtons, BrushToolButtons, ItemButtons, MENU_WIDTH, MenuNavButtons, SurfaceToolButtons, ToolButtons } from '../../../constants.js';
+import { AssetTypes, AttributeButtons, BrushToolButtons, ItemButtons, MENU_WIDTH, MenuNavButtons, RecordToolButtons, SurfaceToolButtons, ToolButtons } from '../../../constants.js';
 import { ToolMode } from '../system_state.js';
 import { ButtonMenu } from './button_menu.js';
 import { MeshButton } from './mesh_button.js';
@@ -34,7 +34,7 @@ export function MenuController() {
         new MeshButton(ToolButtons.BRUSH, 'Brush', BUTTON_SIZE),
         new MeshButton(ToolButtons.SURFACE, 'Surface', BUTTON_SIZE),
         new MeshButton(ToolButtons.SCISSORS, 'Scissors', BUTTON_SIZE, 0xff0000),
-        new MeshButton(ToolButtons.RECORD, 'Record', BUTTON_SIZE, 0xff0000),
+        new MeshButton(ToolButtons.RECORD, 'Record', BUTTON_SIZE),
         new MeshButton(ItemButtons.RECENTER, 'Recenter', BUTTON_SIZE, 0xff0000),
         new MeshButton(MenuNavButtons.SPHERE_SETTINGS, 'Sphere Settings', BUTTON_SIZE),
         new MeshButton(MenuNavButtons.SETTINGS, 'Settings', BUTTON_SIZE, 0xff0000),
@@ -94,7 +94,13 @@ export function MenuController() {
         new MeshButton(SurfaceToolButtons.PULL, 'Pull', BUTTON_SIZE),
         new MeshButton(SurfaceToolButtons.RESET, 'Reset', BUTTON_SIZE),
     ]);
-
+    mSubMenus[ToolButtons.RECORD] = createMenu(ToolButtons.RECORD, [
+        new MeshButton(RecordToolButtons.REWIND, 'Rewind', BUTTON_SIZE),
+        new MeshButton(RecordToolButtons.PLAYPAUSE, 'Play/Pause', BUTTON_SIZE),
+        new MeshButton(RecordToolButtons.FORWARD, 'Forward', BUTTON_SIZE),
+        new MeshButton(RecordToolButtons.ACCEPT, 'Accept', BUTTON_SIZE, 0xff0000),
+        new MeshButton(RecordToolButtons.DELETE, 'Delete', BUTTON_SIZE),
+    ]);
 
     function setContainer(container1, container2) {
         container1.add(mMenuContainer);

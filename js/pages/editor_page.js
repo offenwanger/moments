@@ -13,6 +13,7 @@ import { PictureEditorController } from './controllers/picture_editor_controller
 import { SceneInterfaceController } from './controllers/scene_interface_controller.js';
 import { SidebarController } from './controllers/sidebar_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
+import { AudioRecorder } from '../utils/audio_recorder.js';
 
 export function EditorPage(parentContainer, mWebsocketController) {
     const RESIZE_TARGET_SIZE = 20;
@@ -27,6 +28,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
 
     let mResizingWindows = false;
     let mWindowEventManager = new WindowEventManager();
+    let mAudioRecorder = new AudioRecorder();
 
     let mMainContainer = document.createElement('div');
     mMainContainer.setAttribute('id', 'story-display-main-container')
@@ -66,7 +68,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
     mResizeTarget.addEventListener('pointerdown', () => { mResizingWindows = true; });
     parentContainer.appendChild(mResizeTarget);
 
-    let mSceneInterface = new SceneInterfaceController(mViewContainer, mWebsocketController);
+    let mSceneInterface = new SceneInterfaceController(mViewContainer, mWebsocketController, mAudioRecorder);
     mSceneInterface.onModelUpdate(async (updates) => {
         await mModelController.applyUpdates(updates);
         await updateModel();
@@ -234,6 +236,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
 
     async function show(workspace = null) {
         mWorkspace = workspace;
+
+        mAudioRecorder.init();
 
         const storyId = UrlUtil.getParam('story');
         if (!storyId) { console.error("Story not set!"); return; }

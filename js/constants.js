@@ -46,6 +46,7 @@ export const InteractionType = {
     TWO_HAND_MOVE: 'twoHandMove',
     TWO_HAND_POSE: 'twoHandPose',
     BRUSHING: 'brushing',
+    RECORDING: 'recording',
     NONE: 'none'
 }
 
@@ -71,6 +72,14 @@ export const SurfaceToolButtons = {
     PULL: 'surfaceToolPull',
     FLATTEN: 'surfaceToolFlatten',
     RESET: 'surfaceToolReset',
+}
+
+export const RecordToolButtons = {
+    REWIND: 'recordToolRewind',
+    PLAYPAUSE: 'recordToolPlaypause',
+    FORWARD: 'recordToolForward',
+    ACCEPT: 'recordToolAccept',
+    DELETE: 'recordToolDelete',
 }
 
 export const MenuNavButtons = {

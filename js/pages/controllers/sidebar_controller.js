@@ -129,7 +129,6 @@ export function SidebarController(container) {
         mMomentPanel.setDeleteCallback(func);
         mPicturePanel.setDeleteCallback(func);
         mPoseableAssetPanel.setDeleteCallback(func);
-        mAssetPosePanel.setDeleteCallback(func);
         mTeleportPanel.setDeleteCallback(func);
     }
 

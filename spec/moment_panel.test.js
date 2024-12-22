@@ -20,7 +20,7 @@ describe('Test MomentPanel', function () {
     });
 
     describe('delete tests', function () {
-        fit('should delete the moment', async function () {
+        it('should delete the moment', async function () {
             await createAndOpenStoryMoment();
             expect(testmodel().moments.length == 1);
             await clickButtonInput('#moment-delete-button');

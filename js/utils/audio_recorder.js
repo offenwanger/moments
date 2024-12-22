@@ -40,8 +40,8 @@ export function AudioRecorder() {
                 mMediaRecorder.start(1000)
                 mMediaRecorder.pause();
             } catch (err) {
-                console.error('Failed to start audio recorder.');
                 console.error(err);
+                console.error('Failed to start audio recorder.');
             }
 
         } else {

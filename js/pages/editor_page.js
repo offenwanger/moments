@@ -246,7 +246,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
     async function show(workspace = null) {
         mWorkspace = workspace;
 
-        mAudioRecorder.init();
+        await mAudioRecorder.init();
 
         const storyId = UrlUtil.getParam('story');
         if (!storyId) { console.error("Story not set!"); return; }

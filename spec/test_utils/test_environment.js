@@ -11,6 +11,7 @@ import { mockIndexedDB } from './mock_indexedDB.js';
 import fs from 'fs';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { mockAudioContext } from './mock_audio_context.js';
 import { mockServerSetup } from './mock_server.js';
 import { mockXR } from './mock_xr.js';
 
@@ -36,18 +37,15 @@ export async function setup() {
     mockFileSystem.setup();
 
     global.indexedDB = new mockIndexedDB();
-    //// THREE things /////
+    global.AudioContext = mockAudioContext;
+    global.MediaRecorder = function () { return { start: () => { }, pause: () => { } } };
     global.HTMLCanvasElement = Object;
     global.ProgressEvent = Event;
-    if (global.navigator) {
-        (console).log("Weird bug...");
-        global.navigator.xr = new mockXR();
-    } else {
-        global.navigator = {
-            userAgent: 'TestEnv',
-            xr: new mockXR(),
-        };
-    }
+    if (!global.navigator) global.navigator = { userAgent: 'TestEnv' }
+    global.navigator.xr = new mockXR();
+    global.navigator.mediaDevices = {
+        getUserMedia: () => { return 'stream'; }
+    };
     global.test_rendererAccess = {};
     global.document = {
         elements: [],
@@ -115,7 +113,8 @@ export async function setup() {
             }
         },
         innerWidth: 1000,
-        innerHeight: 800
+        innerHeight: 800,
+        AudioContext: global.AudioContext,
     };
     global.Image = function () {
         let src;
@@ -141,6 +140,7 @@ export async function setup() {
     global.FileReader = mockFileSystem.mockFileReader;
     global.io = function () { return { on: () => { }, emit: () => { }, } };
     global.domtoimage = { toPng: () => createCanvas() }
+    global.Audio = function () { return {} }
 
     await mockThreeSetup();
     await mockServerSetup();

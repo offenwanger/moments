@@ -4,7 +4,6 @@ import { TextInput } from "../components/text_input.js";
 
 export function AssetPosePanel(container) {
     let mUpdateAttributeCallback = async (id, attrs) => { };
-    let mDeleteCallback = async (id) => { };
     let mNavigationCallback = async (id) => { };
 
     let mModel = new Data.StoryModel();
@@ -24,7 +23,7 @@ export function AssetPosePanel(container) {
 
     let mNameDisplay = document.createElement('div');
     mNameDisplay.setAttribute('id', 'assetpose-name-display');
-    mPanelContainer.append(mNameDisplay);
+    mPanelContainer.appendChild(mNameDisplay);
 
     let mAttachedTeleport = new ButtonInput(mPanelContainer)
         .setId('assetpose-teleport-button');
@@ -98,6 +97,5 @@ export function AssetPosePanel(container) {
     this.show = show;
     this.hide = hide;
     this.setUpdateAttributeCallback = (func) => mUpdateAttributeCallback = func;
-    this.setDeleteCallback = (func) => mDeleteCallback = func;
     this.setNavigationCallback = (func) => mNavigationCallback = func;
 }

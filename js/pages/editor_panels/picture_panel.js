@@ -70,6 +70,12 @@ export function PicturePanel(container) {
             await mUpdateAttributeCallback(mPictureId, { z: newNum });
         });
 
+    let mScaleInput = new TextInput(mPanelContainer, 'number')
+        .setLabel("Scale")
+        .setOnChange(async (newNum) => {
+            await mUpdateAttributeCallback(mPictureId, { scale: newNum });
+        });
+
     let mDeleteButton = new ButtonInput(mPanelContainer)
         .setId('picture-delete-button')
         .setLabel('Delete')
@@ -103,6 +109,7 @@ export function PicturePanel(container) {
         mPositionXInput.setText(Math.round(mPicture.x * 1000) / 1000);
         mPositionYInput.setText(Math.round(mPicture.y * 1000) / 1000);
         mPositionZInput.setText(Math.round(mPicture.z * 1000) / 1000);
+        mScaleInput.setText(Math.round(mPicture.scale * 1000) / 1000);
 
         let teleport = model.teleports.find(t => t.attachedId == pictureId);
         if (teleport) {

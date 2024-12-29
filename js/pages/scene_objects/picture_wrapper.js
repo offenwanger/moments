@@ -42,7 +42,7 @@ export function PictureWrapper(parent, audioListener) {
             mRatio = 1;
             return;
         }
-        let mRatio = image.height / image.width;
+        mRatio = image.height / image.width;
         mFrontPlane.material.map = new THREE.Texture(image);
         mFrontPlane.material.map.needsUpdate = true;
         mFrontPlane.material.needsUpdate = true;

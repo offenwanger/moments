@@ -106,15 +106,19 @@ export function PhotosphereWrapper(parent) {
         } else {
             mImage = await (new THREE.ImageLoader()).loadAsync(DEFAULT_TEXTURE)
         }
-        mOriginalColor = await assetUtil.loadImage(mPhotosphere.colorAssetId);
         mOriginalBlur = await assetUtil.loadImage(mPhotosphere.blurAssetId);
-        mBlur.height = mOriginalBlur.height
-        mBlur.width = mOriginalBlur.width
-        resetBlur();
-        mColor.height = mOriginalColor.height
-        mColor.width = mOriginalColor.width
-        resetColor();
+        if (mOriginalBlur) {
+            mBlur.height = mOriginalBlur.height
+            mBlur.width = mOriginalBlur.width
+            resetBlur();
+        }
 
+        mOriginalColor = await assetUtil.loadImage(mPhotosphere.colorAssetId);
+        if (mOriginalColor) {
+            mColor.height = mOriginalColor.height
+            mColor.width = mOriginalColor.width
+            resetColor();
+        }
         mSphere.userData.id = photosphereId;
 
         drawTexture();

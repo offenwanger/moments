@@ -71,7 +71,7 @@ export function PictureWrapper(parent, audioListener) {
             mSound.setLoop(true);
             mSound.setVolume(audio.volume);
             if (audio.ambient) {
-                mSound.play();
+                try { mSound.play(); } catch (e) { console.error(e); }
             } else {
                 mInteractionSound = true;
             }
@@ -91,7 +91,7 @@ export function PictureWrapper(parent, audioListener) {
 
     function remove() {
         mParent.remove(mPlanes);
-        mSound.stop();
+        try { mSound.stop(); } catch (e) { console.error(e); }
     }
 
     function getTargets(ray, toolMode) {
@@ -148,10 +148,10 @@ export function PictureWrapper(parent, audioListener) {
             mFrontPlane.material.needsUpdate = true;
             mBackPlane.material.color.set(0xaaaaaa);
             mBackPlane.material.needsUpdate = true;
-            if (mInteractionSound) { mSound.pause(); }
+            if (mInteractionSound) { try { mSound.pause(); } catch (e) { console.error(e); } }
         }
         target.select = (toolMode) => {
-            if (mInteractionSound) { mSound.play(); }
+            if (mInteractionSound) { try { mSound.play(); } catch (e) { console.error(e); } }
         }
         target.getId = () => mPicture.id;
         return target;

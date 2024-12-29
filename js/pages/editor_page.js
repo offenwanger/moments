@@ -14,6 +14,7 @@ import { SceneInterfaceController } from './controllers/scene_interface_controll
 import { SidebarController } from './controllers/sidebar_controller.js';
 import { AssetPicker } from './editor_panels/asset_picker.js';
 import { AudioRecorder } from '../utils/audio_recorder.js';
+import { RemoteWorkSpace } from '../workspace_manager.js';
 
 export function EditorPage(parentContainer, mWebsocketController) {
     const RESIZE_TARGET_SIZE = 20;
@@ -265,12 +266,7 @@ export function EditorPage(parentContainer, mWebsocketController) {
 
             mModelController = new ModelController(model);
 
-            mAssetUtil = new AssetUtil({
-                getAssetAsDataURI: async function (filename) {
-                    let file = await fetch('uploads/' + storyId + "/" + filename);
-                    return await file.text();
-                }
-            });
+            mAssetUtil = new AssetUtil(new RemoteWorkSpace(storyId));
         } else {
             let story = await mWorkspace.getStory(storyId);
             if (!story) throw Error("Invalid workspace!");

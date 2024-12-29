@@ -95,15 +95,9 @@ export function WebsocketController() {
 
     async function shareStory(model, workspace) {
         try {
-            let usedAssets = []
-            usedAssets.push(...model.poseableAssets.map(o => o.assetId))
-            usedAssets.push(...model.pictures.map(o => o.assetId))
-            usedAssets.push(...model.audios.map(o => o.assetId))
-            usedAssets.push(...model.photospheres.map(o => [o.imageAssetId, o.colorAssetId, o.blurAssetId])
-                .flat().filter(o => o))
-            let filenames = model.assets.filter(a => usedAssets
-                .includes(a.id))
-                .map(a => a.filename);
+            // This is not a good way to do this.
+            // WE should really only upload when a thing is requested.
+            let filenames = model.assets.map(a => a.filename);
             for (let filename of filenames) {
                 await uploadAsset(model.id, filename, workspace)
             }

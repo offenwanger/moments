@@ -79,6 +79,8 @@ export function WorkspaceManager(folderHandle) {
     async function storeAsset(file) {
         let oldFilename = file.name;
         let nameBreakdown = oldFilename.split(".");
+        // simplify name otherwise it causes URL issues. 
+        nameBreakdown[0] = nameBreakdown[0].replace(/[^a-zA-Z0-9-_]/g, '');
         nameBreakdown[0] += "-" + Date.now();
         let newName = nameBreakdown.join('.');
         let arrayBuffer = await file.arrayBuffer();
@@ -152,6 +154,27 @@ export function WorkspaceManager(folderHandle) {
     this.getAssetAsDataURI = getAssetAsDataURI;
     this.loadStory = loadStory;
     this.packageStory = packageStory;
+}
+
+export function RemoteWorkSpace(storyId) {
+    async function getAssetAsDataURI(filename) {
+        try {
+            let result = await fetch('uploads/' + storyId + "/" + filename);
+            if (result?.ok) {
+                return await result.text();
+            } else {
+                console.error(result);
+                console.error(`Failed to fetch file, HTTP Response Code: ${result?.status}`)
+                return null;
+            }
+        } catch (error) {
+            console.error(error);
+            console.error('Failed to fetch file');
+            return null;
+        }
+    }
+
+    this.getAssetAsDataURI = getAssetAsDataURI;
 }
 
 

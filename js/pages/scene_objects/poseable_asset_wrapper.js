@@ -129,7 +129,7 @@ export function PoseableAssetWrapper(parent, audioListener) {
                     mSounds[pose.id].setBuffer(buffer);
                     mSounds[pose.id].setLoop(true);
                     mSounds[pose.id].setVolume(audio.volume);
-                    if (audio.ambient) mSounds[pose.id].play();
+                    if (audio.ambient) try { mSounds[pose.id].play() } catch (e) { console.error(e); }
                 }
 
                 object.userData.interactionAudio = !audio.ambient;
@@ -152,7 +152,9 @@ export function PoseableAssetWrapper(parent, audioListener) {
 
     function remove() {
         mParent.remove(mModelGroup)
-        Object.values(mSounds).forEach(s => s.stop())
+        Object.values(mSounds).forEach(s => {
+            try { s.stop() } catch (e) { console.error(e); }
+        });
     }
 
     function getTargets(ray, toolMode) {
@@ -299,11 +301,11 @@ export function PoseableAssetWrapper(parent, audioListener) {
             };
             interactionTarget.select = (toolMode) => {
                 let obj = mGLTF.getObjectByName(pose.name);
-                if (obj.userData.interactionAudio) mSounds[pose.id].play();
+                if (obj.userData.interactionAudio) try { mSounds[pose.id].play(); } catch (e) { console.error(e); }
             };
             interactionTarget.idle = (toolMode) => {
                 let obj = interactionTarget.getObject3D();
-                if (obj.userData.interactionAudio) mSounds[pose.id].pause();
+                if (obj.userData.interactionAudio) try { mSounds[pose.id].pause(); } catch (e) { console.error(e); }
 
                 if (obj.isMesh) {
                     obj.material.color.set(obj.userData.originalColor);

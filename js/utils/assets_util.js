@@ -114,8 +114,11 @@ export function AssetUtil(workspace) {
     async function loadAudioBuffer(assetId) {
         try {
             if (!mLoadedAssets[assetId]) {
-                let asset = mModel.find(assetId);
-                if (!asset) { console.error("Invalid image asset: " + assetId, asset); throw new Error("Invalid model asset: " + assetId); }
+                let asset = mModel.assets.find(a => a.id == assetId);
+                if (!asset) {
+                    console.error("Invalid audio asset: " + assetId);
+                    throw new Error("Invalid model asset: " + assetId);
+                }
                 let uri = await mWorkspace.getAssetAsDataURI(asset.filename);
                 let buffer = await new Promise((resolve, reject) => mAudioLoader.load(uri, resolve, null, reject));
                 mLoadedAssets[assetId] = buffer;

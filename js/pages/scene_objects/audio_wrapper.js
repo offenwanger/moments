@@ -43,9 +43,9 @@ export function AudioWrapper(parent, audioListener) {
         mSound.setLoop(true);
         mSound.setVolume(audio.volume);
         if (audio.ambient) {
-            mSound.play();
+            try { mSound.play(); } catch (e) { console.error(e); }
         } else {
-            mSound.stop();
+            try { mSound.stop(); } catch (e) { console.error(e); }
         }
 
         mAudio = audio;
@@ -57,7 +57,7 @@ export function AudioWrapper(parent, audioListener) {
 
     function remove() {
         mParent.remove(mSphere);
-        mSound.stop();
+        try { mSound.stop(); } catch (e) { console.error(e); }
     }
 
     function getTargets(ray, toolMode) {
@@ -80,12 +80,14 @@ export function AudioWrapper(parent, audioListener) {
         target.select = function (toolMode) {
             mSphere.material.color.setHex(0xffffff)
             if (!mAudio.ambient) {
-                mSound.play();
+                try { mSound.play(); } catch (e) { console.error(e); }
             }
         };
         target.idle = (toolMode) => {
-            mSphere.material.color.setHex(0xaaaa99)
-            if (!mAudio.ambient) mSound.pause();
+            mSphere.material.color.setHex(0xaaaa99);
+            if (!mAudio.ambient) {
+                try { mSound.pause(); } catch (e) { console.error(e); }
+            }
         }
         target.getLocalPosition = () => {
             let p = new THREE.Vector3();

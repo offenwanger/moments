@@ -91,6 +91,8 @@ export function EditorPage(parentContainer, mWebsocketController) {
                 let type;
                 if (t == 'image') {
                     type = AssetTypes.IMAGE;
+                } else if (t == 'audio') {
+                    type = AssetTypes.AUDIO;
                 } else {
                     let extension = file.name.split('.').pop();
                     if (extension == 'glb' || extension == 'gltf') {

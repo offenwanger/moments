@@ -6,6 +6,8 @@ import { ToolButtons } from '../../constants.js';
 export function PictureWrapper(parent, audioListener) {
     let mParent = parent;
     let mPicture = new Data.Picture();
+    let mCurrentAssetId = null;
+    let mAssetAge = 0;
     let mInteractionTarget = createInteractionTarget();
 
     let mRatio = 1;
@@ -34,18 +36,27 @@ export function PictureWrapper(parent, audioListener) {
     mParent.add(mPlanes);
 
     async function update(picture, model, assetUtil) {
-        let image = await assetUtil.loadImage(picture.assetId);
-        if (!image || isNaN(image.height / image.width)) {
-            console.error('Invalid image: ' + picture.assetId);
-            mFrontPlane.material.map = null;
-            mFrontPlane.material.needsUpdate = true;
-            mRatio = 1;
-            return;
+        let assetAge = assetUtil.getAssetAge(picture.assetId);
+        if (mCurrentAssetId != picture.assetId || (assetAge && mAssetAge < assetAge)) {
+            let image = await assetUtil.loadImage(picture.assetId);
+            if (!image || isNaN(image.height / image.width)) {
+                console.error('Invalid image: ' + picture.assetId);
+                mFrontPlane.material.map = null;
+                mFrontPlane.material.needsUpdate = true
+                mCurrentAssetId = null;
+                mAssetAge = 0;
+                mRatio = 1;
+                return;
+            }
+            mRatio = image.height / image.width;
+            mFrontPlane.material.map = new THREE.Texture(image);
+            // do this here because we have to wait until we set the material map.
+            mFrontPlane.material.needsUpdate = true
+            mFrontPlane.material.map.needsUpdate = true
+            mCurrentAssetId = picture.assetId;
+            mAssetAge = assetAge;
         }
-        mRatio = image.height / image.width;
-        mFrontPlane.material.map = new THREE.Texture(image);
-        mFrontPlane.material.map.needsUpdate = true;
-        mFrontPlane.material.needsUpdate = true;
+
         mPlanes.position.set(picture.x, picture.y, picture.z);
         mPlanes.setRotationFromQuaternion(new THREE.Quaternion().fromArray(picture.orientation));
         mPlanes.scale.set(picture.scale, picture.scale * mRatio, picture.scale)

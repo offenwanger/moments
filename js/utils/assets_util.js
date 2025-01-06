@@ -139,4 +139,5 @@ export function AssetUtil(workspace) {
     this.loadGLTFModel = loadGLTFModel;
     this.loadAssetModel = loadAssetModel;
     this.loadAudioBuffer = loadAudioBuffer;
+    this.getAssetAge = (id) => mAssetAges[id];
 }

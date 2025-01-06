@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { logInfo } from '../../../utils/log_util.js';
 import { XRInputController } from './xr_input_controller.js';
-import { XRPageInterfaceController } from './xr_page_interface_controller.js';
 
 export function XRSessionController() {
     let mOnSessionStartCallback = () => { }
@@ -12,8 +11,6 @@ export function XRSessionController() {
     let mSession = null;
     let mSceneContainer = new THREE.Group();
 
-    let mXRPageInterfaceController = new XRPageInterfaceController(mSceneContainer);
-    mSceneContainer.add(mXRPageInterfaceController.getGroup());
     let mXRInputController = new XRInputController(mSceneContainer);
 
 
@@ -31,7 +28,6 @@ export function XRSessionController() {
         mOnSessionStartCallback();
 
         mXRInputController.setSession(mSession);
-        await mXRPageInterfaceController.renderWebpage();
     }
     mXRRenderer.xr.addEventListener('sessionend', () => {
         mSession = null;
@@ -56,25 +52,12 @@ export function XRSessionController() {
 
     let lastSend = Date.now();
     async function render(time) {
-        mXRPageInterfaceController.setPositions(
-            mXRInputController.getHeadPosition(),
-            mXRInputController.getHeadDirection(),
-            mXRInputController.getLeftControllerPosition(),
-            mXRInputController.getLeftControllerOrientation(),
-            mXRInputController.getRightControllerPosition(),
-            mXRInputController.getRightControllerOrientation())
-
         if (Date.now() - lastSend > 1000) {
             let pos = mXRInputController.getUserPosition();
             mUserMovedCallback(pos.head, pos.handR, pos.handL);
         }
 
         await mXRInputController.pollInteractionState();
-
-        if (mXRPageInterfaceController.isInteracting()) {
-            await mXRPageInterfaceController.updateClickState(
-                mXRInputController.getPrimaryRPressed());
-        }
     }
 
     this.hovered = (hovered, isPrimary) => { }
